@@ -27,6 +27,16 @@
   </property>
   <property name="styleSheet">
    <string notr="true">QWidget {
+	color: black;
+	border: 1px;
+	background-color: white;
+}
+QLineEdit {
+	border: 1px solid rgb(153, 153, 153);
+	border-radius: 2px;
+}
+QSpinBox {
+	border: 1px solid rgb(153, 153, 153);
 	background-color: white;
 }</string>
   </property>
@@ -620,14 +630,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QLabel" name="oder_num_label">
@@ -661,14 +668,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QSpinBox" name="spinBox_3">
@@ -680,14 +684,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QSpinBox" name="spinBox_4">
@@ -699,14 +700,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QSpinBox" name="spinBox_5">
@@ -718,14 +716,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QSpinBox" name="spinBox_6">
@@ -737,14 +732,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QSpinBox" name="spinBox_7">
@@ -756,14 +748,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QCheckBox" name="order_t3YJZJ_151_checkBox">
@@ -808,14 +797,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QSpinBox" name="spinBox_9">
@@ -827,14 +813,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QCheckBox" name="order_t3YJBDT_151_checkBox">
@@ -879,14 +862,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QCheckBox" name="order_t3YJHJ_151_checkBox">
@@ -964,14 +944,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QSpinBox" name="spinBox_12">
@@ -983,14 +960,11 @@ QPushButton:pressed, QPushButton:checked {
      <height>20</height>
     </rect>
    </property>
-   <property name="styleSheet">
-    <string notr="true">QSpinBox {
-	border-bottom: 1px solid black;
-	background-color: white;
-}</string>
-   </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
+   </property>
+   <property name="buttonSymbols">
+    <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
   <widget class="QCheckBox" name="order_t3HJNY_151_checkBox">
@@ -1038,11 +1012,85 @@ QPushButton:pressed, QPushButton:checked {
    <property name="styleSheet">
     <string notr="true">QComboBox {
 	border: 1px solid white;
-	border-bottom: 1px solid black;
+	border-bottom: 1px solid rgb(153, 153, 153);
 	border-left: 1px solid rgb(195, 195, 195);
 }</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="test_button">
+   <property name="geometry">
+    <rect>
+     <x>220</x>
+     <y>266</y>
+     <width>141</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>test</string>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: rgb(226, 255, 233);
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+   </property>
+   <property name="text">
+    <string>test</string>
+   </property>
+  </widget>
+  <zorder>adb_path_label</zorder>
+  <zorder>adb_path_lineEdit</zorder>
+  <zorder>adb_devices_label</zorder>
+  <zorder>choice_adbpath_Button</zorder>
+  <zorder>authername_label</zorder>
+  <zorder>logger_Browser</zorder>
+  <zorder>quarry_time_label</zorder>
+  <zorder>quarry_time_lineEdit</zorder>
+  <zorder>minute_unit_label</zorder>
+  <zorder>save_config_Button</zorder>
+  <zorder>start_switch_work_Button</zorder>
+  <zorder>start_spend_order_Button</zorder>
+  <zorder>stop_all_task_Button</zorder>
+  <zorder>oder_list_label</zorder>
+  <zorder>order_build61_checkBox</zorder>
+  <zorder>order_build81_checkBox</zorder>
+  <zorder>order_build162_checkBox</zorder>
+  <zorder>order_build182_checkBox</zorder>
+  <zorder>order_build101_checkBox</zorder>
+  <zorder>order_coin1012w_checkBox</zorder>
+  <zorder>order_exp1012w_checkBox</zorder>
+  <zorder>oder_num_label</zorder>
+  <zorder>order_t3YJZJ_151_checkBox</zorder>
+  <zorder>order_t3YJBDT_151_checkBox</zorder>
+  <zorder>order_t3YJHJ_151_checkBox</zorder>
+  <zorder>order_t3NPJ_151_checkBox</zorder>
+  <zorder>order_t3HJNY_151_checkBox</zorder>
+  <zorder>adb_devices_comboBox</zorder>
+  <zorder>test_button</zorder>
+  <zorder>spinBox_12</zorder>
+  <zorder>spinBox_11</zorder>
+  <zorder>spinBox_10</zorder>
+  <zorder>spinBox_9</zorder>
+  <zorder>spinBox_8</zorder>
+  <zorder>spinBox_7</zorder>
+  <zorder>spinBox_6</zorder>
+  <zorder>spinBox_5</zorder>
+  <zorder>spinBox_4</zorder>
+  <zorder>spinBox_3</zorder>
+  <zorder>spinBox_2</zorder>
+  <zorder>spinBox</zorder>
  </widget>
  <resources/>
  <connections/>

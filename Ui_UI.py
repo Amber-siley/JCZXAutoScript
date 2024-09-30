@@ -16,6 +16,16 @@ class Ui_Form(object):
         Form.setMinimumSize(QtCore.QSize(400, 264))
         Form.setMaximumSize(QtCore.QSize(576, 284))
         Form.setStyleSheet("QWidget {\n"
+"    color: black;\n"
+"    border: 1px;\n"
+"    background-color: white;\n"
+"}\n"
+"QLineEdit {\n"
+"    border: 1px solid rgb(153, 153, 153);\n"
+"    border-radius: 2px;\n"
+"}\n"
+"QSpinBox {\n"
+"    border: 1px solid rgb(153, 153, 153);\n"
 "    background-color: white;\n"
 "}")
         self.adb_path_label = QtWidgets.QLabel(parent=Form)
@@ -247,11 +257,8 @@ class Ui_Form(object):
         self.order_exp1012w_checkBox.setObjectName("order_exp1012w_checkBox")
         self.spinBox = QtWidgets.QSpinBox(parent=Form)
         self.spinBox.setGeometry(QtCore.QRect(520, 24, 61, 20))
-        self.spinBox.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox.setObjectName("spinBox")
         self.oder_num_label = QtWidgets.QLabel(parent=Form)
         self.oder_num_label.setGeometry(QtCore.QRect(520, 0, 60, 24))
@@ -260,51 +267,33 @@ class Ui_Form(object):
         self.oder_num_label.setObjectName("oder_num_label")
         self.spinBox_2 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_2.setGeometry(QtCore.QRect(520, 44, 61, 20))
-        self.spinBox_2.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_2.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_2.setObjectName("spinBox_2")
         self.spinBox_3 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_3.setGeometry(QtCore.QRect(520, 64, 61, 20))
-        self.spinBox_3.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_3.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_3.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_3.setObjectName("spinBox_3")
         self.spinBox_4 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_4.setGeometry(QtCore.QRect(520, 84, 61, 20))
-        self.spinBox_4.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_4.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_4.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_4.setObjectName("spinBox_4")
         self.spinBox_5 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_5.setGeometry(QtCore.QRect(520, 104, 61, 20))
-        self.spinBox_5.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_5.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_5.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_5.setObjectName("spinBox_5")
         self.spinBox_6 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_6.setGeometry(QtCore.QRect(520, 124, 61, 20))
-        self.spinBox_6.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_6.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_6.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_6.setObjectName("spinBox_6")
         self.spinBox_7 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_7.setGeometry(QtCore.QRect(520, 144, 61, 20))
-        self.spinBox_7.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_7.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_7.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_7.setObjectName("spinBox_7")
         self.order_t3YJZJ_151_checkBox = QtWidgets.QCheckBox(parent=Form)
         self.order_t3YJZJ_151_checkBox.setGeometry(QtCore.QRect(400, 164, 121, 20))
@@ -319,19 +308,13 @@ class Ui_Form(object):
         self.order_t3YJZJ_151_checkBox.setObjectName("order_t3YJZJ_151_checkBox")
         self.spinBox_8 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_8.setGeometry(QtCore.QRect(520, 164, 61, 20))
-        self.spinBox_8.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_8.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_8.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_8.setObjectName("spinBox_8")
         self.spinBox_9 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_9.setGeometry(QtCore.QRect(520, 184, 61, 20))
-        self.spinBox_9.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_9.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_9.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_9.setObjectName("spinBox_9")
         self.order_t3YJBDT_151_checkBox = QtWidgets.QCheckBox(parent=Form)
         self.order_t3YJBDT_151_checkBox.setGeometry(QtCore.QRect(400, 184, 121, 20))
@@ -346,11 +329,8 @@ class Ui_Form(object):
         self.order_t3YJBDT_151_checkBox.setObjectName("order_t3YJBDT_151_checkBox")
         self.spinBox_10 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_10.setGeometry(QtCore.QRect(520, 204, 61, 20))
-        self.spinBox_10.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_10.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_10.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_10.setObjectName("spinBox_10")
         self.order_t3YJHJ_151_checkBox = QtWidgets.QCheckBox(parent=Form)
         self.order_t3YJHJ_151_checkBox.setGeometry(QtCore.QRect(400, 204, 121, 20))
@@ -376,19 +356,13 @@ class Ui_Form(object):
         self.order_t3NPJ_151_checkBox.setObjectName("order_t3NPJ_151_checkBox")
         self.spinBox_11 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_11.setGeometry(QtCore.QRect(520, 224, 61, 20))
-        self.spinBox_11.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_11.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_11.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_11.setObjectName("spinBox_11")
         self.spinBox_12 = QtWidgets.QSpinBox(parent=Form)
         self.spinBox_12.setGeometry(QtCore.QRect(520, 244, 61, 20))
-        self.spinBox_12.setStyleSheet("QSpinBox {\n"
-"    border-bottom: 1px solid black;\n"
-"    background-color: white;\n"
-"}")
         self.spinBox_12.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.spinBox_12.setButtonSymbols(QtWidgets.QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_12.setObjectName("spinBox_12")
         self.order_t3HJNY_151_checkBox = QtWidgets.QCheckBox(parent=Form)
         self.order_t3HJNY_151_checkBox.setGeometry(QtCore.QRect(400, 244, 121, 20))
@@ -405,10 +379,69 @@ class Ui_Form(object):
         self.adb_devices_comboBox.setGeometry(QtCore.QRect(70, 24, 105, 24))
         self.adb_devices_comboBox.setStyleSheet("QComboBox {\n"
 "    border: 1px solid white;\n"
-"    border-bottom: 1px solid black;\n"
+"    border-bottom: 1px solid rgb(153, 153, 153);\n"
 "    border-left: 1px solid rgb(195, 195, 195);\n"
 "}")
         self.adb_devices_comboBox.setObjectName("adb_devices_comboBox")
+        self.test_button = QtWidgets.QPushButton(parent=Form)
+        self.test_button.setGeometry(QtCore.QRect(220, 266, 141, 20))
+        self.test_button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: rgb(226, 255, 233);\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.test_button.setObjectName("test_button")
+        self.adb_path_label.raise_()
+        self.adb_path_lineEdit.raise_()
+        self.adb_devices_label.raise_()
+        self.choice_adbpath_Button.raise_()
+        self.authername_label.raise_()
+        self.logger_Browser.raise_()
+        self.quarry_time_label.raise_()
+        self.quarry_time_lineEdit.raise_()
+        self.minute_unit_label.raise_()
+        self.save_config_Button.raise_()
+        self.start_switch_work_Button.raise_()
+        self.start_spend_order_Button.raise_()
+        self.stop_all_task_Button.raise_()
+        self.oder_list_label.raise_()
+        self.order_build61_checkBox.raise_()
+        self.order_build81_checkBox.raise_()
+        self.order_build162_checkBox.raise_()
+        self.order_build182_checkBox.raise_()
+        self.order_build101_checkBox.raise_()
+        self.order_coin1012w_checkBox.raise_()
+        self.order_exp1012w_checkBox.raise_()
+        self.oder_num_label.raise_()
+        self.order_t3YJZJ_151_checkBox.raise_()
+        self.order_t3YJBDT_151_checkBox.raise_()
+        self.order_t3YJHJ_151_checkBox.raise_()
+        self.order_t3NPJ_151_checkBox.raise_()
+        self.order_t3HJNY_151_checkBox.raise_()
+        self.adb_devices_comboBox.raise_()
+        self.test_button.raise_()
+        self.spinBox_12.raise_()
+        self.spinBox_11.raise_()
+        self.spinBox_10.raise_()
+        self.spinBox_9.raise_()
+        self.spinBox_8.raise_()
+        self.spinBox_7.raise_()
+        self.spinBox_6.raise_()
+        self.spinBox_5.raise_()
+        self.spinBox_4.raise_()
+        self.spinBox_3.raise_()
+        self.spinBox_2.raise_()
+        self.spinBox.raise_()
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -447,3 +480,5 @@ class Ui_Form(object):
         self.order_t3YJHJ_151_checkBox.setText(_translate("Form", "15换1亚金合金 T3"))
         self.order_t3NPJ_151_checkBox.setText(_translate("Form", "15换1涅槃剂 T3"))
         self.order_t3HJNY_151_checkBox.setText(_translate("Form", "15换1幻金能源 T3"))
+        self.test_button.setToolTip(_translate("Form", "test"))
+        self.test_button.setText(_translate("Form", "test"))
