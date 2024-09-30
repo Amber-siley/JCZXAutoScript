@@ -8,7 +8,7 @@ from Ui_UI import Ui_Form
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog
 from PyQt6.QtGui import QIntValidator
-from PyQt6.QtCore import QObject, QThread,pyqtSignal
+from PyQt6.QtCore import QThread,QTimer
 import subprocess
 import logging
 import cv2
@@ -17,7 +17,7 @@ import numpy as np
 DEFAULT_CONFIGS = {
     "adb_path": None,
     "adb_device": None,
-    "quarry_time": 30,
+    "quarry_time": None,
     "orders":{
         "build_61":{
             "enable": True,
@@ -185,17 +185,24 @@ class JCZXGame:
         ORDERS = "订单库"
         ASK_NEED_SUBMIT = "询问提交订单"
     
-    loc= Interface.HOME
+    class Buttons:
+        back_button = join("resources","buttons","back.png")
+        friends_button = join("resources","buttons","friends.png")
+        home_button = join("resources","buttons","home.png")
+        base_button = join("resources","buttons","base.png")
+        quarry_button = join("resources","buttons","quarry.png")
+        ore_button = join("resources","buttons","ore.png")
+        building_button = join("resources","buttons","buildingOccupancy.png")
+        building_switch_button = join("resources","buttons","buildingSwitch.png")
+    
+    class ScreenLocs:
+        friend = join("resources","locations","friend.png")
+        quarry = join("resources","locations","quarry.png")
+        base = join("resources","buttons","buildingOccupancy.png")
+        building_switch = join("resources","buttons","buildingSwitch.png")
     
     def __init__(self, adb_path: str, logger:logging.Logger) -> None:
         self.adb_path = adb_path
-        self.back_button = join("resources","buttons","back.png")
-        self.friends_button = join("resources","buttons","friends.png")
-        self.home_button = join("resources","buttons","home.png")
-        self.base_button = join("resources","buttons","base.png")
-        self.quarry_button = join("resources","buttons","quarry.png")
-        self.ore_button = join("resources","buttons","ore.png")
-        self.building_button = join("resources","buttons","buildingOccupancy.png")
         self.log = logger
     
     @staticmethod
@@ -205,8 +212,8 @@ class JCZXGame:
                 return func(self, *args, **kwargs)
         return wrapper
     
-    def getNowLocation(self) -> str:
-        ...
+    def inLocation(self, screen_loc) -> bool:
+        return bool(self.findImageCenterLocation(screen_loc))
     
     def getScreenSize(self) -> tuple[int, int]:
         msg = subprocess.check_output([self.adb_path, "-s", self.device, "shell", "wm", "size"]).decode().split(" ")[-1].replace("\r\n","")
@@ -234,40 +241,34 @@ class JCZXGame:
             return False
 
     def gotoHome(self):
-        if self.__clickAndMsg(self.home_button, "前往【主界面】", "前往【主界面】失败"):
+        if self.__clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败"):
             self.loc = self.Interface.HOME
             sleep(3)
     
     def gotoFriend(self):
-        if self.loc == self.Interface.FRIEND:   return
-        if self.__clickAndMsg(self.friends_button, "前往【好友界面】", "前往【好友界面】失败"):
-            self.loc = self.Interface.FRIEND
-        else:
-            self.gotoHome()
+        if self.inLocation(self.ScreenLocs.friend): return
+        else:   self.gotoHome()
+        if not self.__clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败"):
             self.gotoFriend()
         sleep(1)
     
     def gotoBase(self):
-        if self.loc == self.Interface.BASE: return
-        if self.__clickAndMsg(self.base_button, "前往【基地】", "前往【基地】失败"):
-            self.loc = self.Interface.BASE
-        else:
-            self.gotoHome()
+        if self.inLocation(self.ScreenLocs.base):   return
+        else:   self.gotoHome()
+        if not self.__clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败"):
             self.gotoBase()
         sleep(3)
     
     def gotoQuarry(self):
-        if self.loc == self.Interface.QUARRY:   return
-        if self.__clickAndMsg(self.quarry_button, "前往【矿场】", "前往【矿场】失败"):
-            self.loc = self.Interface.QUARRY
-        else:
-            self.gotoBase()
+        if self.inLocation(self.ScreenLocs.quarry): return
+        else:   self.gotoBase()
+        if not self.__clickAndMsg(self.Buttons.quarry_button, "前往【矿场】", "前往【矿场】失败"):
             self.gotoQuarry()
         sleep(3)
     
     def takeOre(self):
-        if self.loc == self.Interface.BASE:
-            if self.__clickAndMsg(self.ore_button, "收集矿物"):
+        if self.inLocation(self.ScreenLocs.base):
+            if self.__clickAndMsg(self.Buttons.ore_button, "收集矿物"):
                 sleep(0.5)
                 self.click(self.width//2, self.height//1.2)
             else:
@@ -278,13 +279,11 @@ class JCZXGame:
         sleep(1)
     
     def gotoBuildingOccupancy(self):
-        if self.loc == self.Interface.BUILDING_OCCUPANCY:   return
-        if self.__clickAndMsg(self.building_button, "前往【驻员管理】", "前往【驻员管理】失败"):
-            self.loc = self.Interface.BUILDING_OCCUPANCY
-        else:
-            self.gotoBase()
+        if self.inLocation(self.ScreenLocs.building_switch):   return
+        else:   self.gotoBase()
+        if not self.__clickAndMsg(self.Buttons.building_button, "前往【驻员管理】", "前往【驻员管理】失败"):
             self.gotoBuildingOccupancy()
-        sleep(1)  
+        sleep(1)
     
     def switchWork(self):
         ...
@@ -341,6 +340,7 @@ class WorkThread(QThread):
         self.adb = adb
         self.log = log
         self.tag = self.DEBUG
+        self.timer = QTimer()
     
     def setMode(self, tag:int):
         self.tag = tag
@@ -357,7 +357,7 @@ class WorkThread(QThread):
                 self.log.error(f"未知tag {self.tag}")
 
     def __debug(self):
-        self.adb.takeOre()
+        self.adb.gotoBuildingOccupancy()
     
     def setADB(self, adb):
         self.adb = adb
