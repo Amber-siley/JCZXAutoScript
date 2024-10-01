@@ -42,7 +42,7 @@ class Ui_Form(object):
         self.adb_devices_label.setIndent(-1)
         self.adb_devices_label.setObjectName("adb_devices_label")
         self.choice_adbpath_Button = QtWidgets.QPushButton(parent=Form)
-        self.choice_adbpath_Button.setGeometry(QtCore.QRect(376, 0, 24, 24))
+        self.choice_adbpath_Button.setGeometry(QtCore.QRect(354, 0, 24, 24))
         self.choice_adbpath_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -401,6 +401,29 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.test_button.setObjectName("test_button")
+        self.help_button = QtWidgets.QPushButton(parent=Form)
+        self.help_button.setGeometry(QtCore.QRect(376, 0, 24, 24))
+        self.help_button.setLayoutDirection(QtCore.Qt.LayoutDirection.LeftToRight)
+        self.help_button.setStyleSheet("QPushButton {\n"
+"    color: rgb(168, 168, 168);\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.help_button.setObjectName("help_button")
+        self.help_textBrowser = QtWidgets.QTextBrowser(parent=Form)
+        self.help_textBrowser.setGeometry(QtCore.QRect(400, 0, 181, 271))
+        self.help_textBrowser.setObjectName("help_textBrowser")
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
         self.adb_devices_label.raise_()
@@ -442,6 +465,8 @@ class Ui_Form(object):
         self.spinBox_3.raise_()
         self.spinBox_2.raise_()
         self.spinBox.raise_()
+        self.help_button.raise_()
+        self.help_textBrowser.raise_()
 
         self.retranslateUi(Form)
         QtCore.QMetaObject.connectSlotsByName(Form)
@@ -459,7 +484,7 @@ class Ui_Form(object):
         self.minute_unit_label.setText(_translate("Form", "M"))
         self.save_config_Button.setToolTip(_translate("Form", "保存当前配置并应用"))
         self.save_config_Button.setText(_translate("Form", "保存用户配置"))
-        self.start_switch_work_Button.setToolTip(_translate("Form", "将矿场员工换班"))
+        self.start_switch_work_Button.setToolTip(_translate("Form", "先将矿场员工换班，然后在规定时间巡查订单库进行提交"))
         self.start_switch_work_Button.setText(_translate("Form", "启动换班任务"))
         self.start_spend_order_Button.setToolTip(_translate("Form", "寻找订单并交付"))
         self.start_spend_order_Button.setText(_translate("Form", "启动交付订单"))
@@ -482,3 +507,20 @@ class Ui_Form(object):
         self.order_t3HJNY_151_checkBox.setText(_translate("Form", "15换1幻金能源 T3"))
         self.test_button.setToolTip(_translate("Form", "test"))
         self.test_button.setText(_translate("Form", "test"))
+        self.help_button.setToolTip(_translate("Form", "帮助"))
+        self.help_button.setText(_translate("Form", "?"))
+        self.help_textBrowser.setHtml(_translate("Form", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
+"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
+"p, li { white-space: pre-wrap; }\n"
+"hr { height: 1px; border-width: 0; }\n"
+"li.unchecked::marker { content: \"\\2610\"; }\n"
+"li.checked::marker { content: \"\\2612\"; }\n"
+"</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
+"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">ADB路径：模拟器目录下的ADB.exe调试程序路径</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">设备列表：模拟器下的设备，默认获取第一个设备</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">矿场结算：矿场每30分钟结算一次矿物，值与账号注册时间有关，当没有指定设置或者为-1时，自动挂机30分钟获取时间</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">启动交付订单：首先检查订单库并交付符合条件的订单，再进行矿场换班工作</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">启动换班任务：首先进行矿场换班工作，再进行在规定时间进行交付订单任务</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt;\">保存用户配置：使用手动修改方式并不会触发自动保存，推荐修改配置项后手动保存配置</span></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"><br /></p>\n"
+"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
