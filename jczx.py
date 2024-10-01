@@ -96,6 +96,7 @@ class MainManager(Ui_Form):
         self.__init_devices()
         self.referMenuConfig()
         self.__init_logger()
+        self.test()
         self.__start_app()
     
     @property
@@ -119,6 +120,10 @@ class MainManager(Ui_Form):
         self.save_config_Button.clicked.connect(self.saveConfig)
         self.adb_devices_comboBox.currentTextChanged.connect(self.setDeviceConfig)
         self.test_button.clicked.connect(self.__debug)
+    
+    def test(self):
+        # self.adb.findImageCenterLocation(self.adb.Buttons.backyard_button)
+        ...
     
     def __debug(self):
         self.work_thread.setMode(WorkThread.DEBUG)
@@ -194,6 +199,7 @@ class JCZXGame:
         ore_button = join("resources","buttons","ore.png")
         building_button = join("resources","buttons","buildingOccupancy.png")
         building_switch_button = join("resources","buttons","buildingSwitch.png")
+        backyard_button = join("resources","buttons","backyard.png")
     
     class ScreenLocs:
         friend = join("resources","locations","friend.png")
@@ -296,15 +302,36 @@ class JCZXGame:
             if warnMsg: self.log.warning(warnMsg)
             return False
     
-    def findImageCenterLocation(self, button_path) -> tuple[int,int] | None:
+    def findImageCenterLocation(self, button_path) -> tuple[int, int] | None:
+        locations = self.findImageCenterLacations(button_path)
+        if locations:
+            return locations[0]
+        else:
+            return None
+
+    def findImageCenterLacations(self, button_path) -> list[tuple[int, int]] | None:
         screenshot_gray = self.grayScreenshot()
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > 0.9)
-        h, w = template_gray.shape[0:2]
-        xs, ys = locations
-        if xs.any() and ys.any():
-            return (ys[-1]+w//2, xs[-1]+h//2)
+        w, h= template_gray.shape[0:2]
+        if any(locations[0]):
+            tmp_x = [locations[0][0]]
+            tmp_y = [locations[1][0]]
+            for x,y in zip(*locations):
+                if y-10 >= tmp_y[-1]:
+                    tmp_x.append(x)
+                    tmp_y.append(y)
+                    continue
+                if x-10 >= tmp_x[-1]:
+                    tmp_x.append(x)
+                    tmp_y.append(y)
+                    continue
+            result = [(y+h//2,x+w//2) for x,y in zip(tmp_x,tmp_y)]
+            # cv2.rectangle(screenshot_gray,(tmp_y[0],tmp_x[0]),(tmp_y[0]+h,tmp_x[0]+w),(255,0,0),3)
+            # cv2.imshow("1",screenshot_gray)
+            # cv2.waitKey()
+            return result
         else:
             return None
     
