@@ -5,6 +5,7 @@ from json import load,dumps
 from time import sleep
 from datetime import datetime
 from queue import LifoQueue
+from functools import cache
 from Ui_UI import Ui_Form
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog
@@ -96,6 +97,7 @@ class MainManager(Ui_Form):
         """初始化"""
         self.__init_buttom()
         self.__init_menu()
+        self.__init_orderlist()
         self.__init_valueRule()
         self.__init_devices()
         self.referMenuConfig()
@@ -132,6 +134,54 @@ class MainManager(Ui_Form):
         self.stop_all_task_Button.clicked.connect(self.stopTask)
         
         self.test_button.clicked.connect(self.__debug)
+    
+    def __init_orderlist(self):
+        self.order_build61_checkBox.setChecked(self.config.get_config(("orders","build_61","enable")))
+        self.order_build61_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_61","enable"), self.order_build61_checkBox.isChecked()))
+        self.order_build61_spinBox.setValue(self.config.get_config(("orders","build_61","time")))
+        self.order_build61_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_61","time"), self.order_build61_spinBox.value()))
+        
+        self.order_build81_checkBox.setChecked(self.config.get_config(("orders","build_81","enable")))
+        self.order_build81_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_81","enable"), self.order_build81_checkBox.isChecked()))
+        self.order_build81_spinBox.setValue(self.config.get_config(("orders","build_81","time")))
+        self.order_build81_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_81","time"), self.order_build81_spinBox.value()))
+        
+        self.order_build101_checkBox.setChecked(self.config.get_config(("orders","build_101","enable")))
+        self.order_build101_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_101","enable"), self.order_build101_checkBox.isChecked()))
+        self.order_build101_spinBox.setValue(self.config.get_config(("orders","build_101","time")))
+        self.order_build101_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_101","time"), self.order_build101_spinBox.value()))
+        
+        self.order_build162_checkBox.setChecked(self.config.get_config(("orders","build_162","enable")))
+        self.order_build162_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_162","enable"), self.order_build162_checkBox.isChecked()))
+        self.order_build162_spinBox.setValue(self.config.get_config(("orders","build_162","time")))
+        self.order_build162_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_162","time"), self.order_build162_spinBox.value()))
+        
+        self.order_build182_checkBox.setChecked(self.config.get_config(("orders","build_182","enable")))
+        self.order_build182_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_182","enable"), self.order_build182_checkBox.isChecked()))
+        self.order_build182_spinBox.setValue(self.config.get_config(("orders","build_182","time")))
+        self.order_build182_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_182","time"), self.order_build182_spinBox.value()))
+        
+        self.order_coin1012w_checkBox.setChecked(self.config.get_config(("orders","coin_1012","enable")))
+        self.order_coin1012w_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","coin_1012","enable"), self.order_coin1012w_checkBox.isChecked()))
+        self.order_coin1012w_spinBox.setValue(self.config.get_config(("orders","coin_1012","time")))
+        self.order_coin1012w_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","coin_1012","time"), self.order_coin1012w_spinBox.value()))
+        
+        self.order_exp1012w_checkBox.setChecked(self.config.get_config(("orders","exp_1012","enable")))
+        self.order_exp1012w_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","exp_1012","enable"), self.order_exp1012w_checkBox.isChecked()))
+        self.order_exp1012w_spinBox.setValue(self.config.get_config(("orders","exp_1012","time")))
+        self.order_exp1012w_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","exp_1012","time"), self.order_exp1012w_spinBox.value()))
+        
+        #暂时隐藏
+        self.order_t3HJNY_151_checkBox.setHidden(True)
+        self.order_t3HJNY_151_spinBox.setHidden(True)
+        self.order_t3NPJ_151_checkBox.setHidden(True)
+        self.order_t3NPJ_151_spinBox.setHidden(True)
+        self.order_t3YJBDT_151_checkBox.setHidden(True)
+        self.order_t3YJBDT_151_spinBox.setHidden(True)
+        self.order_t3YJZJ_151_checkBox.setHidden(True)
+        self.order_t3YJZJ_151_spinBox.setHidden(True)
+        self.order_t3YJHJ_151_checkBox.setHidden(True)
+        self.order_t3YJHJ_151_spinBox.setHidden(True)
     
     def stopTask(self):
         if self.work_thread.isRunning():
@@ -245,6 +295,27 @@ class JsonConfig:
     @property
     def quarry_time(self):
         return self.get_config("quarry_time")
+    @property
+    def build61(self):
+        return self.get_config(("orders","build_61","enable"))
+    @property
+    def build81(self):
+        return self.get_config(("orders","build_81","enable"))
+    @property
+    def build101(self):
+        return self.get_config(("orders","build_101","enable"))
+    @property
+    def build162(self):
+        return self.get_config(("orders","build_162","enable"))
+    @property
+    def build182(self):
+        return self.get_config(("orders","build_182","enable"))
+    @property
+    def coin1012(self):
+        return self.get_config(("orders","coin_1012","enable"))
+    @property
+    def exp1012(self):
+        return self.get_config(("orders","exp_1012","enable"))
     
     def save(self):
         with open(self.path,"w",encoding="utf-8") as fp:
@@ -287,8 +358,31 @@ class JCZXGame:
         building_switch_button = join("resources","buttons","buildingSwitch.png")
         backyard_button = join("resources","buttons","backyard.png")
         switch_button = join("resources","buttons","switch.png")
+        spend_button = join("resources","buttons","spend.png")
         friendOrders_button = join("resources","buttons","friendOrders.png")
         tradingPost_button = join("resources","buttons","tradingPost.png")
+    
+    class Orders:
+        build61 = join("resources","orders","build61.png")
+        build81 = join("resources","orders","build81.png")
+        build101 = join("resources","orders","build101.png")
+        build162 = join("resources","orders","build162.png")
+        build182 = join("resources","orders","build182.png")
+        coin1012 = join("resources","orders","coin1012.png")
+        exp1012 = join("resources","orders","exp1012.png")
+        class DESCRIPTION:  ...
+    
+    def getUserOrderPaths(self) -> list[tuple[str, Orders.DESCRIPTION]]:
+        """返回用户设置的订单路径及其介绍"""
+        result = []
+        if self.config.build61: result.append((self.Orders.build61, "构建6换1"))
+        if self.config.build81: result.append((self.Orders.build81, "构建8换1"))
+        if self.config.build101: result.append((self.Orders.build101, "构建10换1"))
+        if self.config.build162: result.append((self.Orders.build162, "构建16换2"))
+        if self.config.build182: result.append((self.Orders.build182, "构建18换2"))
+        if self.config.coin1012: result.append((self.Orders.coin1012, "星币10换12w"))
+        if self.config.exp1012: result.append((self.Orders.exp1012, "经验10换12w"))
+        return result
     
     class ScreenLocs:
         friend = join("resources","locations","friend.png")
@@ -400,11 +494,13 @@ class JCZXGame:
             return
         else:
             self.gotoBase()
-        if not self.__clickAndMsg(self.Buttons.tradingPost_button,"前往【原料交易所】", "前往【原料交易所】失败"):
+        if not self.__clickAndMsg(self.Buttons.tradingPost_button, "前往【原料交易所】", "前往【原料交易所】失败"):
             self.gotoTradingPost()
         sleep(1)
     
-    def checkOrders(self):
+    def checkOrdersLocations(self) -> list[tuple[int, int]]:
+        # for img,des in self.getUserOrderPaths():
+        #     self.__clickAndMsg(img, f"交付订单【{des}】", )
         ...
     
     def gotoFriendOrdersAndSpend(self):
@@ -595,7 +691,6 @@ class WorkThread(QThread):
                 self.adb.switchQuarryWork()
                 self.adb.back()
             sleep(60)
-            
 
 if __name__ == "__main__":
     app = QApplication(argv)

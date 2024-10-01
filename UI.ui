@@ -621,7 +621,7 @@ QPushButton:pressed, QPushButton:checked {
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox">
+  <widget class="QSpinBox" name="order_build61_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -659,7 +659,7 @@ QPushButton:pressed, QPushButton:checked {
     <number>-1</number>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_2">
+  <widget class="QSpinBox" name="order_build81_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -675,7 +675,7 @@ QPushButton:pressed, QPushButton:checked {
     <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_3">
+  <widget class="QSpinBox" name="order_build101_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -691,7 +691,7 @@ QPushButton:pressed, QPushButton:checked {
     <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_4">
+  <widget class="QSpinBox" name="order_build162_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -707,7 +707,7 @@ QPushButton:pressed, QPushButton:checked {
     <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_5">
+  <widget class="QSpinBox" name="order_build182_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -723,7 +723,7 @@ QPushButton:pressed, QPushButton:checked {
     <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_6">
+  <widget class="QSpinBox" name="order_coin1012w_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -739,7 +739,7 @@ QPushButton:pressed, QPushButton:checked {
     <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_7">
+  <widget class="QSpinBox" name="order_exp1012w_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -788,7 +788,7 @@ QPushButton:pressed, QPushButton:checked {
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_8">
+  <widget class="QSpinBox" name="order_t3YJZJ_151_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -804,7 +804,7 @@ QPushButton:pressed, QPushButton:checked {
     <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_9">
+  <widget class="QSpinBox" name="order_t3YJBDT_151_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -853,7 +853,7 @@ QPushButton:pressed, QPushButton:checked {
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_10">
+  <widget class="QSpinBox" name="order_t3YJHJ_151_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -935,7 +935,7 @@ QPushButton:pressed, QPushButton:checked {
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_11">
+  <widget class="QSpinBox" name="order_t3NPJ_151_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -951,7 +951,7 @@ QPushButton:pressed, QPushButton:checked {
     <enum>QAbstractSpinBox::PlusMinus</enum>
    </property>
   </widget>
-  <widget class="QSpinBox" name="spinBox_12">
+  <widget class="QSpinBox" name="order_t3HJNY_151_spinBox">
    <property name="geometry">
     <rect>
      <x>520</x>
@@ -1104,6 +1104,8 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Microsoft YaHei UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p align=&quot;center&quot; style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;Version: beta 0.1.1&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;注：该版本不支持提交订单数量控制&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;ADB路径：模拟器目录下的ADB.exe调试程序路径&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;设备列表：模拟器下的设备，默认获取第一个设备&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;矿场结算：矿场每30分钟结算一次矿物，值与账号注册时间有关，当没有指定设置或者为-1时，自动挂机30分钟获取时间&lt;/span&gt;&lt;/p&gt;
@@ -1143,18 +1145,18 @@ li.checked::marker { content: &quot;\2612&quot;; }
   <zorder>order_t3HJNY_151_checkBox</zorder>
   <zorder>adb_devices_comboBox</zorder>
   <zorder>test_button</zorder>
-  <zorder>spinBox_12</zorder>
-  <zorder>spinBox_11</zorder>
-  <zorder>spinBox_10</zorder>
-  <zorder>spinBox_9</zorder>
-  <zorder>spinBox_8</zorder>
-  <zorder>spinBox_7</zorder>
-  <zorder>spinBox_6</zorder>
-  <zorder>spinBox_5</zorder>
-  <zorder>spinBox_4</zorder>
-  <zorder>spinBox_3</zorder>
-  <zorder>spinBox_2</zorder>
-  <zorder>spinBox</zorder>
+  <zorder>order_t3HJNY_151_spinBox</zorder>
+  <zorder>order_t3NPJ_151_spinBox</zorder>
+  <zorder>order_t3YJHJ_151_spinBox</zorder>
+  <zorder>order_t3YJBDT_151_spinBox</zorder>
+  <zorder>order_t3YJZJ_151_spinBox</zorder>
+  <zorder>order_exp1012w_spinBox</zorder>
+  <zorder>order_coin1012w_spinBox</zorder>
+  <zorder>order_build182_spinBox</zorder>
+  <zorder>order_build162_spinBox</zorder>
+  <zorder>order_build101_spinBox</zorder>
+  <zorder>order_build81_spinBox</zorder>
+  <zorder>order_build61_spinBox</zorder>
   <zorder>help_button</zorder>
   <zorder>help_textBrowser</zorder>
  </widget>
