@@ -6,10 +6,9 @@ from time import sleep
 from datetime import datetime
 from queue import LifoQueue
 from Ui_UI import Ui_Form
-from schedule_lite import timetable
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtGui import QIntValidator,QTextCursor
 from PyQt6.QtCore import QThread,QTimer
 
 import subprocess
@@ -62,6 +61,7 @@ class LoggerHandler(logging.Handler):
     def emit(self, record):
         msg = self.format(record)
         self.edit.append(msg)
+        self.edit.moveCursor(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.MoveAnchor)
     
     def format(self, record):
         if record.levelno == logging.DEBUG:
@@ -111,7 +111,7 @@ class MainManager(Ui_Form):
     
     def __init_menu(self):
         self.help_textBrowser.setHidden(True)
-        self.test_button.setHidden(True)
+        # self.test_button.setHidden(True)
     
     def __init_valueRule(self):
         self.quarry_time_lineEdit.setValidator(QIntValidator(0, 60))
@@ -129,22 +129,29 @@ class MainManager(Ui_Form):
         self.adb_devices_comboBox.currentTextChanged.connect(self.setDeviceConfig)
         self.start_switch_work_Button.clicked.connect(self.switchWork)
         self.start_spend_order_Button.clicked.connect(self.spendOrder)
+        self.stop_all_task_Button.clicked.connect(self.stopTask)
         
         self.test_button.clicked.connect(self.__debug)
     
+    def stopTask(self):
+        if self.work_thread.isRunning():
+            self.work_thread.stop()
+            self.log.info("已停止所有任务")
+    
     def switchWork(self):
-        if self.work_thread.tag == self.work_thread.SWITCH:
+        if self.work_thread.tag == self.work_thread.SWITCH and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning():
-            self.work_thread.exit()
+            self.work_thread.stop()
+            self.log.info("已停止当前任务")
         self.work_thread.setMode(WorkThread.SWITCH)
         self.work_thread.start()
     
     def spendOrder(self):
-        if self.work_thread.tag == self.work_thread.ORDER:
+        if self.work_thread.tag == self.work_thread.ORDER and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning():
-            self.work_thread.exit()
+            self.work_thread.stop()
         self.work_thread.setMode(WorkThread.ORDER)
         self.work_thread.start()
     
@@ -155,10 +162,10 @@ class MainManager(Ui_Form):
             self.help_textBrowser.setHidden(True)
     
     def __debug(self):
-        if self.work_thread.tag == self.work_thread.DEBUG:
+        if self.work_thread.tag == self.work_thread.DEBUG and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning():
-            self.work_thread.exit()
+            self.work_thread.stop()
         self.work_thread.setMode(WorkThread.DEBUG)
         self.work_thread.start()
     
@@ -280,14 +287,17 @@ class JCZXGame:
         building_switch_button = join("resources","buttons","buildingSwitch.png")
         backyard_button = join("resources","buttons","backyard.png")
         switch_button = join("resources","buttons","switch.png")
+        friendOrders_button = join("resources","buttons","friendOrders.png")
         tradingPost_button = join("resources","buttons","tradingPost.png")
     
     class ScreenLocs:
         friend = join("resources","locations","friend.png")
         home = join("resources","buttons","friends.png")
-        tradingPost = join("resources","buttons","tradingPost.png")
+        tradingPost = join("resources","locations","tradingPost.png")
+        friendTradingPost = join("resources","locations","friendTradingPost.png")
         quarry = join("resources","locations","quarry.png")
         base = join("resources","buttons","buildingOccupancy.png")
+        # orderStop = join("resources","locations","orderStop.png")
         building_switch = join("resources","buttons","buildingSwitch.png")
     
     def __init__(self, adb_path: str, logger:logging.Logger, config:JsonConfig) -> None:
@@ -318,12 +328,14 @@ class JCZXGame:
         screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_COLOR)
         return cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
     
-    def click(self, x:int, y:int):
+    def click(self, x:int, y:int, wait:int = 0):
         subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)])
+        if wait:
+            sleep(wait)
     
-    def clickButton(self, button_path:str, index:int = 0) -> bool:
+    def clickButton(self, button_path:str, index:int = 0, wait:int = 0) -> bool:
         if locations := self.findImageCenterLocations(button_path):
-            self.click(*locations[index])
+            self.click(*locations[index], wait)
             # self.log.info(f"点击按钮{button_path}")
             return True
         else:
@@ -392,17 +404,41 @@ class JCZXGame:
             self.gotoTradingPost()
         sleep(1)
     
+    def checkOrders(self):
+        ...
+    
+    def gotoFriendOrdersAndSpend(self):
+        if self.inLocation(self.ScreenLocs.friendTradingPost):
+            ...#check orders
+        if not self.inLocation(self.ScreenLocs.friend):
+            self.gotoFriend()
+        for i in range(15):
+            if locations := self.findImageCenterLocations(self.Buttons.backyard_button):
+                for locs in locations:
+                    self.click(*locs, 0.1)
+                    self.__clickAndMsg(self.Buttons.friendOrders_button, "进入【好友交易所】", "进入【好友交易所】失败", wait=0.3)
+                    ...#check orders
+                    self.back()
+                    self.click(*locs, 0.3)
+                self.swipeUPScreenCenter()
+            else:
+                break
+        self.gotoHome()
+    
     def back(self):
-        self.__clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败")
-        sleep(1)
+        self.__clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = 1)
     
     def takeOre(self):
         if self.inLocation(self.ScreenLocs.base):
             if self.__clickAndMsg(self.Buttons.ore_button, "收集矿物"):
                 sleep(0.7)
                 self.click(self.width//2, self.height//1.2)
+                sleep(0.7)
+                return True
             else:
                 self.log.info("暂未发现矿物")
+                sleep(0.7)
+                return False
         else:
             self.gotoBase()
             self.takeOre()
@@ -410,8 +446,10 @@ class JCZXGame:
     
     def waitTakeOre(self):
         while True:
-            self.takeOre()
-            sleep(60)
+            if self.takeOre():
+                return True
+            else:
+                sleep(60)
     
     def gotoBuildingOccupancy(self):
         if self.inLocation(self.ScreenLocs.building_switch):
@@ -429,8 +467,8 @@ class JCZXGame:
             sleep(0.5)
             self.__clickAndMsg(self.Buttons.switch_button,"交换工作员工","交换工作员工失败")
     
-    def __clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0):
-        if self.clickButton(button_path, index):
+    def __clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0):
+        if self.clickButton(button_path, index, wait):
             if infoMsg: self.log.info(infoMsg)
             return True
         else:
@@ -470,12 +508,14 @@ class JCZXGame:
         else:
             return None
     
-    def swipe(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200):
+    def swipe(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
         subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)])
+        if wait:
+            sleep(wait)
     
     def swipeUPScreenCenter(self):
-        self.swipe(self.width//1.5, self.height//1.5)
-    
+        self.swipe(self.width//2, self.height//1.4, self.width//2, self.height//2, 200, 1.5)
+
     def setDevice(self, device):
         self.device = device
     
@@ -507,6 +547,9 @@ class WorkThread(QThread):
         self.tag = self.DEBUG
         self.timer = QTimer()
     
+    def stop(self):
+        self.terminate()
+    
     def setMode(self, tag:int):
         self.tag = tag
     
@@ -522,7 +565,7 @@ class WorkThread(QThread):
                 self.log.error(f"未知tag {self.tag}")
 
     def __debug(self):
-        self.adb.switchQuarryWork()
+        self.adb.swipeUPScreenCenter()
         
     def setADB(self, adb):
         self.adb = adb
@@ -531,7 +574,11 @@ class WorkThread(QThread):
         self.log = log
     
     def spendOrder(self):
+        self.log.info("开始【交付订单】任务")
         self.adb.gotoTradingPost()
+        ...#check orders
+        self.adb.gotoFriend()
+        self.adb.gotoFriendOrdersAndSpend()
         
     def switchWork(self):
         quarry_time1 = self.adb.getQuarryTime()
