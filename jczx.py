@@ -1,21 +1,24 @@
 from typing import Any
-from sys import argv
-from os.path import exists,join
+from os.path import exists,join,abspath
 from json import load,dumps
 from time import sleep
 from datetime import datetime
-from queue import LifoQueue
-from functools import cache
 from Ui_UI import Ui_Form
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog
 from PyQt6.QtGui import QIntValidator,QTextCursor
-from PyQt6.QtCore import QThread,QTimer
+from PyQt6.QtCore import QThread
 
 import subprocess
 import logging
 import cv2
+import sys
 import numpy as np
+
+def joinPath(*args):
+    if hasattr(sys, '_MEIPASS'):
+        return join(sys._MEIPASS, *args)
+    return join(abspath("."), *args)
 
 DEFAULT_CONFIGS = {
     "adb_path": None,
@@ -64,6 +67,9 @@ class LoggerHandler(logging.Handler):
         self.edit.append(msg)
         self.edit.moveCursor(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.MoveAnchor)
     
+    def write(self,text):
+        self.edit.append(text)
+    
     def format(self, record):
         if record.levelno == logging.DEBUG:
             color = 'blue'
@@ -87,7 +93,7 @@ class MainManager(Ui_Form):
         self.config = JsonConfig("autoScriptConfig.json",DEFAULT_CONFIGS)
         self.log = logging.Logger(__name__, logging.DEBUG)
         self.adb = JCZXGame(self.adb_path, self.log, self.config)
-        self.work_thread = WorkThread(self.adb, self.log)
+        self.work_thread = WorkThread(self.adb, self.log, self.config)
         
     def setupUi(self):
         super().setupUi(self.form)
@@ -122,6 +128,7 @@ class MainManager(Ui_Form):
         handler = LoggerHandler(self.logger_Browser)
         self.log.addHandler(handler)
         self.log.info("程序初始化完成")
+        sys.stdout = handler
     
     def __init_buttom(self):
         """初始化按钮"""
@@ -348,58 +355,58 @@ class JCZXGame:
         ASK_NEED_SUBMIT = "询问提交订单"
     
     class Buttons:
-        back_button = join("resources","buttons","back.png")
-        add_button = join("resources","buttons","add.png")
-        coinRaw_button = join("resources","buttons","coinRaw.png")
-        craftCoinRaw_button = join("resources","buttons","craftCoinRaw.png")
-        expRaw_button = join("resources","buttons","expRaw.png")
-        craftExpRaw_button = join("resources","buttons","craftExpRaw.png")
-        ticketRaw_button = join("resources","buttons","ticketRaw.png")
-        craftTicketRaw_button = join("resources","buttons","craftTicketRaw.png")
-        sure_button = join("resources","buttons","sure.png")
-        craftSure_button = join("resources","buttons","craftSure.png")
-        friends_button = join("resources","buttons","friends.png")
-        home_button = join("resources","buttons","home.png")
-        base_button = join("resources","buttons","base.png")
-        quarry_button = join("resources","buttons","quarry.png")
-        ore_button = join("resources","buttons","ore.png")
-        building_button = join("resources","buttons","buildingOccupancy.png")
-        building_switch_button = join("resources","buttons","buildingSwitch.png")
-        backyard_button = join("resources","buttons","backyard.png")
-        switch_button = join("resources","buttons","switch.png")
-        # spend_button = join("resources","buttons","spend.png")
-        friendOrders_button = join("resources","buttons","friendOrders.png")
-        tradingPost_button = join("resources","buttons","tradingPost.png")
+        back_button = joinPath("resources","buttons","back.png")
+        add_button = joinPath("resources","buttons","add.png")
+        coinRaw_button = joinPath("resources","buttons","coinRaw.png")
+        craftCoinRaw_button = joinPath("resources","buttons","craftCoinRaw.png")
+        expRaw_button = joinPath("resources","buttons","expRaw.png")
+        craftExpRaw_button = joinPath("resources","buttons","craftExpRaw.png")
+        ticketRaw_button = joinPath("resources","buttons","ticketRaw.png")
+        craftTicketRaw_button = joinPath("resources","buttons","craftTicketRaw.png")
+        sure_button = joinPath("resources","buttons","sure.png")
+        craftSure_button = joinPath("resources","buttons","craftSure.png")
+        friends_button = joinPath("resources","buttons","friends.png")
+        home_button = joinPath("resources","buttons","home.png")
+        base_button = joinPath("resources","buttons","base.png")
+        quarry_button = joinPath("resources","buttons","quarry.png")
+        ore_button = joinPath("resources","buttons","ore.png")
+        building_button = joinPath("resources","buttons","buildingOccupancy.png")
+        building_switch_button = joinPath("resources","buttons","buildingSwitch.png")
+        backyard_button = joinPath("resources","buttons","backyard.png")
+        switch_button = joinPath("resources","buttons","switch.png")
+        # spend_button = joinPath("resources","buttons","spend.png")
+        friendOrders_button = joinPath("resources","buttons","friendOrders.png")
+        tradingPost_button = joinPath("resources","buttons","tradingPost.png")
     
     class Numbers:
-        a0 = join("resources","numbers","0.png")
-        a1 = join("resources","numbers","1.png")
-        a2 = join("resources","numbers","2.png")
-        a3 = join("resources","numbers","3.png")
-        a4 = join("resources","numbers","4.png")
-        a5 = join("resources","numbers","5.png")
-        a6 = join("resources","numbers","6.png")
-        a7 = join("resources","numbers","7.png")
-        a8 = join("resources","numbers","8.png")
-        a9 = join("resources","numbers","9.png")
-        a10 = join("resources","numbers","10.png")
-        a11 = join("resources","numbers","11.png")
-        a12 = join("resources","numbers","12.png")
-        a13 = join("resources","numbers","13.png")
-        a14 = join("resources","numbers","14.png")
-        a15 = join("resources","numbers","15.png")
-        a16 = join("resources","numbers","16.png")
-        a17 = join("resources","numbers","17.png")
-        a18 = join("resources","numbers","18.png")
+        a0 = joinPath("resources","numbers","0.png")
+        a1 = joinPath("resources","numbers","1.png")
+        a2 = joinPath("resources","numbers","2.png")
+        a3 = joinPath("resources","numbers","3.png")
+        a4 = joinPath("resources","numbers","4.png")
+        a5 = joinPath("resources","numbers","5.png")
+        a6 = joinPath("resources","numbers","6.png")
+        a7 = joinPath("resources","numbers","7.png")
+        a8 = joinPath("resources","numbers","8.png")
+        a9 = joinPath("resources","numbers","9.png")
+        a10 = joinPath("resources","numbers","10.png")
+        a11 = joinPath("resources","numbers","11.png")
+        a12 = joinPath("resources","numbers","12.png")
+        a13 = joinPath("resources","numbers","13.png")
+        a14 = joinPath("resources","numbers","14.png")
+        a15 = joinPath("resources","numbers","15.png")
+        a16 = joinPath("resources","numbers","16.png")
+        a17 = joinPath("resources","numbers","17.png")
+        a18 = joinPath("resources","numbers","18.png")
     
     class Orders:
-        build61 = join("resources","orders","build61.png")
-        build81 = join("resources","orders","build81.png")
-        build101 = join("resources","orders","build101.png")
-        build162 = join("resources","orders","build162.png")
-        build182 = join("resources","orders","build182.png")
-        coin1012 = join("resources","orders","coin1012.png")
-        exp1012 = join("resources","orders","exp1012.png")
+        build61 = joinPath("resources","orders","build61.png")
+        build81 = joinPath("resources","orders","build81.png")
+        build101 = joinPath("resources","orders","build101.png")
+        build162 = joinPath("resources","orders","build162.png")
+        build182 = joinPath("resources","orders","build182.png")
+        coin1012 = joinPath("resources","orders","coin1012.png")
+        exp1012 = joinPath("resources","orders","exp1012.png")
         class Description:  ...
         CoinOrders = (coin1012)
         ExpOrders = (exp1012)
@@ -429,20 +436,23 @@ class JCZXGame:
         return result
     
     class ScreenLocs:
-        friend = join("resources","locations","friend.png")
-        notEnough = join("resources","locations","notEnough.png")
-        home = join("resources","buttons","friends.png")
-        tradingPost = join("resources","locations","tradingPost.png")
-        friendTradingPost = join("resources","locations","friendTradingPost.png")
-        quarry = join("resources","locations","quarry.png")
-        base = join("resources","buttons","buildingOccupancy.png")
-        # orderStop = join("resources","locations","orderStop.png")
-        building_switch = join("resources","buttons","buildingSwitch.png")
+        friend = joinPath("resources","locations","friend.png")
+        notEnough = joinPath("resources","locations","notEnough.png")
+        home = joinPath("resources","buttons","friends.png")
+        tradingPost = joinPath("resources","locations","tradingPost.png")
+        friendTradingPost = joinPath("resources","locations","friendTradingPost.png")
+        quarry = joinPath("resources","locations","quarry.png")
+        base = joinPath("resources","buttons","buildingOccupancy.png")
+        # orderStop = joinPath("resources","locations","orderStop.png")
+        building_switch = joinPath("resources","buttons","buildingSwitch.png")
     
     def __init__(self, adb_path: str, logger:logging.Logger, config:JsonConfig) -> None:
         self.adb_path = adb_path
         self.log = logger
         self.config = config
+        self.startupinfo = subprocess.STARTUPINFO()
+        self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+        self.startupinfo.wShowWindow = subprocess.SW_HIDE
     
     @staticmethod
     def check(func):
@@ -455,20 +465,20 @@ class JCZXGame:
         return bool(self.findImageCenterLocations(screen_loc))
     
     def getScreenSize(self) -> tuple[int, int]:
-        msg = subprocess.check_output([self.adb_path, "-s", self.device, "shell", "wm", "size"]).decode().split(" ")[-1].replace("\r\n","")
+        msg = subprocess.check_output([self.adb_path, "-s", self.device, "shell", "wm", "size"], startupinfo = self.startupinfo).decode().split(" ")[-1].replace("\r\n","")
         w, h = map(int, msg.split("x"))
         return (w, h)
     
     @check
     def screenshot(self) -> bytes:
-        return subprocess.check_output([self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"])
+        return subprocess.check_output([self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"], startupinfo = self.startupinfo)
     
     def grayScreenshot(self):
         screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_COLOR)
         return cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
     
     def click(self, x:int, y:int, wait:int = 0):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)])
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)], stdout = subprocess.DEVNULL)
         if wait:
             sleep(wait)
     
@@ -658,7 +668,7 @@ class JCZXGame:
     
     def takeOre(self):
         if self.inLocation(self.ScreenLocs.base):
-            if self.__clickAndMsg(self.Buttons.ore_button, "收集矿物"):
+            if self.__clickAndMsg(self.Buttons.ore_button, "收集矿物", log = False):
                 sleep(0.7)
                 self.click(self.width//2, self.height//1.2)
                 sleep(0.7)
@@ -760,7 +770,7 @@ class JCZXGame:
             return None
     
     def swipe(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)])
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)], stdout = subprocess.DEVNULL)
         if wait:
             sleep(wait)
     
@@ -783,20 +793,19 @@ class JCZXGame:
     
     @check
     def devices(self) -> list[str]:
-        return list(map(lambda x:x[:x.find("\t")], subprocess.check_output([self.adb_path, "devices"]).decode().split("\r\n")))[1:-2]
+        return list(map(lambda x:x[:x.find("\t")], subprocess.check_output([self.adb_path, "devices"], startupinfo = self.startupinfo).decode().split("\r\n")))[1:-2]
 
 class WorkThread(QThread):
     ORDER = 1
     SWITCH = 2
     DEBUG = 0
     
-    def __init__(self, adb:JCZXGame = None, log:logging.Logger = None) -> None:
+    def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
         super().__init__()
-        self.work_lifoqueue = LifoQueue()
         self.adb = adb
         self.log = log
         self.tag = self.DEBUG
-        self.timer = QTimer()
+        self.config = config
     
     def stop(self):
         self.terminate()
@@ -824,13 +833,28 @@ class WorkThread(QThread):
     def setLog(self, log):
         self.log = log
     
+    @staticmethod
+    def check(func):
+        def _(self, *args, **kwargs):
+            if self.config.adb_path:
+                if self.config.adb_device:
+                    func(self, *args, **kwargs)
+                else:
+                    self.log.error("当前未设置【设备】")
+            else:
+                self.log.error("当前未选择【ADB调试路径】")
+        return _
+        
+    @check
     def spendOrder(self):
         self.log.info("开始【交付订单】任务")
         self.adb.gotoTradingPost()
-        ...#check orders
+        #check orders
+        self.adb.checkAndSpendOrders()
         self.adb.gotoFriend()
         self.adb.gotoFriendOrdersAndSpend()
-        
+    
+    @check
     def switchWork(self):
         quarry_time1 = self.adb.getQuarryTime()
         quarry_time2 = (quarry_time1+30)%60
@@ -848,6 +872,6 @@ class WorkThread(QThread):
             sleep(60)
 
 if __name__ == "__main__":
-    app = QApplication(argv)
+    app = QApplication(sys.argv)
     manager = MainManager(app)
     manager.setupUi()
