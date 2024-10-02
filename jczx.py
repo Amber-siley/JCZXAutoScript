@@ -349,6 +349,15 @@ class JCZXGame:
     
     class Buttons:
         back_button = join("resources","buttons","back.png")
+        add_button = join("resources","buttons","add.png")
+        coinRaw_button = join("resources","buttons","coinRaw.png")
+        craftCoinRaw_button = join("resources","buttons","craftCoinRaw.png")
+        expRaw_button = join("resources","buttons","expRaw.png")
+        craftExpRaw_button = join("resources","buttons","craftExpRaw.png")
+        ticketRaw_button = join("resources","buttons","ticketRaw.png")
+        craftTicketRaw_button = join("resources","buttons","craftTicketRaw.png")
+        sure_button = join("resources","buttons","sure.png")
+        craftSure_button = join("resources","buttons","craftSure.png")
         friends_button = join("resources","buttons","friends.png")
         home_button = join("resources","buttons","home.png")
         base_button = join("resources","buttons","base.png")
@@ -358,9 +367,30 @@ class JCZXGame:
         building_switch_button = join("resources","buttons","buildingSwitch.png")
         backyard_button = join("resources","buttons","backyard.png")
         switch_button = join("resources","buttons","switch.png")
-        spend_button = join("resources","buttons","spend.png")
+        # spend_button = join("resources","buttons","spend.png")
         friendOrders_button = join("resources","buttons","friendOrders.png")
         tradingPost_button = join("resources","buttons","tradingPost.png")
+    
+    class Numbers:
+        a0 = join("resources","numbers","0.png")
+        a1 = join("resources","numbers","1.png")
+        a2 = join("resources","numbers","2.png")
+        a3 = join("resources","numbers","3.png")
+        a4 = join("resources","numbers","4.png")
+        a5 = join("resources","numbers","5.png")
+        a6 = join("resources","numbers","6.png")
+        a7 = join("resources","numbers","7.png")
+        a8 = join("resources","numbers","8.png")
+        a9 = join("resources","numbers","9.png")
+        a10 = join("resources","numbers","10.png")
+        a11 = join("resources","numbers","11.png")
+        a12 = join("resources","numbers","12.png")
+        a13 = join("resources","numbers","13.png")
+        a14 = join("resources","numbers","14.png")
+        a15 = join("resources","numbers","15.png")
+        a16 = join("resources","numbers","16.png")
+        a17 = join("resources","numbers","17.png")
+        a18 = join("resources","numbers","18.png")
     
     class Orders:
         build61 = join("resources","orders","build61.png")
@@ -370,9 +400,23 @@ class JCZXGame:
         build182 = join("resources","orders","build182.png")
         coin1012 = join("resources","orders","coin1012.png")
         exp1012 = join("resources","orders","exp1012.png")
-        class DESCRIPTION:  ...
+        class Description:  ...
+        CoinOrders = (coin1012)
+        ExpOrders = (exp1012)
+        BuildOrders = (build101, build162, build182, build61, build81)
+        
+        @staticmethod
+        def amount(order:str):
+            match order:
+                case JCZXGame.Orders.build101: return 10
+                case JCZXGame.Orders.build61: return 6
+                case JCZXGame.Orders.build81: return 8
+                case JCZXGame.Orders.build162: return 16
+                case JCZXGame.Orders.build182: return 18
+                case JCZXGame.Orders.coin1012: return 10
+                case JCZXGame.Orders.exp1012: return 10
     
-    def getUserOrderPaths(self) -> list[tuple[str, Orders.DESCRIPTION]]:
+    def getUserOrderPaths(self) -> list[tuple[str, Orders.Description]]:
         """返回用户设置的订单路径及其介绍"""
         result = []
         if self.config.build61: result.append((self.Orders.build61, "构建6换1"))
@@ -386,6 +430,7 @@ class JCZXGame:
     
     class ScreenLocs:
         friend = join("resources","locations","friend.png")
+        notEnough = join("resources","locations","notEnough.png")
         home = join("resources","buttons","friends.png")
         tradingPost = join("resources","locations","tradingPost.png")
         friendTradingPost = join("resources","locations","friendTradingPost.png")
@@ -427,13 +472,14 @@ class JCZXGame:
         if wait:
             sleep(wait)
     
-    def clickButton(self, button_path:str, index:int = 0, wait:int = 0) -> bool:
+    def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True) -> bool:
         if locations := self.findImageCenterLocations(button_path):
             self.click(*locations[index], wait)
             # self.log.info(f"点击按钮{button_path}")
             return True
         else:
-            self.log.warning(f"未找到按钮{button_path}")
+            if log:
+                self.log.warning(f"未找到按钮{button_path}")
             return False
 
     def getQuarryTime(self) -> int:
@@ -458,9 +504,8 @@ class JCZXGame:
     def gotoHome(self):
         if self.inLocation(self.ScreenLocs.home):
             return
-        if self.__clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败"):
-            self.loc = self.Interface.HOME
-            sleep(3)
+        self.__clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败")
+        sleep(3)
     
     def gotoFriend(self):
         if self.inLocation(self.ScreenLocs.friend):
@@ -498,14 +543,100 @@ class JCZXGame:
             self.gotoTradingPost()
         sleep(1)
     
-    def checkOrdersLocations(self) -> list[tuple[int, int]]:
-        # for img,des in self.getUserOrderPaths():
-        #     self.__clickAndMsg(img, f"交付订单【{des}】", )
-        ...
+    def addAndCraft(self, num:int):
+        loc = self.findImageCenterLocation(self.Buttons.add_button)
+        for i in range(num - 1):
+            # self.__clickAndMsg(self.Buttons.add_button, wait = 0.1)
+            self.click(*loc, wait = 0.1)
+        sleep(0.5)
+        self.craftSure()
+    
+    def checkAndSpendOrders(self):
+        """检查并交付订单"""
+        self.__checkOrders()
+        self.swipeUPScreenCenter()
+        self.__checkOrders()
+    
+    def __checkOrders(self):
+        for img,des in self.getUserOrderPaths():
+            if self.__clickAndMsg(img, wait = 0.3, log = False):
+                if self.findImageCenterLocation(self.ScreenLocs.notEnough):
+                    if img in self.Orders.BuildOrders:
+                        ticketRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.ticketRaw_button)
+                        self.makeSure(2)
+                        #合成黑盒
+                        self.__clickAndMsg(self.Buttons.craftTicketRaw_button, "点击【稀有黑匣】", "点击【稀有黑匣】失败", wait = 0.3)
+                        self.addAndCraft(ticketRawNum)
+                        self.log.info(f"合成【稀有黑匣】x{ticketRawNum}")
+                    elif img in self.Orders.CoinOrders:
+                        coinRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.coinRaw_button)
+                        self.makeSure(2)
+                        #合成星币原料
+                        self.__clickAndMsg(self.Buttons.craftCoinRaw_button, "点击【星币碎片】", "点击【星币碎片】失败", wait = 0.3)
+                        self.addAndCraft(coinRawNum)
+                        self.log.info(f"合成【星币碎片】x{coinRawNum}")
+                    elif img in self.Orders.ExpOrders:
+                        expRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.expRaw_button)
+                        self.makeSure(2)
+                        ...#合成数据硬盘
+                        self.__clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3)
+                        self.addAndCraft(expRawNum)
+                        self.log.info(f"合成【数据硬盘】x{expRawNum}")
+                    self.back(0.3)
+                    self.back(0.3)
+                    self.__clickAndMsg(img, wait = 0.3)
+                else:
+                    self.makeSure2()
+                    
+    
+    def findRawNumbers(self, Raw_path:str) -> int | None:
+        templete = cv2.imread(Raw_path, cv2.IMREAD_GRAYSCALE)
+        h, w = templete.shape
+        screengray = self.grayScreenshot()
+        if locs := self.findImageLeftUPLocations(Raw_path):
+            x, y = locs[0]
+            y += h
+            locality = screengray[x:x+w, y:y+h]
+            return self.translateNumber(locality)
+        else:
+            return None
+    
+    def translateNumber(self, Raw_num:cv2.typing.MatLike) -> int | None:
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a18, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 18
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a17, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 17
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a16, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 16
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a15, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 15
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a14, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 14
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a13, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 13
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a12, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 12
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a11, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 11
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a10, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 10
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a9, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 9
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a8, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 8
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a7, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 7
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a6, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 6
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a5, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 5
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a4, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 4
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a3, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 3
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a2, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 2
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a1, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 1
+        if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a0, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 0
+    
+    def makeSure(self, wait = 0.3):
+        self.__clickAndMsg(self.Buttons.sure_button, wait = wait)
+    
+    def makeSure2(self, wait = 1):
+        self.makeSure(wait)
+        self.click(self.width//2, self.height//1.2, wait = 0.3)
+    
+    def craftSure(self):
+        self.__clickAndMsg(self.Buttons.craftSure_button, wait = 1)
+        self.click(self.width//2, self.height//1.2, wait = 0.5)
     
     def gotoFriendOrdersAndSpend(self):
         if self.inLocation(self.ScreenLocs.friendTradingPost):
-            ...#check orders
+            #check orders
+            self.checkAndSpendOrders()
         if not self.inLocation(self.ScreenLocs.friend):
             self.gotoFriend()
         for i in range(15):
@@ -513,7 +644,8 @@ class JCZXGame:
                 for locs in locations:
                     self.click(*locs, 0.1)
                     self.__clickAndMsg(self.Buttons.friendOrders_button, "进入【好友交易所】", "进入【好友交易所】失败", wait=0.3)
-                    ...#check orders
+                    #check orders
+                    self.checkAndSpendOrders()
                     self.back()
                     self.click(*locs, 0.3)
                 self.swipeUPScreenCenter()
@@ -521,8 +653,8 @@ class JCZXGame:
                 break
         self.gotoHome()
     
-    def back(self):
-        self.__clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = 1)
+    def back(self, wait:int = 1):
+        self.__clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = wait)
     
     def takeOre(self):
         if self.inLocation(self.ScreenLocs.base):
@@ -563,22 +695,45 @@ class JCZXGame:
             sleep(0.5)
             self.__clickAndMsg(self.Buttons.switch_button,"交换工作员工","交换工作员工失败")
     
-    def __clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0):
-        if self.clickButton(button_path, index, wait):
+    def __clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = True):
+        if self.clickButton(button_path, index, wait, log):
             if infoMsg: self.log.info(infoMsg)
             return True
         else:
             if warnMsg: self.log.warning(warnMsg)
             return False
     
-    def findImageCenterLocation(self, button_path) -> tuple[int, int] | None:
+    def findImageLeftUPLocations(self, button_path:str) -> list[tuple[int, int]] | None:
+        screenshot_gray = self.grayScreenshot()
+        template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
+        matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
+        locations = np.where(matcher > 0.9)
+        w, h= template_gray.shape[0:2]
+        if any(locations[0]):
+            tmp_x = [locations[0][0]]
+            tmp_y = [locations[1][0]]
+            for x,y in zip(*locations):
+                if y-10 >= tmp_y[-1]:
+                    tmp_x.append(x)
+                    tmp_y.append(y)
+                    continue
+                if x-10 >= tmp_x[-1]:
+                    tmp_x.append(x)
+                    tmp_y.append(y)
+                    continue
+            result = [(x, y) for x,y in zip(tmp_x, tmp_y)]
+            return result
+        else:
+            return None
+    
+    def findImageCenterLocation(self, button_path:str) -> tuple[int, int] | None:
         locations = self.findImageCenterLocations(button_path)
         if locations:
             return locations[0]
         else:
             return None
 
-    def findImageCenterLocations(self, button_path) -> list[tuple[int, int]] | None:
+    def findImageCenterLocations(self, button_path:str) -> list[tuple[int, int]] | None:
         screenshot_gray = self.grayScreenshot()
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
@@ -661,7 +816,7 @@ class WorkThread(QThread):
                 self.log.error(f"未知tag {self.tag}")
 
     def __debug(self):
-        self.adb.swipeUPScreenCenter()
+        self.adb.checkAndSpendOrders()
         
     def setADB(self, adb):
         self.adb = adb
