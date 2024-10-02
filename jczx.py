@@ -478,7 +478,7 @@ class JCZXGame:
         return cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
     
     def click(self, x:int, y:int, wait:int = 0):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)], stdout = subprocess.DEVNULL)
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)], startupinfo = self.startupinfo)
         if wait:
             sleep(wait)
     
@@ -770,7 +770,7 @@ class JCZXGame:
             return None
     
     def swipe(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)], stdout = subprocess.DEVNULL)
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)], startupinfo = self.startupinfo)
         if wait:
             sleep(wait)
     

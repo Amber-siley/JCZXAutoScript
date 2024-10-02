@@ -473,7 +473,7 @@ class Ui_Form(object):
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
-        Form.setWindowTitle(_translate("Form", "Form"))
+        Form.setWindowTitle(_translate("Form", "交错战线AutoScript"))
         self.adb_path_label.setText(_translate("Form", "ADB路径："))
         self.adb_devices_label.setText(_translate("Form", "设备列表："))
         self.choice_adbpath_Button.setToolTip(_translate("Form", "选择ADB调试程序"))
