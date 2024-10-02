@@ -571,6 +571,7 @@ class JCZXGame:
         self.__checkOrders()
     
     def __checkOrders(self):
+        self.log.info("正在检索【订单】")
         for img,des in self.getUserOrderPaths():
             if self.__clickAndMsg(img, wait = 0.3, log = False):
                 if self.findImageCenterLocation(self.ScreenLocs.notEnough):
@@ -652,11 +653,13 @@ class JCZXGame:
             self.checkAndSpendOrders()
         if not self.inLocation(self.ScreenLocs.friend):
             self.gotoFriend()
-        for i in range(15):
+        index = 0
+        for i in range(10):
             if locations := self.findImageCenterLocations(self.Buttons.backyard_button):
                 for locs in locations:
                     self.click(*locs, 0.1)
-                    self.__clickAndMsg(self.Buttons.friendOrders_button, "进入【好友交易所】", "进入【好友交易所】失败", wait=0.1)
+                    index += 1
+                    self.__clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】-{index}", f"进入【好友交易所】-{index}失败", wait=0.1)
                     #check orders
                     self.checkAndSpendOrders()
                     self.back()
