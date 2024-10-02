@@ -510,8 +510,8 @@ class JCZXGame:
                     self.log.info(f"设置【矿场结算】时间 {quarry_time} 分")
                     self.switchQuarryWork()
                     return quarry_time
-                else:
-                    self.gotoBase()
+            else:
+                self.gotoBase()
             sleep(60)
     
     def gotoHome(self):
