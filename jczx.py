@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any,Callable
 from os.path import exists,join,abspath
 from json import load,dumps
 from time import sleep
@@ -119,7 +119,7 @@ class MainManager(Ui_Form):
     
     def __init_menu(self):
         self.help_textBrowser.setHidden(True)
-        self.test_button.setHidden(True)
+        # self.test_button.setHidden(True)
     
     def __init_valueRule(self):
         self.quarry_time_lineEdit.setValidator(QIntValidator(0, 60))
@@ -354,8 +354,11 @@ class JCZXGame:
         ORDERS = "订单库"
         ASK_NEED_SUBMIT = "询问提交订单"
     
-    class Buttons:
+    class _Buttons:
         back_button = joinPath("resources","buttons","back.png")
+        getItem_button = joinPath("resources","buttons","getItem.png")
+        closeNotice_button = joinPath("resources","buttons","closeNotice.png")
+        noReminders_button = joinPath("resources","buttons","noReminders.png")
         add_button = joinPath("resources","buttons","add.png")
         coinRaw_button = joinPath("resources","buttons","coinRaw.png")
         craftCoinRaw_button = joinPath("resources","buttons","craftCoinRaw.png")
@@ -378,7 +381,7 @@ class JCZXGame:
         friendOrders_button = joinPath("resources","buttons","friendOrders.png")
         tradingPost_button = joinPath("resources","buttons","tradingPost.png")
     
-    class Numbers:
+    class _Numbers:
         a0 = joinPath("resources","numbers","0.png")
         a1 = joinPath("resources","numbers","1.png")
         a2 = joinPath("resources","numbers","2.png")
@@ -399,7 +402,7 @@ class JCZXGame:
         a17 = joinPath("resources","numbers","17.png")
         a18 = joinPath("resources","numbers","18.png")
     
-    class Orders:
+    class _Orders:
         build61 = joinPath("resources","orders","build61.png")
         build81 = joinPath("resources","orders","build81.png")
         build101 = joinPath("resources","orders","build101.png")
@@ -415,33 +418,35 @@ class JCZXGame:
         @staticmethod
         def amount(order:str):
             match order:
-                case JCZXGame.Orders.build101: return 10
-                case JCZXGame.Orders.build61: return 6
-                case JCZXGame.Orders.build81: return 8
-                case JCZXGame.Orders.build162: return 16
-                case JCZXGame.Orders.build182: return 18
-                case JCZXGame.Orders.coin1012: return 10
-                case JCZXGame.Orders.exp1012: return 10
+                case JCZXGame._Orders.build101: return 10
+                case JCZXGame._Orders.build61: return 6
+                case JCZXGame._Orders.build81: return 8
+                case JCZXGame._Orders.build162: return 16
+                case JCZXGame._Orders.build182: return 18
+                case JCZXGame._Orders.coin1012: return 10
+                case JCZXGame._Orders.exp1012: return 10
     
-    def getUserOrderPaths(self) -> list[tuple[str, Orders.Description]]:
+    def getUserOrderPaths(self) -> list[tuple[str, _Orders.Description]]:
         """返回用户设置的订单路径及其介绍"""
         result = []
-        if self.config.build61: result.append((self.Orders.build61, "构建6换1"))
-        if self.config.build81: result.append((self.Orders.build81, "构建8换1"))
-        if self.config.build101: result.append((self.Orders.build101, "构建10换1"))
-        if self.config.build162: result.append((self.Orders.build162, "构建16换2"))
-        if self.config.build182: result.append((self.Orders.build182, "构建18换2"))
-        if self.config.coin1012: result.append((self.Orders.coin1012, "星币10换12w"))
-        if self.config.exp1012: result.append((self.Orders.exp1012, "经验10换12w"))
+        if self.config.build61: result.append((self._Orders.build61, "构建6换1"))
+        if self.config.build81: result.append((self._Orders.build81, "构建8换1"))
+        if self.config.build101: result.append((self._Orders.build101, "构建10换1"))
+        if self.config.build162: result.append((self._Orders.build162, "构建16换2"))
+        if self.config.build182: result.append((self._Orders.build182, "构建18换2"))
+        if self.config.coin1012: result.append((self._Orders.coin1012, "星币10换12w"))
+        if self.config.exp1012: result.append((self._Orders.exp1012, "经验10换12w"))
         return result
     
-    class ScreenLocs:
+    class _ScreenLocs:
         friend = joinPath("resources","locations","friend.png")
         notEnough = joinPath("resources","locations","notEnough.png")
+        getItem= joinPath("resources","buttons","getItem.png")
         home = joinPath("resources","buttons","friends.png")
         tradingPost = joinPath("resources","locations","tradingPost.png")
         friendTradingPost = joinPath("resources","locations","friendTradingPost.png")
         quarry = joinPath("resources","locations","quarry.png")
+        billboard = joinPath("resources","buttons","noReminders.png")
         base = joinPath("resources","buttons","buildingOccupancy.png")
         # orderStop = joinPath("resources","locations","orderStop.png")
         building_switch = joinPath("resources","buttons","buildingSwitch.png")
@@ -453,6 +458,11 @@ class JCZXGame:
         self.startupinfo = subprocess.STARTUPINFO()
         self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
+    
+    Buttons = _Buttons()
+    Numbers = _Numbers()
+    Orders = _Orders()
+    ScreenLocs = _ScreenLocs()
     
     @staticmethod
     def check(func):
@@ -517,7 +527,7 @@ class JCZXGame:
     def gotoHome(self):
         if self.inLocation(self.ScreenLocs.home):
             return
-        self.__clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败")
+        self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败")
         sleep(3)
     
     def gotoFriend(self):
@@ -525,7 +535,7 @@ class JCZXGame:
             return
         else:
             self.gotoHome()
-        if not self.__clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败"):
+        if not self._clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败"):
             self.gotoFriend()
         sleep(1)
     
@@ -534,7 +544,7 @@ class JCZXGame:
             return
         else:
             self.gotoHome()
-        if not self.__clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败"):
+        if not self._clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败"):
             self.gotoBase()
         sleep(3)
     
@@ -543,7 +553,7 @@ class JCZXGame:
             return
         else:
             self.gotoBase()
-        if not self.__clickAndMsg(self.Buttons.quarry_button, "前往【矿场】", "前往【矿场】失败"):
+        if not self._clickAndMsg(self.Buttons.quarry_button, "前往【矿场】", "前往【矿场】失败"):
             self.gotoQuarry()
         sleep(3)
     
@@ -552,14 +562,14 @@ class JCZXGame:
             return
         else:
             self.gotoBase()
-        if not self.__clickAndMsg(self.Buttons.tradingPost_button, "前往【原料交易所】", "前往【原料交易所】失败"):
+        if not self._clickAndMsg(self.Buttons.tradingPost_button, "前往【原料交易所】", "前往【原料交易所】失败"):
             self.gotoTradingPost()
         sleep(1)
     
     def addAndCraft(self, num:int):
         loc = self.findImageCenterLocation(self.Buttons.add_button)
         for i in range(num - 1):
-            # self.__clickAndMsg(self.Buttons.add_button, wait = 0.1)
+            # self._clickAndMsg(self.Buttons.add_button, wait = 0.1)
             self.click(*loc, wait = 0.1)
         sleep(0.5)
         self.craftSure()
@@ -573,32 +583,32 @@ class JCZXGame:
     def __checkOrders(self):
         self.log.info("正在检索【订单】")
         for img,des in self.getUserOrderPaths():
-            if self.__clickAndMsg(img, wait = 0.3, log = False):
+            if self._clickAndMsg(img, wait = 0.3, log = False):
                 if self.findImageCenterLocation(self.ScreenLocs.notEnough):
                     if img in self.Orders.BuildOrders:
                         ticketRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.ticketRaw_button)
                         self.makeSure(2)
                         #合成黑盒
-                        self.__clickAndMsg(self.Buttons.craftTicketRaw_button, "点击【稀有黑匣】", "点击【稀有黑匣】失败", wait = 0.3)
+                        self._clickAndMsg(self.Buttons.craftTicketRaw_button, "点击【稀有黑匣】", "点击【稀有黑匣】失败", wait = 0.3)
                         self.addAndCraft(ticketRawNum)
                         self.log.info(f"合成【稀有黑匣】x{ticketRawNum}")
                     elif img in self.Orders.CoinOrders:
                         coinRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.coinRaw_button)
                         self.makeSure(2)
                         #合成星币原料
-                        self.__clickAndMsg(self.Buttons.craftCoinRaw_button, "点击【星币碎片】", "点击【星币碎片】失败", wait = 0.3)
+                        self._clickAndMsg(self.Buttons.craftCoinRaw_button, "点击【星币碎片】", "点击【星币碎片】失败", wait = 0.3)
                         self.addAndCraft(coinRawNum)
                         self.log.info(f"合成【星币碎片】x{coinRawNum}")
                     elif img in self.Orders.ExpOrders:
                         expRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.expRaw_button)
                         self.makeSure(2)
                         ...#合成数据硬盘
-                        self.__clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3)
+                        self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3)
                         self.addAndCraft(expRawNum)
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
                     self.back(0.3)
                     self.back(0.3)
-                    self.__clickAndMsg(img, wait = 0.3)
+                    self._clickAndMsg(img, wait = 0.3)
                 else:
                     self.makeSure2()
                     
@@ -637,14 +647,14 @@ class JCZXGame:
         if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a0, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 0
     
     def makeSure(self, wait = 0.3):
-        self.__clickAndMsg(self.Buttons.sure_button, wait = wait)
+        self._clickAndMsg(self.Buttons.sure_button, wait = wait)
     
     def makeSure2(self, wait = 1):
         self.makeSure(wait)
         self.click(self.width//2, self.height//1.2, wait = 0.3)
     
     def craftSure(self):
-        self.__clickAndMsg(self.Buttons.craftSure_button, wait = 1)
+        self._clickAndMsg(self.Buttons.craftSure_button, wait = 1)
         self.click(self.width//2, self.height//1.2, wait = 0.5)
     
     def gotoFriendOrdersAndSpend(self):
@@ -659,7 +669,7 @@ class JCZXGame:
                 for locs in locations:
                     self.click(*locs, 0.1)
                     index += 1
-                    self.__clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】-{index}", f"进入【好友交易所】-{index}失败", wait=0.1)
+                    self._clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】-{index}", f"进入【好友交易所】-{index}失败", wait=0.1)
                     #check orders
                     self.checkAndSpendOrders()
                     self.back()
@@ -670,11 +680,11 @@ class JCZXGame:
         self.gotoHome()
     
     def back(self, wait:int = 1):
-        self.__clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = wait)
+        self._clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = wait)
     
     def takeOre(self):
         if self.inLocation(self.ScreenLocs.base):
-            if self.__clickAndMsg(self.Buttons.ore_button, "收集矿物", log = False):
+            if self._clickAndMsg(self.Buttons.ore_button, "收集矿物", log = False):
                 sleep(0.7)
                 self.click(self.width//2, self.height//1.2)
                 sleep(0.7)
@@ -700,18 +710,18 @@ class JCZXGame:
             return
         else:
             self.gotoBase()
-        if not self.__clickAndMsg(self.Buttons.building_button, "前往【驻员管理】", "前往【驻员管理】失败"):
+        if not self._clickAndMsg(self.Buttons.building_button, "前往【驻员管理】", "前往【驻员管理】失败"):
             self.gotoBuildingOccupancy()
         sleep(1)
     
     def switchQuarryWork(self):
         if not self.inLocation(self.ScreenLocs.building_switch):
             self.gotoBuildingOccupancy()
-        if self.__clickAndMsg(self.Buttons.building_switch_button, "点击【矿场预设】", "点击【矿场预设】失败",2):
+        if self._clickAndMsg(self.Buttons.building_switch_button, "点击【矿场预设】", "点击【矿场预设】失败",2):
             sleep(0.5)
-            self.__clickAndMsg(self.Buttons.switch_button,"交换工作员工","交换工作员工失败")
+            self._clickAndMsg(self.Buttons.switch_button,"交换工作员工","交换工作员工失败")
     
-    def __clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = True):
+    def _clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = True) -> bool:
         if self.clickButton(button_path, index, wait, log):
             if infoMsg: self.log.info(infoMsg)
             return True
@@ -831,7 +841,7 @@ class WorkThread(QThread):
                 self.log.error(f"未知tag {self.tag}")
 
     def __debug(self):
-        self.adb.checkAndSpendOrders()
+        ...
         
     def setADB(self, adb):
         self.adb = adb
