@@ -119,7 +119,7 @@ class MainManager(Ui_Form):
     
     def __init_menu(self):
         self.help_textBrowser.setHidden(True)
-        # self.test_button.setHidden(True)
+        self.test_button.setHidden(True)
     
     def __init_valueRule(self):
         self.quarry_time_lineEdit.setValidator(QIntValidator(0, 60))
@@ -178,7 +178,7 @@ class MainManager(Ui_Form):
         self.order_exp1012w_spinBox.setValue(self.config.get_config(("orders","exp_1012","time")))
         self.order_exp1012w_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","exp_1012","time"), self.order_exp1012w_spinBox.value()))
         
-        #暂时隐藏
+        #未在开发计划中，暂时隐藏
         self.order_t3HJNY_151_checkBox.setHidden(True)
         self.order_t3HJNY_151_spinBox.setHidden(True)
         self.order_t3NPJ_151_checkBox.setHidden(True)
@@ -503,12 +503,15 @@ class JCZXGame:
         self.gotoBase()
         self.log.info("正在【挂机中】")
         while True:
-            if self.findImageCenterLocation(self.Buttons.ore_button):
-                self.config.set_config("quarry_time",datetime.now().minute)
-                quarry_time = self.config.quarry_time
-                self.log.info(f"设置【矿场结算】时间 {quarry_time} 分")
-                self.switchQuarryWork()
-                return quarry_time
+            if self.inLocation(self.ScreenLocs.base):
+                if self.findImageCenterLocation(self.Buttons.ore_button):
+                    self.config.set_config("quarry_time",datetime.now().minute)
+                    quarry_time = self.config.quarry_time
+                    self.log.info(f"设置【矿场结算】时间 {quarry_time} 分")
+                    self.switchQuarryWork()
+                    return quarry_time
+                else:
+                    self.gotoBase()
             sleep(60)
     
     def gotoHome(self):
@@ -653,7 +656,7 @@ class JCZXGame:
             if locations := self.findImageCenterLocations(self.Buttons.backyard_button):
                 for locs in locations:
                     self.click(*locs, 0.1)
-                    self.__clickAndMsg(self.Buttons.friendOrders_button, "进入【好友交易所】", "进入【好友交易所】失败", wait=0.3)
+                    self.__clickAndMsg(self.Buttons.friendOrders_button, "进入【好友交易所】", "进入【好友交易所】失败", wait=0.1)
                     #check orders
                     self.checkAndSpendOrders()
                     self.back()
@@ -856,9 +859,9 @@ class WorkThread(QThread):
     
     @check
     def switchWork(self):
+        self.log.info("开始【矿场换班】任务")
         quarry_time1 = self.adb.getQuarryTime()
         quarry_time2 = (quarry_time1+30)%60
-        self.log.info("开始【矿场换班】任务")
         while True:
             now_minute = datetime.now().minute
             # self.log.debug(f"{now_minute} {quarry_time1} {quarry_time2}")
