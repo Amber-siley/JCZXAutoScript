@@ -1,4 +1,4 @@
-from typing import Any,Callable
+from typing import Any,overload
 from os.path import exists,join,abspath
 from json import load,dumps
 from time import sleep
@@ -25,33 +25,33 @@ DEFAULT_CONFIGS = {
     "adb_device": None,
     "quarry_time": None,
     "orders":{
-        "build_61":{
+        "build_61": {
             "enable": True,
-            "time": 0,
+            "craft": True
         },
-        "build_81":{
+        "build_81": {
             "enable": True,
-            "time": 0,
+            "craft": True
         },
-        "build_101":{
+        "build_101": {
             "enable": False,
-            "time": 0,
+            "craft": True
         },
-        "build_162":{
+        "build_162": {
             "enable": True,
-            "time": 0,
+            "craft": True
         },
-        "build_182":{
-            "enable": True,
-            "time": 0,
-        },
-        "coin_1012":{
+        "build_182": {
             "enable": False,
-            "time": 0,
+            "craft": True
         },
-        "exp_1012":{
+        "coin_1012": {
             "enable": False,
-            "time": 0,
+            "craft": False
+        },
+        "exp_1012": {
+            "enable": False,
+            "craft": False
         }
     }
 }
@@ -74,7 +74,7 @@ class LoggerHandler(logging.Handler):
         if record.levelno == logging.DEBUG:
             color = 'blue'
         elif record.levelno == logging.INFO:
-            color = 'white'
+            color = 'black'
         elif record.levelno == logging.WARNING:
             color = 'orange'
         elif record.levelno == logging.ERROR:
@@ -86,6 +86,8 @@ class LoggerHandler(logging.Handler):
         return msg
     
 class MainManager(Ui_Form):
+    FunctionWidgetNum = 1
+    
     def __init__(self, app: QApplication) -> None:
         self.app = app
         self.form = QWidget()
@@ -119,6 +121,7 @@ class MainManager(Ui_Form):
     
     def __init_menu(self):
         self.help_textBrowser.setHidden(True)
+        self.logger_Browser.setFocus()
         # self.test_button.setHidden(True)
     
     def __init_valueRule(self):
@@ -143,72 +146,63 @@ class MainManager(Ui_Form):
         self.test_button.clicked.connect(self.__debug)
     
     def __init_orderlist(self):
-        self.order_build61_checkBox.setChecked(self.config.get_config(("orders","build_61","enable")))
+        self.order_build61_checkBox.setChecked(self.config.build61.enable)
+        self.craft_build61_enable_checkBox.setChecked(self.config.build61.craft)
         self.order_build61_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_61","enable"), self.order_build61_checkBox.isChecked()))
-        self.order_build61_spinBox.setValue(self.config.get_config(("orders","build_61","time")))
-        self.order_build61_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_61","time"), self.order_build61_spinBox.value()))
+        self.craft_build61_enable_checkBox.stateChanged.connect(lambda: self.config.build61.setCraftEnable(self.craft_build61_enable_checkBox.isChecked()))
         
         self.order_build81_checkBox.setChecked(self.config.get_config(("orders","build_81","enable")))
+        self.craft_build81_enable_checkBox.setChecked(self.config.build81.craft)
         self.order_build81_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_81","enable"), self.order_build81_checkBox.isChecked()))
-        self.order_build81_spinBox.setValue(self.config.get_config(("orders","build_81","time")))
-        self.order_build81_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_81","time"), self.order_build81_spinBox.value()))
+        self.craft_build81_enable_checkBox.stateChanged.connect(lambda: self.config.build81.setCraftEnable(self.craft_build81_enable_checkBox.isChecked()))
         
         self.order_build101_checkBox.setChecked(self.config.get_config(("orders","build_101","enable")))
+        self.craft_build101_enable_checkBox.setChecked(self.config.build101.craft)
         self.order_build101_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_101","enable"), self.order_build101_checkBox.isChecked()))
-        self.order_build101_spinBox.setValue(self.config.get_config(("orders","build_101","time")))
-        self.order_build101_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_101","time"), self.order_build101_spinBox.value()))
+        self.craft_build101_enable_checkBox.stateChanged.connect(lambda: self.config.build101.setCraftEnable(self.craft_build101_enable_checkBox.isChecked()))
         
         self.order_build162_checkBox.setChecked(self.config.get_config(("orders","build_162","enable")))
+        self.craft_build162_enable_checkBox.setChecked(self.config.build162.craft)
         self.order_build162_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_162","enable"), self.order_build162_checkBox.isChecked()))
-        self.order_build162_spinBox.setValue(self.config.get_config(("orders","build_162","time")))
-        self.order_build162_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_162","time"), self.order_build162_spinBox.value()))
+        self.craft_build162_enable_checkBox.stateChanged.connect(lambda: self.config.build162.setCraftEnable(self.craft_build162_enable_checkBox.isChecked()))
         
         self.order_build182_checkBox.setChecked(self.config.get_config(("orders","build_182","enable")))
+        self.craft_build182_enable_checkBox.setChecked(self.config.build182.craft)
         self.order_build182_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","build_182","enable"), self.order_build182_checkBox.isChecked()))
-        self.order_build182_spinBox.setValue(self.config.get_config(("orders","build_182","time")))
-        self.order_build182_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","build_182","time"), self.order_build182_spinBox.value()))
+        self.craft_build182_enable_checkBox.stateChanged.connect(lambda: self.config.build182.setCraftEnable(self.craft_build182_enable_checkBox.isChecked()))
         
         self.order_coin1012w_checkBox.setChecked(self.config.get_config(("orders","coin_1012","enable")))
+        self.craft_coin1012w_enable_checkBox.setChecked(self.config.coin1012.craft)
         self.order_coin1012w_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","coin_1012","enable"), self.order_coin1012w_checkBox.isChecked()))
-        self.order_coin1012w_spinBox.setValue(self.config.get_config(("orders","coin_1012","time")))
-        self.order_coin1012w_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","coin_1012","time"), self.order_coin1012w_spinBox.value()))
+        self.craft_coin1012w_enable_checkBox.stateChanged.connect(lambda: self.config.coin1012.setCraftEnable(self.craft_coin1012w_enable_checkBox.isChecked()))
         
         self.order_exp1012w_checkBox.setChecked(self.config.get_config(("orders","exp_1012","enable")))
+        self.craft_exp1012w_enable_checkBox.setChecked(self.config.exp1012.craft)
         self.order_exp1012w_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","exp_1012","enable"), self.order_exp1012w_checkBox.isChecked()))
-        self.order_exp1012w_spinBox.setValue(self.config.get_config(("orders","exp_1012","time")))
-        self.order_exp1012w_spinBox.valueChanged.connect(lambda: self.config.set_config(("orders","exp_1012","time"), self.order_exp1012w_spinBox.value()))
-        
-        #未在开发计划中，暂时隐藏
-        self.order_t3HJNY_151_checkBox.setHidden(True)
-        self.order_t3HJNY_151_spinBox.setHidden(True)
-        self.order_t3NPJ_151_checkBox.setHidden(True)
-        self.order_t3NPJ_151_spinBox.setHidden(True)
-        self.order_t3YJBDT_151_checkBox.setHidden(True)
-        self.order_t3YJBDT_151_spinBox.setHidden(True)
-        self.order_t3YJZJ_151_checkBox.setHidden(True)
-        self.order_t3YJZJ_151_spinBox.setHidden(True)
-        self.order_t3YJHJ_151_checkBox.setHidden(True)
-        self.order_t3YJHJ_151_spinBox.setHidden(True)
+        self.craft_exp1012w_enable_checkBox.stateChanged.connect(lambda: self.config.exp1012.setCraftEnable(self.craft_exp1012w_enable_checkBox.isChecked()))
     
     def stopTask(self):
         if self.work_thread.isRunning():
             self.work_thread.stop()
-            self.log.info("已停止所有任务")
+            self.log.info(f"已停止【{self.work_thread.mode}】")
+        else:
+            self.log.info("当前无任务运行")
     
     def switchWork(self):
-        if self.work_thread.tag == self.work_thread.SWITCH and self.work_thread.isRunning():
+        if self.work_thread.mode == self.work_thread.SWITCH and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning():
             self.work_thread.stop()
-            self.log.info("已停止当前任务")
+            self.log.info(f"已停止【{self.work_thread.mode}】")
         self.work_thread.setMode(WorkThread.SWITCH)
         self.work_thread.start()
     
     def spendOrder(self):
-        if self.work_thread.tag == self.work_thread.ORDER and self.work_thread.isRunning():
+        if self.work_thread.mode == self.work_thread.ORDER and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning():
             self.work_thread.stop()
+            self.log.info(f"已停止【{self.work_thread.mode}】")
         self.work_thread.setMode(WorkThread.ORDER)
         self.work_thread.start()
     
@@ -219,7 +213,7 @@ class MainManager(Ui_Form):
             self.help_textBrowser.setHidden(True)
     
     def __debug(self):
-        if self.work_thread.tag == self.work_thread.DEBUG and self.work_thread.isRunning():
+        if self.work_thread.mode == self.work_thread.DEBUG and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning():
             self.work_thread.stop()
@@ -276,6 +270,20 @@ class MainManager(Ui_Form):
         self.log.info("完成保存配置")
 
 class JsonConfig:
+    class Order:
+        class OrderType: ...
+        def __init__(self, config, opt:OrderType | str) -> None:
+            self.__config = config
+            self.opt = opt
+            self.enable = self.__config.get_config(("orders", self.opt, "enable"))
+            self.craft = self.__config.get_config(("orders", self.opt, "craft"))
+        
+        def setEnable(self, enable:bool) -> None:
+            self.__config.set_config(("orders", self.opt, "enable"), enable)
+        
+        def setCraftEnable(self, enable:bool) -> None:
+            self.__config.set_config(("orders", self.opt, "craft"), enable)
+        
     def __init__(self, path, default:dict = {}) -> None:
         self.path = path
         self.default = default
@@ -294,40 +302,30 @@ class JsonConfig:
         self.save()
     
     @property
-    def adb_device(self):
-        return self.get_config("adb_device")
+    def adb_device(self):   return self.get_config("adb_device")
     @property
-    def adb_path(self):
-        return self.get_config("adb_path")
+    def adb_path(self): return self.get_config("adb_path")
     @property
-    def quarry_time(self):
-        return self.get_config("quarry_time")
+    def quarry_time(self):  return self.get_config("quarry_time")
     @property
-    def build61(self):
-        return self.get_config(("orders","build_61","enable"))
+    def build61(self):  return self.Order(self, "build_61")
     @property
-    def build81(self):
-        return self.get_config(("orders","build_81","enable"))
+    def build81(self):  return self.Order(self, "build_81")
     @property
-    def build101(self):
-        return self.get_config(("orders","build_101","enable"))
+    def build101(self): return self.Order(self, "build_101")
     @property
-    def build162(self):
-        return self.get_config(("orders","build_162","enable"))
+    def build162(self): return self.Order(self, "build_162")
     @property
-    def build182(self):
-        return self.get_config(("orders","build_182","enable"))
+    def build182(self): return self.Order(self, "build_182")
     @property
-    def coin1012(self):
-        return self.get_config(("orders","coin_1012","enable"))
+    def coin1012(self): return self.Order(self, "coin_1012")
     @property
-    def exp1012(self):
-        return self.get_config(("orders","exp_1012","enable"))
+    def exp1012(self):  return self.Order(self, "exp_1012")
     
     def save(self):
         with open(self.path,"w",encoding="utf-8") as fp:
             fp.write(dumps(self._configs, indent = 4, ensure_ascii = False))
-        
+
     def get_config(self,sec:str | tuple) -> Any:
         """获取配置项值"""
         if isinstance(sec,str):
@@ -337,23 +335,31 @@ class JsonConfig:
             for key in sec:
                 tmp = tmp[key]
             return tmp
-
+    
     def set_default(self):
         with open(self.path,"w",encoding="utf-8") as fp:
             fp.write(dumps(self.default, indent = 4, ensure_ascii = False))
 
 class JCZXGame:
-    class Interface:
-        HOME = "主界面"
-        FRIEND = '好友界面'
-        UNKNOWN = "未知界面"
-        BUILDING_OCCUPANCY = "驻员管理"
-        ROOM = "宿舍"
-        BASE = "基地"
-        QUARRY = "矿场"
-        ORDERS = "订单库"
-        ASK_NEED_SUBMIT = "询问提交订单"
-    
+    class _ScreenCut:
+        class Point: ...
+        def __init__(self, w, h) -> None:
+            self.w = w
+            self.h = h
+        
+        def cut(self, cx, cy, x, y) ->tuple[Point, Point]:
+            w = self.w//cx
+            h = self.h//cy
+            return ((w*x, h*y), (w*(x+1), h*(y+1)))
+
+        def cut2x2(self, x, y): return self.cut(2, 2, x, y)
+        def cut2x3(self, x, y): return self.cut(2, 3, x, y)
+        def cut3x7(self, x, y): return self.cut(3, 7, x, y)
+        def cut7x1(self, x, y): return self.cut(7, 1, x, y)
+        def cut7x3(self, x, y): return self.cut(7, 3, x, y)
+        def cut7x2(self, x, y): return self.cut(7, 2, x, y)
+        def cut9x9(self, x, y): return self.cut(9, 9, x, y)
+        
     class _Buttons:
         back_button = joinPath("resources","buttons","back.png")
         getItem_button = joinPath("resources","buttons","getItem.png")
@@ -367,6 +373,7 @@ class JCZXGame:
         ticketRaw_button = joinPath("resources","buttons","ticketRaw.png")
         craftTicketRaw_button = joinPath("resources","buttons","craftTicketRaw.png")
         sure_button = joinPath("resources","buttons","sure.png")
+        cancel_button = joinPath("resources","buttons","cancel.png")
         craftSure_button = joinPath("resources","buttons","craftSure.png")
         friends_button = joinPath("resources","buttons","friends.png")
         home_button = joinPath("resources","buttons","home.png")
@@ -377,7 +384,6 @@ class JCZXGame:
         building_switch_button = joinPath("resources","buttons","buildingSwitch.png")
         backyard_button = joinPath("resources","buttons","backyard.png")
         switch_button = joinPath("resources","buttons","switch.png")
-        # spend_button = joinPath("resources","buttons","spend.png")
         friendOrders_button = joinPath("resources","buttons","friendOrders.png")
         tradingPost_button = joinPath("resources","buttons","tradingPost.png")
     
@@ -411,6 +417,7 @@ class JCZXGame:
         coin1012 = joinPath("resources","orders","coin1012.png")
         exp1012 = joinPath("resources","orders","exp1012.png")
         class Description:  ...
+        class CraftEnable: ...
         CoinOrders = (coin1012)
         ExpOrders = (exp1012)
         BuildOrders = (build101, build162, build182, build61, build81)
@@ -426,16 +433,16 @@ class JCZXGame:
                 case JCZXGame._Orders.coin1012: return 10
                 case JCZXGame._Orders.exp1012: return 10
     
-    def getUserOrderPaths(self) -> list[tuple[str, _Orders.Description]]:
+    def getUserOrderPaths(self) -> list[tuple[str, _Orders.Description, _Orders.CraftEnable]]:
         """返回用户设置的订单路径及其介绍"""
         result = []
-        if self.config.build61: result.append((self._Orders.build61, "构建6换1"))
-        if self.config.build81: result.append((self._Orders.build81, "构建8换1"))
-        if self.config.build101: result.append((self._Orders.build101, "构建10换1"))
-        if self.config.build162: result.append((self._Orders.build162, "构建16换2"))
-        if self.config.build182: result.append((self._Orders.build182, "构建18换2"))
-        if self.config.coin1012: result.append((self._Orders.coin1012, "星币10换12w"))
-        if self.config.exp1012: result.append((self._Orders.exp1012, "经验10换12w"))
+        if self.config.build61.enable: result.append((self._Orders.build61, "构建6换1", self.config.build61.craft))
+        if self.config.build81.enable: result.append((self._Orders.build81, "构建8换1", self.config.build81.craft))
+        if self.config.build101.enable: result.append((self._Orders.build101, "构建10换1", self.config.build101.craft))
+        if self.config.build162.enable: result.append((self._Orders.build162, "构建16换2", self.config.build162.craft))
+        if self.config.build182.enable: result.append((self._Orders.build182, "构建18换2", self.config.build182.craft))
+        if self.config.coin1012.enable: result.append((self._Orders.coin1012, "星币10换12w", self.config.coin1012.craft))
+        if self.config.exp1012.enable: result.append((self._Orders.exp1012, "经验10换12w", self.config.exp1012.craft))
         return result
     
     class _ScreenLocs:
@@ -458,6 +465,15 @@ class JCZXGame:
         self.startupinfo = subprocess.STARTUPINFO()
         self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
+        self.size = None
+        
+    @property
+    def width(self):
+        return self.getScreenSize()[0]
+
+    @property
+    def height(self):
+        return self.getScreenSize()[1]
     
     Buttons = _Buttons()
     Numbers = _Numbers()
@@ -471,30 +487,39 @@ class JCZXGame:
                 return func(self, *args, **kwargs)
         return wrapper
     
-    def inLocation(self, screen_loc) -> bool:
-        return bool(self.findImageCenterLocations(screen_loc))
+    def inLocation(self, screen_loc, cutPoints:tuple[tuple[int, int]] = None) -> bool:
+        return bool(self.findImageCenterLocations(screen_loc, cutPoints))
     
     def getScreenSize(self) -> tuple[int, int]:
-        msg = subprocess.check_output([self.adb_path, "-s", self.device, "shell", "wm", "size"], startupinfo = self.startupinfo).decode().split(" ")[-1].replace("\r\n","")
-        w, h = map(int, msg.split("x"))
+        if self.size:
+            return self.size
+        else:
+            msg = subprocess.check_output([self.adb_path, "-s", self.device, "shell", "wm", "size"], startupinfo = self.startupinfo).decode().split(" ")[-1].replace("\r\n","")
+            w, h = map(int, msg.split("x"))
+            self.size = (w, h)
         return (w, h)
     
     @check
     def screenshot(self) -> bytes:
         return subprocess.check_output([self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"], startupinfo = self.startupinfo)
     
-    def grayScreenshot(self):
-        screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_COLOR)
-        return cv2.cvtColor(screenshot, cv2.COLOR_BGR2GRAY)
+    def grayScreenshot(self, cutPoints = None):
+        screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_GRAYSCALE)
+        if cutPoints:
+            (x0, y0), (x1, y1) = cutPoints
+            return screenshot[y0:y1, x0:x1]
+        else:
+            return screenshot
     
     def click(self, x:int, y:int, wait:int = 0):
         subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)], startupinfo = self.startupinfo)
         if wait:
             sleep(wait)
     
-    def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True) -> bool:
-        if locations := self.findImageCenterLocations(button_path):
+    def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None) -> bool:
+        if locations := self.findImageCenterLocations(button_path, cutPoints):
             self.click(*locations[index], wait)
+            self.log.debug(f"{locations}")
             # self.log.info(f"点击按钮{button_path}")
             return True
         else:
@@ -506,6 +531,7 @@ class JCZXGame:
         """获取矿场结算时间"""
         self.takeOre()
         if self.config.quarry_time:
+            self.log.info("正在等待【矿场结算时间】")
             return self.config.quarry_time
         self.log.info("未设置【矿场结算】时间正在挂机获取")
         self.switchQuarryWork()
@@ -525,51 +551,41 @@ class JCZXGame:
             sleep(60)
     
     def gotoHome(self):
-        if self.inLocation(self.ScreenLocs.home):
+        if self.inLocation(self.ScreenLocs.home, self.ScreenCut.cut3x7(0,6)):
             return
-        self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败")
+        self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0))
         sleep(3)
     
     def gotoFriend(self):
-        if self.inLocation(self.ScreenLocs.friend):
+        if self.inLocation(self.ScreenLocs.friend, self.ScreenCut.cut9x9(0, 8)):
             return
         else:
             self.gotoHome()
-        if not self._clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败"):
+        if not self._clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败", cutPoints = self.ScreenCut.cut3x7(0,6)):
             self.gotoFriend()
         sleep(1)
     
     def gotoBase(self):
-        if self.inLocation(self.ScreenLocs.base):
+        if self.inLocation(self.ScreenLocs.base, self.ScreenCut.cut7x3(0, 2)):
             return
         else:
             self.gotoHome()
-        if not self._clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败"):
+        if not self._clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败", cutPoints = self.ScreenCut.cut3x7(2, 6)):
             self.gotoBase()
-        sleep(3)
-    
-    def gotoQuarry(self):
-        if self.inLocation(self.ScreenLocs.quarry):
-            return
-        else:
-            self.gotoBase()
-        if not self._clickAndMsg(self.Buttons.quarry_button, "前往【矿场】", "前往【矿场】失败"):
-            self.gotoQuarry()
         sleep(3)
     
     def gotoTradingPost(self):
-        if self.inLocation(self.ScreenLocs.tradingPost):
+        if self.inLocation(self.ScreenLocs.tradingPost, self.ScreenCut.cut7x2(0, 1)):
             return
         else:
             self.gotoBase()
-        if not self._clickAndMsg(self.Buttons.tradingPost_button, "前往【原料交易所】", "前往【原料交易所】失败"):
+        if not self._clickAndMsg(self.Buttons.tradingPost_button, "前往【原料交易所】", "前往【原料交易所】失败", cutPoints = self.ScreenCut.cut2x3(1, 1)):
             self.gotoTradingPost()
         sleep(1)
     
     def addAndCraft(self, num:int):
         loc = self.findImageCenterLocation(self.Buttons.add_button)
         for i in range(num - 1):
-            # self._clickAndMsg(self.Buttons.add_button, wait = 0.1)
             self.click(*loc, wait = 0.1)
         sleep(0.5)
         self.craftSure()
@@ -577,14 +593,18 @@ class JCZXGame:
     def checkAndSpendOrders(self):
         """检查并交付订单"""
         self.__checkOrders()
-        self.swipeUPScreenCenter()
-        self.__checkOrders()
+        # self.swipeUPScreenCenter()
+        # self.__checkOrders()
     
     def __checkOrders(self):
         self.log.info("正在检索【订单】")
-        for img,des in self.getUserOrderPaths():
+        for img,des,craft in self.getUserOrderPaths():
             if self._clickAndMsg(img, wait = 0.3, log = False):
+                self.log.info(f"发现订单【{des}】")
                 if self.findImageCenterLocation(self.ScreenLocs.notEnough):
+                    if not craft:
+                        self._clickAndMsg(self.Buttons.cancel_button, wait = 0.3)
+                        continue
                     if img in self.Orders.BuildOrders:
                         ticketRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.ticketRaw_button)
                         self.makeSure(2)
@@ -602,7 +622,7 @@ class JCZXGame:
                     elif img in self.Orders.ExpOrders:
                         expRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.expRaw_button)
                         self.makeSure(2)
-                        ...#合成数据硬盘
+                        #合成数据硬盘
                         self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3)
                         self.addAndCraft(expRawNum)
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
@@ -612,12 +632,11 @@ class JCZXGame:
                 else:
                     self.makeSure2()
                     
-    
     def findRawNumbers(self, Raw_path:str) -> int | None:
         templete = cv2.imread(Raw_path, cv2.IMREAD_GRAYSCALE)
         h, w = templete.shape
         screengray = self.grayScreenshot()
-        if locs := self.findImageLeftUPLocations(Raw_path):
+        if locs := self.findImageLeftUPLocations(Raw_path, self.ScreenCut.cut7x1(0, 0)):
             x, y = locs[0]
             y += h
             locality = screengray[x:x+w, y:y+h]
@@ -664,12 +683,15 @@ class JCZXGame:
         if not self.inLocation(self.ScreenLocs.friend):
             self.gotoFriend()
         index = 0
-        for i in range(10):
+        for i in range(11):
             if locations := self.findImageCenterLocations(self.Buttons.backyard_button):
                 for locs in locations:
                     self.click(*locs, 0.1)
                     index += 1
-                    self._clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】-{index}", f"进入【好友交易所】-{index}失败", wait=0.1)
+                    if not self._clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】-{index}", f"进入【好友交易所】-{index}失败", wait=0.1):
+                        self.gotoHome()
+                        self.log.warning(f"未处于【好友列表】 任务结束")
+                        return
                     #check orders
                     self.checkAndSpendOrders()
                     self.back()
@@ -685,7 +707,7 @@ class JCZXGame:
     def takeOre(self):
         if self.inLocation(self.ScreenLocs.base):
             if self._clickAndMsg(self.Buttons.ore_button, "收集矿物", log = False):
-                sleep(0.7)
+                sleep(1)
                 self.click(self.width//2, self.height//1.2)
                 sleep(0.7)
                 return True
@@ -721,8 +743,8 @@ class JCZXGame:
             sleep(0.5)
             self._clickAndMsg(self.Buttons.switch_button,"交换工作员工","交换工作员工失败")
     
-    def _clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = True) -> bool:
-        if self.clickButton(button_path, index, wait, log):
+    def _clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None) -> bool:
+        if self.clickButton(button_path, index, wait, log, cutPoints):
             if infoMsg: self.log.info(infoMsg)
             return True
         else:
@@ -734,7 +756,6 @@ class JCZXGame:
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > 0.9)
-        w, h= template_gray.shape[0:2]
         if any(locations[0]):
             tmp_x = [locations[0][0]]
             tmp_y = [locations[1][0]]
@@ -759,28 +780,29 @@ class JCZXGame:
         else:
             return None
 
-    def findImageCenterLocations(self, button_path:str) -> list[tuple[int, int]] | None:
-        screenshot_gray = self.grayScreenshot()
+    def findImageCenterLocations(self, button_path:str, cutPoints:tuple[tuple[int, int]] = None) -> list[tuple[int, int]] | None:
+        if cutPoints:
+            x0, y0 = cutPoints[0]
+        else:
+            x0, y0 = 0, 0
+        screenshot_gray = self.grayScreenshot(cutPoints)
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-        locations = np.where(matcher > 0.9)
-        w, h= template_gray.shape[0:2]
+        locations = np.where(matcher > 0.8)
+        h, w= template_gray.shape[0:2]
         if any(locations[0]):
-            tmp_x = [locations[0][0]]
-            tmp_y = [locations[1][0]]
-            for x,y in zip(*locations):
-                if y-10 >= tmp_y[-1]:
-                    tmp_x.append(x)
-                    tmp_y.append(y)
-                    continue
+            tmp_y = [locations[0][0]]
+            tmp_x = [locations[1][0]]
+            for y,x in zip(*locations):
                 if x-10 >= tmp_x[-1]:
                     tmp_x.append(x)
                     tmp_y.append(y)
                     continue
-            result = [(y+h//2,x+w//2) for x,y in zip(tmp_x,tmp_y)]
-            # cv2.rectangle(screenshot_gray,(tmp_y[0],tmp_x[0]),(tmp_y[0]+h,tmp_x[0]+w),(255,0,0),3)
-            # cv2.imshow("1",screenshot_gray)
-            # cv2.waitKey()
+                if y-10 >= tmp_y[-1]:
+                    tmp_x.append(x)
+                    tmp_y.append(y)
+                    continue
+            result = [((x+w//2)+x0,(y+h//2)+y0) for x,y in zip(tmp_x,tmp_y)]
             return result
         else:
             return None
@@ -795,42 +817,35 @@ class JCZXGame:
 
     def setDevice(self, device):
         self.device = device
+        self.ScreenCut= self._ScreenCut(self.width, self.height)
     
     def setADBPath(self, path):
         self.adb_path = path
-    
-    @property
-    def width(self):
-        return self.getScreenSize()[0]
-
-    @property
-    def height(self):
-        return self.getScreenSize()[1]
     
     @check
     def devices(self) -> list[str]:
         return list(map(lambda x:x[:x.find("\t")], subprocess.check_output([self.adb_path, "devices"], startupinfo = self.startupinfo).decode().split("\r\n")))[1:-2]
 
 class WorkThread(QThread):
-    ORDER = 1
-    SWITCH = 2
-    DEBUG = 0
+    ORDER = "交付订单"
+    SWITCH = "矿场换班"
+    DEBUG = "Debug"
     
     def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
         super().__init__()
         self.adb = adb
         self.log = log
-        self.tag = self.DEBUG
+        self.mode = self.DEBUG
         self.config = config
     
     def stop(self):
         self.terminate()
     
-    def setMode(self, tag:int):
-        self.tag = tag
+    def setMode(self, mode:str):
+        self.mode = mode
     
     def run(self) -> None:
-        match self.tag:
+        match self.mode:
             case self.ORDER:
                 self.spendOrder()
             case self.SWITCH:
@@ -841,6 +856,12 @@ class WorkThread(QThread):
                 self.log.error(f"未知tag {self.tag}")
 
     def __debug(self):
+        # cv2.imshow("1",self.adb.grayScreenshot(self.adb.ScreenCut.cut3x7(0, 0)))
+        # cv2.waitKey()
+        # self.adb.gotoHome()
+        # self.adb.gotoFriend()
+        # self.adb.gotoBase()
+        # self.adb.gotoTradingPost()
         ...
         
     def setADB(self, adb):
