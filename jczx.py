@@ -139,9 +139,10 @@ class MainManager(Ui_Form):
         self.save_config_Button.clicked.connect(self.saveConfig)
         self.help_button.clicked.connect(self.switchHelpTextHidden)
         self.adb_devices_comboBox.currentTextChanged.connect(self.setDeviceConfig)
-        self.start_switch_work_Button.clicked.connect(self.switchWork)
-        self.start_spend_order_Button.clicked.connect(self.spendOrder)
+        self.start_switch_work_Button.clicked.connect(lambda: self.createWork(self.work_thread.SWITCH))
+        self.start_spend_order_Button.clicked.connect(lambda: self.createWork(self.work_thread.ORDER))
         self.stop_all_task_Button.clicked.connect(self.stopTask)
+        self.auto_agree_friend_Button.clicked.connect(lambda: self.createWork(self.work_thread.ACCEPT))
         
         self.test_button.clicked.connect(self.__debug)
     
@@ -187,23 +188,14 @@ class MainManager(Ui_Form):
             self.log.info(f"已停止【{self.work_thread.mode}】")
         else:
             self.log.info("当前无任务运行")
-    
-    def switchWork(self):
-        if self.work_thread.mode == self.work_thread.SWITCH and self.work_thread.isRunning():
+        
+    def createWork(self, mode):
+        if self.work_thread.mode == mode and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning():
             self.work_thread.stop()
             self.log.info(f"已停止【{self.work_thread.mode}】")
-        self.work_thread.setMode(WorkThread.SWITCH)
-        self.work_thread.start()
-    
-    def spendOrder(self):
-        if self.work_thread.mode == self.work_thread.ORDER and self.work_thread.isRunning():
-            return
-        if self.work_thread.isRunning():
-            self.work_thread.stop()
-            self.log.info(f"已停止【{self.work_thread.mode}】")
-        self.work_thread.setMode(WorkThread.ORDER)
+        self.work_thread.setMode(mode)
         self.work_thread.start()
     
     def switchHelpTextHidden(self):
@@ -352,9 +344,18 @@ class JCZXGame:
             h = self.h//cy
             return ((w*x, h*y), (w*(x+1), h*(y+1)))
 
+        def cut1x2(self, x, y): return self.cut(1, 2, x, y)
+        def cut2x1(self, x, y): return self.cut(2, 1, x, y)
         def cut2x2(self, x, y): return self.cut(2, 2, x, y)
         def cut2x3(self, x, y): return self.cut(2, 3, x, y)
+        def cut3x1(self, x, y): return self.cut(3, 1, x, y)
+        def cut3x2(self, x, y): return self.cut(3, 2, x, y)
+        def cut3x3(self, x, y): return self.cut(3, 3, x, y)
+        def cut3x4(self, x, y): return self.cut(3, 4, x, y)
         def cut3x7(self, x, y): return self.cut(3, 7, x, y)
+        def cut4x1(self, x, y): return self.cut(4, 1, x, y)
+        def cut4x2(self, x, y): return self.cut(4, 2, x, y)
+        def cut4x3(self, x, y): return self.cut(4, 3, x, y)
         def cut7x1(self, x, y): return self.cut(7, 1, x, y)
         def cut7x3(self, x, y): return self.cut(7, 3, x, y)
         def cut7x2(self, x, y): return self.cut(7, 2, x, y)
@@ -362,6 +363,9 @@ class JCZXGame:
         
     class _Buttons:
         back_button = joinPath("resources","buttons","back.png")
+        apply_button = joinPath("resources","buttons","apply.png")
+        accept_button = joinPath("resources","buttons","accept.png")
+        cannotSubmit_button = joinPath("resources","buttons","cannotSubmit.png")
         getItem_button = joinPath("resources","buttons","getItem.png")
         closeNotice_button = joinPath("resources","buttons","closeNotice.png")
         noReminders_button = joinPath("resources","buttons","noReminders.png")
@@ -448,6 +452,7 @@ class JCZXGame:
     class _ScreenLocs:
         friend = joinPath("resources","locations","friend.png")
         notEnough = joinPath("resources","locations","notEnough.png")
+        tabBar = joinPath("resources","locations","tabBar.png")
         getItem= joinPath("resources","buttons","getItem.png")
         home = joinPath("resources","buttons","friends.png")
         tradingPost = joinPath("resources","locations","tradingPost.png")
@@ -465,7 +470,18 @@ class JCZXGame:
         self.startupinfo = subprocess.STARTUPINFO()
         self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
+        self.submitOrders = []
         self.size = None
+        self.acceptPos = None
+        self.homePos = None
+        self.backPos = None
+        self.cancelPos = None
+        self.surePos = None
+        self.craftPos = None
+        self.friendPos = None
+        self.basePos = None
+        self.tradingPos = None
+        self.buildingOccupancyPos = None
         
     @property
     def width(self):
@@ -516,16 +532,16 @@ class JCZXGame:
         if wait:
             sleep(wait)
     
-    def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None) -> bool:
-        if locations := self.findImageCenterLocations(button_path, cutPoints):
+    def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None, per = 0.9) -> tuple[int, int] | None:
+        if locations := self.findImageCenterLocations(button_path, cutPoints, per):
             self.click(*locations[index], wait)
             self.log.debug(f"{locations}")
             # self.log.info(f"点击按钮{button_path}")
-            return True
+            return locations[index]
         else:
             if log:
                 self.log.warning(f"未找到按钮{button_path}")
-            return False
+            return None
 
     def getQuarryTime(self) -> int:
         """获取矿场结算时间"""
@@ -539,8 +555,8 @@ class JCZXGame:
         self.gotoBase()
         self.log.info("正在【挂机中】")
         while True:
-            if self.inLocation(self.ScreenLocs.base):
-                if self.findImageCenterLocation(self.Buttons.ore_button):
+            if self.inLocation(self.ScreenLocs.base, self.ScreenCut.cut7x3(0, 2)):
+                if self.findImageCenterLocation(self.Buttons.ore_button, self.ScreenCut.cut3x2(1, 1)):
                     self.config.set_config("quarry_time",datetime.now().minute)
                     quarry_time = self.config.quarry_time
                     self.log.info(f"设置【矿场结算】时间 {quarry_time} 分")
@@ -553,7 +569,12 @@ class JCZXGame:
     def gotoHome(self):
         if self.inLocation(self.ScreenLocs.home, self.ScreenCut.cut3x7(0,6)):
             return
-        self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0))
+        if self.homePos:
+            self.click(*self.homePos)
+            self.log.info("前往【主界面】")
+        else:
+            if loc := self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0)):
+                self.homePos = loc
         sleep(3)
     
     def gotoFriend(self):
@@ -561,17 +582,29 @@ class JCZXGame:
             return
         else:
             self.gotoHome()
-        if not self._clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败", cutPoints = self.ScreenCut.cut3x7(0,6)):
-            self.gotoFriend()
+        if self.friendPos:
+            self.click(*self.friendPos)
+            self.log.info("前往【好友界面】")
+        else:
+            if loc := self._clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败", cutPoints = self.ScreenCut.cut3x7(0,6)):
+                self.friendPos = loc
+            else:
+                self.gotoFriend()
         sleep(1)
     
     def gotoBase(self):
-        if self.inLocation(self.ScreenLocs.base, self.ScreenCut.cut7x3(0, 2)):
+        if self.inLocation(self.ScreenLocs.base, self.ScreenCut.cut4x3(0, 2)):
             return
         else:
             self.gotoHome()
-        if not self._clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败", cutPoints = self.ScreenCut.cut3x7(2, 6)):
-            self.gotoBase()
+        if self.basePos:
+            self.click(*self.basePos)
+            self.log.info("前往【基地】")
+        else:
+            if loc := self._clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败", cutPoints = self.ScreenCut.cut3x7(2, 6)):
+                self.basePos = loc
+            else:
+                self.gotoBase()
         sleep(3)
     
     def gotoTradingPost(self):
@@ -584,7 +617,7 @@ class JCZXGame:
         sleep(1)
     
     def addAndCraft(self, num:int):
-        loc = self.findImageCenterLocation(self.Buttons.add_button)
+        loc = self.findImageCenterLocation(self.Buttons.add_button, cutPoints = self.ScreenCut.cut3x3(2, 1))
         for i in range(num - 1):
             self.click(*loc, wait = 0.1)
         sleep(0.5)
@@ -593,44 +626,56 @@ class JCZXGame:
     def checkAndSpendOrders(self):
         """检查并交付订单"""
         self.__checkOrders()
-        # self.swipeUPScreenCenter()
-        # self.__checkOrders()
+        if self.inLocation(self.ScreenLocs.tabBar, self.ScreenCut.cut7x1(6, 0)):
+            self.swipeUPScreenCenter()
+            self.__checkOrders(self.ScreenCut.cut1x2(0, 1))
     
-    def __checkOrders(self):
+    def __checkOrders(self, cutPoints = None):
         self.log.info("正在检索【订单】")
         for img,des,craft in self.getUserOrderPaths():
-            if self._clickAndMsg(img, wait = 0.3, log = False):
+            # if self._clickAndMsg(img, wait = 0.3, log = False, per = 0.95):
+            if locality := self.findImageCenterLocation(img, cutPoints, per = 0.95):
                 self.log.info(f"发现订单【{des}】")
-                if self.findImageCenterLocation(self.ScreenLocs.notEnough):
+                # if self.findImageCenterLocation(self.ScreenLocs.notEnough, self.ScreenCut.cut3x3(1, 1)):
+                templete = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
+                h, w = templete.shape
+                x, y = locality
+                x0, y0 = x-w//2, y+h//2
+                x1, y1 = x+w//2, y+h//2+h
+                if self.findImageCenterLocation(self.Buttons.cannotSubmit_button, ((x0, y0), (x1, y1)), per = 0.95):
                     if not craft:
-                        self._clickAndMsg(self.Buttons.cancel_button, wait = 0.3)
+                        # self._clickAndMsg(self.Buttons.cancel_button, wait = 0.3, cutPoints = self.ScreenCut.cut4x2(1, 1))
                         continue
+                    self.click(*locality, 0.3)
                     if img in self.Orders.BuildOrders:
                         ticketRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.ticketRaw_button)
                         self.makeSure(2)
                         #合成黑盒
-                        self._clickAndMsg(self.Buttons.craftTicketRaw_button, "点击【稀有黑匣】", "点击【稀有黑匣】失败", wait = 0.3)
+                        self._clickAndMsg(self.Buttons.craftTicketRaw_button, "点击【稀有黑匣】", "点击【稀有黑匣】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x2(1, 1))
                         self.addAndCraft(ticketRawNum)
                         self.log.info(f"合成【稀有黑匣】x{ticketRawNum}")
                     elif img in self.Orders.CoinOrders:
                         coinRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.coinRaw_button)
                         self.makeSure(2)
                         #合成星币原料
-                        self._clickAndMsg(self.Buttons.craftCoinRaw_button, "点击【星币碎片】", "点击【星币碎片】失败", wait = 0.3)
+                        self._clickAndMsg(self.Buttons.craftCoinRaw_button, "点击【星币碎片】", "点击【星币碎片】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x1(1, 0))
                         self.addAndCraft(coinRawNum)
                         self.log.info(f"合成【星币碎片】x{coinRawNum}")
                     elif img in self.Orders.ExpOrders:
                         expRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.expRaw_button)
                         self.makeSure(2)
                         #合成数据硬盘
-                        self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3)
+                        self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x1(2, 0))
                         self.addAndCraft(expRawNum)
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
                     self.back(0.3)
                     self.back(0.3)
                     self._clickAndMsg(img, wait = 0.3)
+                    self.submitOrders.append(des)
                 else:
+                    self.click(*locality, 0.3)
                     self.makeSure2()
+                    self.submitOrders.append(des)
                     
     def findRawNumbers(self, Raw_path:str) -> int | None:
         templete = cv2.imread(Raw_path, cv2.IMREAD_GRAYSCALE)
@@ -666,47 +711,66 @@ class JCZXGame:
         if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a0, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 0
     
     def makeSure(self, wait = 0.3):
-        self._clickAndMsg(self.Buttons.sure_button, wait = wait)
+        if self.surePos:
+            self.click(*self.surePos, wait)
+        else:
+            loc = self._clickAndMsg(self.Buttons.sure_button, wait = wait, cutPoints = self.ScreenCut.cut4x2(2, 1))
+            self.surePos = loc
     
     def makeSure2(self, wait = 1):
         self.makeSure(wait)
         self.click(self.width//2, self.height//1.2, wait = 0.3)
     
     def craftSure(self):
-        self._clickAndMsg(self.Buttons.craftSure_button, wait = 1)
+        if self.craftPos:
+            self.click(*self.craftPos)
+        else:
+            loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 1, cutPoints = self.ScreenCut.cut3x3(2, 2))
+            self.craftPos = loc
         self.click(self.width//2, self.height//1.2, wait = 0.5)
     
     def gotoFriendOrdersAndSpend(self):
-        if self.inLocation(self.ScreenLocs.friendTradingPost):
+        if self.inLocation(self.ScreenLocs.friendTradingPost, self.ScreenCut.cut7x2(0, 1)):
             #check orders
             self.checkAndSpendOrders()
-        if not self.inLocation(self.ScreenLocs.friend):
+        if not self.inLocation(self.ScreenLocs.friend, self.ScreenCut.cut9x9(0, 8)):
             self.gotoFriend()
         index = 0
         for i in range(11):
-            if locations := self.findImageCenterLocations(self.Buttons.backyard_button):
+            if locations := self.findImageCenterLocations(self.Buttons.backyard_button, self.ScreenCut.cut3x1(2, 0)):
                 for locs in locations:
                     self.click(*locs, 0.1)
                     index += 1
-                    if not self._clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】-{index}", f"进入【好友交易所】-{index}失败", wait=0.1):
+                    if not self._clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】{index}", f"进入【好友交易所】{index}失败", wait=0.1, cutPoints = self.ScreenCut.cut4x1(2, 0)):
                         self.gotoHome()
                         self.log.warning(f"未处于【好友列表】 任务结束")
+                        if self.submitOrders:
+                            self.log.info("已提交订单"+" ".join(self.submitOrders))
+                            self.submitOrders.clear()
                         return
                     #check orders
                     self.checkAndSpendOrders()
                     self.back()
-                    self.click(*locs, 0.3)
+                    self.click(*locs, 0.2)
                 self.swipeUPScreenCenter()
             else:
                 break
         self.gotoHome()
+        if self.submitOrders:
+            self.log.info("已提交订单"+" ".join(self.submitOrders))
+            self.submitOrders.clear()
     
     def back(self, wait:int = 1):
-        self._clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = wait)
+        if self.backPos:
+            self.click(*self.backPos)
+            self.log.info("返回上一界面")
+        else:
+            loc = self._clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = wait, cutPoints = self.ScreenCut.cut3x7(0, 0))
+            self.backPos = loc
     
     def takeOre(self):
-        if self.inLocation(self.ScreenLocs.base):
-            if self._clickAndMsg(self.Buttons.ore_button, "收集矿物", log = False):
+        if self.inLocation(self.ScreenLocs.base, self.ScreenCut.cut4x3(0, 2)):
+            if self._clickAndMsg(self.Buttons.ore_button, "收集矿物", log = False, cutPoints = self.ScreenCut.cut3x2(1, 1)):
                 sleep(1)
                 self.click(self.width//2, self.height//1.2)
                 sleep(0.7)
@@ -728,31 +792,41 @@ class JCZXGame:
                 sleep(60)
     
     def gotoBuildingOccupancy(self):
-        if self.inLocation(self.ScreenLocs.building_switch):
+        if self.inLocation(self.ScreenLocs.building_switch, cutPoints = self.ScreenCut.cut4x1(2, 0)):
             return
         else:
             self.gotoBase()
-        if not self._clickAndMsg(self.Buttons.building_button, "前往【驻员管理】", "前往【驻员管理】失败"):
-            self.gotoBuildingOccupancy()
+        if self.buildingOccupancyPos:
+            self.click(*self.buildingOccupancyPos)
+            self.log.info("前往【驻员管理】")
+        else:
+            if loc := self._clickAndMsg(self.Buttons.building_button, "前往【驻员管理】", "前往【驻员管理】失败", cutPoints = self.ScreenCut.cut4x3(0, 2)):
+                self.buildingOccupancyPos = loc
+            else:
+                self.gotoBuildingOccupancy()
         sleep(1)
     
     def switchQuarryWork(self):
-        if not self.inLocation(self.ScreenLocs.building_switch):
+        if not self.inLocation(self.ScreenLocs.building_switch, cutPoints = self.ScreenCut.cut4x1(2, 0)):
             self.gotoBuildingOccupancy()
-        if self._clickAndMsg(self.Buttons.building_switch_button, "点击【矿场预设】", "点击【矿场预设】失败",2):
+        if self._clickAndMsg(self.Buttons.building_switch_button, "点击【矿场预设】", "点击【矿场预设】失败", 2, cutPoints = self.ScreenCut.cut3x1(2, 0)):
             sleep(0.5)
-            self._clickAndMsg(self.Buttons.switch_button,"交换工作员工","交换工作员工失败")
+            self._clickAndMsg(self.Buttons.switch_button, "交换工作员工", "交换工作员工失败", cutPoints = self.ScreenCut.cut2x1(1, 0))
     
-    def _clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None) -> bool:
-        if self.clickButton(button_path, index, wait, log, cutPoints):
+    def _clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None, per = 0.9) -> tuple[int, int] | None:
+        if loc := self.clickButton(button_path, index, wait, log, cutPoints, per):
             if infoMsg: self.log.info(infoMsg)
-            return True
+            return loc
         else:
             if warnMsg: self.log.warning(warnMsg)
-            return False
+            return None
     
-    def findImageLeftUPLocations(self, button_path:str) -> list[tuple[int, int]] | None:
-        screenshot_gray = self.grayScreenshot()
+    def findImageLeftUPLocations(self, button_path:str, cutPoints = None) -> list[tuple[int, int]] | None:
+        if cutPoints:
+            x0, y0 = cutPoints[0]
+        else:
+            x0, y0 = 0, 0
+        screenshot_gray = self.grayScreenshot(cutPoints)
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > 0.9)
@@ -768,19 +842,19 @@ class JCZXGame:
                     tmp_x.append(x)
                     tmp_y.append(y)
                     continue
-            result = [(x, y) for x,y in zip(tmp_x, tmp_y)]
+            result = [(x+x0, y+y0) for x,y in zip(tmp_x, tmp_y)]
             return result
         else:
             return None
     
-    def findImageCenterLocation(self, button_path:str) -> tuple[int, int] | None:
-        locations = self.findImageCenterLocations(button_path)
+    def findImageCenterLocation(self, button_path:str, cutPoints = None, per = 0.9) -> tuple[int, int] | None:
+        locations = self.findImageCenterLocations(button_path, cutPoints, per)
         if locations:
             return locations[0]
         else:
             return None
 
-    def findImageCenterLocations(self, button_path:str, cutPoints:tuple[tuple[int, int]] = None) -> list[tuple[int, int]] | None:
+    def findImageCenterLocations(self, button_path:str, cutPoints:tuple[tuple[int, int]] = None, per:float = 0.9) -> list[tuple[int, int]] | None:
         if cutPoints:
             x0, y0 = cutPoints[0]
         else:
@@ -788,7 +862,7 @@ class JCZXGame:
         screenshot_gray = self.grayScreenshot(cutPoints)
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-        locations = np.where(matcher > 0.8)
+        locations = np.where(matcher > per)
         h, w= template_gray.shape[0:2]
         if any(locations[0]):
             tmp_y = [locations[0][0]]
@@ -806,6 +880,13 @@ class JCZXGame:
             return result
         else:
             return None
+    
+    def accept(self):
+        if self.acceptPos:
+            self.click(*self.acceptPos, 0.7)
+        else:
+            loc = self._clickAndMsg(self.Buttons.accept_button, "点击【同意】x∞", wait = 0.7, cutPoints = self.ScreenCut.cut3x2(2, 0))
+            self.acceptPos = loc
     
     def swipe(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
         subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)], startupinfo = self.startupinfo)
@@ -830,6 +911,7 @@ class WorkThread(QThread):
     ORDER = "交付订单"
     SWITCH = "矿场换班"
     DEBUG = "Debug"
+    ACCEPT = "自动同意申请"
     
     def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
         super().__init__()
@@ -839,6 +921,13 @@ class WorkThread(QThread):
         self.config = config
     
     def stop(self):
+        match self.mode:
+            case self.ORDER:
+                if self.adb.submitOrders:
+                    self.log.info("已提交订单"+" ".join(self.adb.submitOrders))
+                    self.adb.submitOrders.clear()
+            case self.SWITCH:
+                ...
         self.terminate()
     
     def setMode(self, mode:str):
@@ -852,16 +941,13 @@ class WorkThread(QThread):
                 self.switchWork()
             case self.DEBUG:
                 self.__debug()
+            case self.ACCEPT:
+                self.autoAccept()
             case _:
                 self.log.error(f"未知tag {self.tag}")
 
     def __debug(self):
-        # cv2.imshow("1",self.adb.grayScreenshot(self.adb.ScreenCut.cut3x7(0, 0)))
-        # cv2.waitKey()
-        # self.adb.gotoHome()
-        # self.adb.gotoFriend()
-        # self.adb.gotoBase()
-        # self.adb.gotoTradingPost()
+        self.log.info(self.adb.findRawNumbers(self.adb.Buttons.ticketRaw_button))
         ...
         
     def setADB(self, adb):
@@ -908,6 +994,14 @@ class WorkThread(QThread):
                 self.adb.back()
             sleep(60)
 
+    @check
+    def autoAccept(self):
+        self.log.info("开始【自动同意申请】任务")
+        self.adb.gotoFriend()
+        self.adb._clickAndMsg(self.adb.Buttons.apply_button, "前往【申请】界面", wait = 0.3, cutPoints = self.adb.ScreenCut.cut4x1(0, 0))
+        while True:
+            self.adb.accept()
+    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     manager = MainManager(app)
