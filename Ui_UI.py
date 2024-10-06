@@ -314,6 +314,24 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.auto_agree_friend_Button.setObjectName("auto_agree_friend_Button")
+        self.brushing_surportAwards_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.brushing_surportAwards_Button.setGeometry(QtCore.QRect(0, 42, 175, 42))
+        self.brushing_surportAwards_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.brushing_surportAwards_Button.setObjectName("brushing_surportAwards_Button")
         self.functionALL_tabWidget.addTab(self.function2_tab, "")
         self.orderList_scrollArea = QtWidgets.QScrollArea(parent=Form)
         self.orderList_scrollArea.setGeometry(QtCore.QRect(400, 24, 175, 160))
@@ -518,12 +536,15 @@ class Ui_Form(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt; font-weight:700;\">Version: Alpha 0.1.2</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt; font-weight:700;\">Version: Alpha 0.1.2 帮助文档</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:700;\">该版本为</span><span style=\" font-weight:700; color:#0055ff;\">开发版本</span><span style=\" font-weight:700;\">，功能可能</span><span style=\" font-weight:700; color:#ff5500;\">不稳定</span></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">ADB路径</span><span style=\" font-size:8pt;\">：模拟器目录下的</span><span style=\" font-size:8pt; color:#ff0000;\">ADB.exe</span><span style=\" font-size:8pt;\">调试程序路径</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">设备列表</span><span style=\" font-size:8pt;\">：模拟器下的设备，默认获取第一个设备</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">矿场结算</span><span style=\" font-size:8pt;\">：矿场每</span><span style=\" font-size:8pt; color:#ff0000;\">30分钟</span><span style=\" font-size:8pt;\">结算一次矿物，值与账号注册时间有关，当没有指定设置或者为-1时，自动挂机30分钟获取时间</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">启动交付订单</span><span style=\" font-size:8pt;\">：检查订单库并交付符合条件的订单，仅</span><span style=\" font-size:8pt; color:#ff0000;\">执行一次</span><span style=\" font-size:8pt;\">，稳定性较低，在找完符合条件的订单并合成交付后，就结束控制</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">启动换班任务</span><span style=\" font-size:8pt;\">：进行矿场换班工作，无限时间运行（除非手动停止），</span><span style=\" font-size:8pt; color:#ff0000;\">高稳定性</span><span style=\" font-size:8pt;\">，在未到达矿场结算时间是脚本不操作游戏，玩家可以自由控制（注意：请先设置【</span><span style=\" font-size:8pt; color:#ff0000;\">驻员状况</span><span style=\" font-size:8pt;\">】中的矿场编队预设，需要预设两个队伍，一个主力队伍，一个替换队伍，首先让自己的</span><span style=\" font-size:8pt; color:#ff0000;\">替换队伍</span><span style=\" font-size:8pt;\">上班，再启动该模式，启动该模式时不要让自己的</span><span style=\" font-size:8pt; color:#ff0000;\">主力挖矿</span><span style=\" font-size:8pt;\">队伍上班，实际上结算时会自动让主力队伍上班，系统还是会以主力队伍进行结算，</span><span style=\" font-size:8pt; color:#ff0000;\">替换队伍</span><span style=\" font-size:8pt;\">相当于</span><span style=\" font-size:8pt; color:#ff0000;\">占位符</span><span style=\" font-size:8pt;\">）</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">自动同意好友申请</span><span style=\" font-size:8pt;\">：全自动同意好友申请，用于在订单群当义父时解放双手</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">为主号刷助战奖励</span><span style=\" font-size:8pt;\">：（助战奖励只有4w，蚊子腿）确保当前使用为</span><span style=\" font-size:8pt; color:#ff0000;\">小号</span><span style=\" font-size:8pt;\">，且小号只有主号</span><span style=\" font-size:8pt; color:#ff0000;\">一个好友</span><span style=\" font-size:8pt;\">，同时一号队伍留有</span><span style=\" font-size:8pt; color:#ff0000;\">2x2的位置</span><span style=\" font-size:8pt; color:#000000;\">。</span><span style=\" font-size:8pt;\">关于双倍助战：助战奖励分割时间为</span><span style=\" font-size:8pt; color:#ff0000;\">每天凌晨3点</span><span style=\" font-size:8pt; color:#000000;\">，在3点之前进行20次助战，3点过后进行20次助战，3点后到第二次刷助战期间主号</span><span style=\" font-size:8pt; color:#ff0000;\">不要登录</span><span style=\" font-size:8pt; color:#000000;\">，次日双倍助战奖励</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">停止所有任务</span><span style=\" font-size:8pt;\">：无视所有情况，强制停止脚本任务</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">保存用户配置</span><span style=\" font-size:8pt;\">：使用手动修改方式并不会触发自动保存，推荐修改配置项后手动保存配置</span></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"><br /></p>\n"
@@ -536,6 +557,8 @@ class Ui_Form(object):
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function1_tab), _translate("Form", "功能1"))
         self.auto_agree_friend_Button.setToolTip(_translate("Form", "<html><head/><body><p>自动同意好友申请【手动停止】</p></body></html>"))
         self.auto_agree_friend_Button.setText(_translate("Form", "自动同意好友申请"))
+        self.brushing_surportAwards_Button.setToolTip(_translate("Form", "<html><head/><body><p>为指定的主账号刷取助战奖励【自动停止】</p></body></html>"))
+        self.brushing_surportAwards_Button.setText(_translate("Form", "为主号刷助战奖励"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function2_tab), _translate("Form", "功能2"))
         self.order_exp1012w_checkBox.setText(_translate("Form", "10换12w经验"))
         self.order_coin1012w_checkBox.setText(_translate("Form", "10换12w星币"))
