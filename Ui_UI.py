@@ -483,6 +483,28 @@ class Ui_Form(object):
         self.craft_build101_enable_checkBox.setTristate(False)
         self.craft_build101_enable_checkBox.setObjectName("craft_build101_enable_checkBox")
         self.orderList_scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.refresh_devices_Button = QtWidgets.QPushButton(parent=Form)
+        self.refresh_devices_Button.setGeometry(QtCore.QRect(159, 24, 16, 24))
+        self.refresh_devices_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.refresh_devices_Button.setText("")
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap("D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.refresh_devices_Button.setIcon(icon1)
+        self.refresh_devices_Button.setObjectName("refresh_devices_Button")
         self.orderList_scrollArea.raise_()
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
@@ -502,6 +524,7 @@ class Ui_Form(object):
         self.help_button.raise_()
         self.help_textBrowser.raise_()
         self.functionALL_tabWidget.raise_()
+        self.refresh_devices_Button.raise_()
 
         self.retranslateUi(Form)
         self.functionALL_tabWidget.setCurrentIndex(0)
@@ -567,3 +590,4 @@ class Ui_Form(object):
         self.order_build101_checkBox.setText(_translate("Form", "10换1构建"))
         self.order_build81_checkBox.setText(_translate("Form", "8换1构建"))
         self.order_build162_checkBox.setText(_translate("Form", "16换2构建"))
+        self.refresh_devices_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷新</p></body></html>"))

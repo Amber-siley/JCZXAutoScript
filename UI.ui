@@ -1113,6 +1113,43 @@ QPushButton:pressed, QPushButton:checked {
     </widget>
    </widget>
   </widget>
+  <widget class="QPushButton" name="refresh_devices_Button">
+   <property name="geometry">
+    <rect>
+     <x>159</x>
+     <y>24</y>
+     <width>16</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;刷新&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png</normaloff>D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png</iconset>
+   </property>
+  </widget>
   <zorder>orderList_scrollArea</zorder>
   <zorder>adb_path_label</zorder>
   <zorder>adb_path_lineEdit</zorder>
@@ -1132,6 +1169,7 @@ QPushButton:pressed, QPushButton:checked {
   <zorder>help_button</zorder>
   <zorder>help_textBrowser</zorder>
   <zorder>functionALL_tabWidget</zorder>
+  <zorder>refresh_devices_Button</zorder>
  </widget>
  <resources/>
  <connections/>

@@ -20,6 +20,9 @@ def joinPath(*args):
         return join(sys._MEIPASS, *args)
     return join(abspath("."), *args)
 
+LOG_LEVEL = logging.INFO
+# LOG_LEVEL = logging.DEBUG
+
 DEFAULT_CONFIGS = {
     "adb_path": None,
     "adb_device": None,
@@ -65,6 +68,7 @@ class LoggerHandler(logging.Handler):
     def emit(self, record):
         msg = self.format(record)
         self.edit.append(msg)
+        sleep(0.01)
         self.edit.moveCursor(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.MoveAnchor)
     
     def write(self,text):
@@ -92,8 +96,8 @@ class MainManager(Ui_Form):
         self.app = app
         self.form = QWidget()
         self.fileDialog = QFileDialog()
-        self.config = JsonConfig("autoScriptConfig.json",DEFAULT_CONFIGS)
-        self.log = logging.Logger(__name__, logging.DEBUG)
+        self.config = JsonConfig("autoScriptConfig.json", DEFAULT_CONFIGS)
+        self.log = logging.Logger(__name__, LOG_LEVEL)
         self.adb = JCZXGame(self.adb_path, self.log, self.config)
         self.work_thread = WorkThread(self.adb, self.log, self.config)
         
@@ -122,7 +126,8 @@ class MainManager(Ui_Form):
     def __init_menu(self):
         self.help_textBrowser.setHidden(True)
         self.logger_Browser.setFocus()
-        # self.test_button.setHidden(True)
+        if LOG_LEVEL != logging.DEBUG:
+            self.test_button.setHidden(True)
     
     def __init_valueRule(self):
         self.quarry_time_lineEdit.setValidator(QIntValidator(0, 60))
@@ -144,6 +149,7 @@ class MainManager(Ui_Form):
         self.stop_all_task_Button.clicked.connect(self.stopTask)
         self.auto_agree_friend_Button.clicked.connect(lambda: self.createWork(self.work_thread.ACCEPT))
         self.brushing_surportAwards_Button.clicked.connect(lambda: self.createWork(self.work_thread.AWARD))
+        self.refresh_devices_Button.clicked.connect(self.__init_devices)
         
         self.test_button.clicked.connect(self.__debug)
     
@@ -243,9 +249,10 @@ class MainManager(Ui_Form):
         self.setDeviceConfig(self.adb_devices_comboBox.currentText())
     
     def setDeviceConfig(self, device:str):
-        self.adb_devices_comboBox.setCurrentText(device)
-        self.config.set_config("adb_device",device)
-        self.adb.setDevice(device)
+        if device:
+            self.adb_devices_comboBox.setCurrentText(device)
+            self.config.set_config("adb_device",device)
+            self.adb.setDevice(device)
     
     def setQuarryTimeConfig(self,quarry_time):
         self.config.set_config("quarry_time", int(quarry_time))
@@ -592,7 +599,7 @@ class JCZXGame:
         return self._clickAndMsg(self.Buttons.illusions_button, "前往【碎星虚影】", "前往【碎星虚影】失败", wait = 1, cutPoints = self.ScreenCut.cut1x2(0, 1))
     
     def clickGeLiKeillusion(self):
-        return self._clickAndMsg(self.Buttons.GeLiKe_button, "前往【戈里克虚影】", "前往【戈里克虚影】失败", wait = 0.5, cutPoints = self.ScreenCut.cut1x2(0, 1))
+        return self._clickAndMsg(self.Buttons.GeLiKe_button, "前往【戈里克虚影】", "前往【戈里克虚影】失败", wait = 1, cutPoints = self.ScreenCut.cut1x2(0, 1))
     
     def clickStartFight(self):
         if loc := self._clickAndMsg(self.Buttons.startFight_button, "准备战斗", "准备战斗异常", wait = 1, cutPoints = self.ScreenCut.cut3x4(2, 3)):
@@ -782,6 +789,7 @@ class JCZXGame:
                     self.back(0.3)
                     self.back(0.3)
                     self._clickAndMsg(img, wait = 0.3)
+                    self.makeSure2()
                     self.submitOrders.append(des)
                 else:
                     self.click(*locality, 0.3)
@@ -854,6 +862,14 @@ class JCZXGame:
             self.Pos.craftPos = loc
         self.click(self.width//2, self.height//1.2, wait = 0.5)
     
+    def tellMeSubmitOrders(self):
+        """告知我已交付订单"""
+        if self.submitOrders:
+            self.log.info("已提交订单"+" ".join(self.submitOrders))
+            self.submitOrders.clear()
+        else:
+            self.log.info("无满足条件订单提交")
+    
     def gotoFriendOrdersAndSpend(self):
         if self.inLocation(self.ScreenLocs.friendTradingPost, self.ScreenCut.cut7x2(0, 1)):
             #check orders
@@ -869,9 +885,7 @@ class JCZXGame:
                     if not self._clickAndMsg(self.Buttons.friendOrders_button, f"进入【好友交易所】{index}", f"进入【好友交易所】{index}失败", wait=0.1, cutPoints = self.ScreenCut.cut4x1(2, 0)):
                         self.gotoHome()
                         self.log.warning(f"未处于【好友列表】 任务结束")
-                        if self.submitOrders:
-                            self.log.info("已提交订单"+" ".join(self.submitOrders))
-                            self.submitOrders.clear()
+                        self.tellMeSubmitOrders()
                         return
                     #check orders
                     self.checkAndSpendOrders()
@@ -881,9 +895,7 @@ class JCZXGame:
             else:
                 break
         self.gotoHome()
-        if self.submitOrders:
-            self.log.info("已提交订单"+" ".join(self.submitOrders))
-            self.submitOrders.clear()
+        self.tellMeSubmitOrders()
     
     def back(self, wait:int = 1):
         if self.Pos.backPos:
@@ -1062,11 +1074,10 @@ class WorkThread(QThread):
         self.config = config
     
     def stop(self):
+        if not self.isRunning(): return
         match self.mode:
             case self.ORDER:
-                if self.adb.submitOrders:
-                    self.log.info("已提交订单"+" ".join(self.adb.submitOrders))
-                    self.adb.submitOrders.clear()
+                self.adb.tellMeSubmitOrders()
             case self.SWITCH:
                 ...
         self.terminate()
@@ -1093,7 +1104,7 @@ class WorkThread(QThread):
             self.log.error("捕获到错误抛出 请查看日志")
 
     def __debug(self):
-        self.adb.clickCloseUseThisTeam(1)
+        self.adb.checkAndSpendOrders()
         ...
         
     def setADB(self, adb):
@@ -1159,7 +1170,7 @@ class WorkThread(QThread):
             self.adb.clickReadyTeamPlane()
             if FriendsWifeLocations := self.adb.findHelpFightFriendsWifeLocations():
                 if emptyLocation := self.adb.findImageCenterLocation(self.adb.ScreenLocs.emptyPlace2x2):
-                    self.adb.dragAndDrop(*FriendsWifeLocations[0], *emptyLocation, wait = 0.5)
+                    self.adb.dragAndDrop(*FriendsWifeLocations[0], *emptyLocation, 500, wait = 0.5)
                 else:
                     self.adb.gotoHome()
                     self.log.info("当前1号队伍无2x2空位 已停止任务")
@@ -1173,6 +1184,7 @@ class WorkThread(QThread):
             self.adb.back()
             self.adb.makeSureQuit()
             self.log.info(f"助战 {i+1}次")
+        self.log.info("【助战任务】结束")
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
