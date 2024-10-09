@@ -642,7 +642,7 @@ class Ui_Form(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt; font-weight:700;\">Version: Alpha 0.1.2 帮助文档</span></p>\n"
+"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt; font-weight:700;\">Version: Alpha 0.1.3 帮助文档</span></p>\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:700;\">该版本为</span><span style=\" font-weight:700; color:#0055ff;\">开发版本</span><span style=\" font-weight:700;\">，功能可能</span><span style=\" font-weight:700; color:#ff5500;\">不稳定</span></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">ADB路径</span><span style=\" font-size:8pt;\">：模拟器目录下的</span><span style=\" font-size:8pt; color:#ff0000;\">ADB.exe</span><span style=\" font-size:8pt;\">调试程序路径</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">设备列表</span><span style=\" font-size:8pt;\">：模拟器下的设备，默认获取第一个设备</span></p>\n"
