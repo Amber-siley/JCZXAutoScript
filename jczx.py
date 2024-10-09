@@ -1,5 +1,6 @@
 from typing import Any
 from os.path import exists,join,abspath
+from os import startfile
 from json import load,dumps
 from time import sleep
 from datetime import datetime
@@ -90,7 +91,12 @@ class LoggerHandler(logging.Handler):
         return msg
     
 class MainManager(Ui_Form):
-    FunctionWidgetNum = 1
+    class _Chart:
+        GrowthItems = joinPath("resources","toolChart","养成材料一览.png")
+        ItemsEX = joinPath("resources","toolChart","材料掉率一图流.jpg")
+        Chips = joinPath("resources","toolChart","芯片获得途径.jpg")
+    
+    Chart = _Chart()
     
     def __init__(self, app: QApplication) -> None:
         self.app = app
@@ -149,7 +155,11 @@ class MainManager(Ui_Form):
         self.stop_all_task_Button.clicked.connect(self.stopTask)
         self.auto_agree_friend_Button.clicked.connect(lambda: self.createWork(self.work_thread.ACCEPT))
         self.brushing_surportAwards_Button.clicked.connect(lambda: self.createWork(self.work_thread.AWARD))
+        self.only_checkSpendThisTradingPost_Button.clicked.connect(lambda: self.createWork(self.work_thread.ONLY_THIS_ORDERS))
         self.refresh_devices_Button.clicked.connect(self.__init_devices)
+        self.growthItems_Button.clicked.connect(lambda: startfile(self.Chart.GrowthItems))
+        self.ItemsEX_Button.clicked.connect(lambda: startfile(self.Chart.ItemsEX))
+        self.Chips_Button.clicked.connect(lambda: startfile(self.Chart.Chips))
         
         self.test_button.clicked.connect(self.__debug)
     
@@ -472,6 +482,7 @@ class JCZXGame:
     class _ScreenLocs:
         friend = joinPath("resources","locations","friend.png")
         levels = joinPath("resources","locations","levels.png")
+        whateverTradingPost = joinPath("resources","locations","whateverTradingPost.png")
         illusionAward = joinPath("resources","locations","illusionAward.png")
         emptyPlace2x2 = joinPath("resources","locations","emptyPlace2x2.png")
         helpFriend = joinPath("resources","locations","helpFriend.png")
@@ -535,6 +546,12 @@ class JCZXGame:
     def inLocationWhateverIllusion(self): return self.inLocation(self.ScreenLocs.illusionAward, self.ScreenCut.cut9x2(8, 0))
     @property
     def needSureEnterFight(self): return self.inLocation(self.ScreenLocs.sureEnter, self.ScreenCut.cut2x2(1, 1))
+    @property
+    def inLocationFriendTradingPost(self): return self.inLocation(self.ScreenLocs.friendTradingPost, self.ScreenCut.cut7x2(0, 1))
+    @property
+    def inLocationTradingPost(self): return self.inLocation(self.ScreenLocs.tradingPost, self.ScreenCut.cut7x2(0, 1))
+    @property
+    def inLocationWhateverTradingPost(self): return self.inLocation(self.ScreenLocs.whateverTradingPost, self.ScreenCut.cut7x2(0, 1))
     
     Buttons = _Buttons()
     Numbers = _Numbers()
@@ -788,8 +805,8 @@ class JCZXGame:
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
                     self.back(0.3)
                     self.back(0.3)
-                    self._clickAndMsg(img, wait = 0.3)
-                    self.makeSure2()
+                    self._clickAndMsg(img, wait = 1)
+                    self.makeSure2(2)
                     self.submitOrders.append(des)
                 else:
                     self.click(*locality, 0.3)
@@ -1065,6 +1082,7 @@ class WorkThread(QThread):
     DEBUG = "Debug"
     ACCEPT = "自动同意申请"
     AWARD = "刷助战奖励"
+    ONLY_THIS_ORDERS = "仅当前订单"
     
     def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
         super().__init__()
@@ -1098,6 +1116,8 @@ class WorkThread(QThread):
                     self.autoAccept()
                 case self.AWARD:
                     self.award()
+                case self.ONLY_THIS_ORDERS:
+                    self.only_ths_orders()
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
         except:
@@ -1164,8 +1184,9 @@ class WorkThread(QThread):
         self.log.info("开始【刷取助战奖励】任务")
         for i in range(20):
             self.adb.gotoGeLiKeIllusion()
+            if i == 0:  sleep(2)
             self.adb.clickStartFight()
-            self.adb.clickCloseUseThisTeam(1)
+            # self.adb.clickCloseUseThisTeam(1)
             self.adb.clickHelpFight(0)
             self.adb.clickReadyTeamPlane()
             if FriendsWifeLocations := self.adb.findHelpFightFriendsWifeLocations():
@@ -1184,7 +1205,19 @@ class WorkThread(QThread):
             self.adb.back()
             self.adb.makeSureQuit()
             self.log.info(f"助战 {i+1}次")
+        self.adb.gotoHome()
         self.log.info("【助战任务】结束")
+    
+    @check
+    def only_ths_orders(self):
+        self.log.info("开始【检索交付当前订单】任务")
+        if self.adb.inLocationWhateverTradingPost:
+            self.adb.checkAndSpendOrders()
+        else:
+            self.adb.gotoTradingPost()
+            self.adb.checkAndSpendOrders()
+        self.adb.tellMeSubmitOrders()
+        self.log.info("【检索交付当前订单】结束")
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
