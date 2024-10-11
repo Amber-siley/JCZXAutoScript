@@ -95,6 +95,7 @@ class MainManager(Ui_Form):
         GrowthItems = joinPath("resources","toolChart","养成材料一览.png")
         ItemsEX = joinPath("resources","toolChart","材料掉率一图流.jpg")
         Chips = joinPath("resources","toolChart","芯片获得途径.jpg")
+        ChoiceChips = joinPath("resources","toolChart","自选芯片.jpg")
     
     Chart = _Chart()
     
@@ -160,6 +161,7 @@ class MainManager(Ui_Form):
         self.growthItems_Button.clicked.connect(lambda: startfile(self.Chart.GrowthItems))
         self.ItemsEX_Button.clicked.connect(lambda: startfile(self.Chart.ItemsEX))
         self.Chips_Button.clicked.connect(lambda: startfile(self.Chart.Chips))
+        self.choice_Chips_Button.clicked.connect(lambda: startfile(self.Chart.ChoiceChips))
         
         self.test_button.clicked.connect(self.__debug)
     
@@ -395,7 +397,7 @@ class JCZXGame:
         activities_button = joinPath("resources","buttons","activities.png")
         apply_button = joinPath("resources","buttons","apply.png")
         accept_button = joinPath("resources","buttons","accept.png")
-        cannotSubmit_button = joinPath("resources","buttons","cannotSubmit.png")
+        submit_button = joinPath("resources","buttons","submit.png")
         getItem_button = joinPath("resources","buttons","getItem.png")
         closeNotice_button = joinPath("resources","buttons","closeNotice.png")
         noReminders_button = joinPath("resources","buttons","noReminders.png")
@@ -482,6 +484,7 @@ class JCZXGame:
     class _ScreenLocs:
         friend = joinPath("resources","locations","friend.png")
         levels = joinPath("resources","locations","levels.png")
+        notEnough = joinPath("resources","locations","notEnough.png")
         whateverTradingPost = joinPath("resources","locations","whateverTradingPost.png")
         illusionAward = joinPath("resources","locations","illusionAward.png")
         emptyPlace2x2 = joinPath("resources","locations","emptyPlace2x2.png")
@@ -489,7 +492,7 @@ class JCZXGame:
         sureEnter = joinPath("resources","buttons","sureEnter.png")
         illusions = joinPath("resources","locations","illusions.png")
         activities = joinPath("resources","locations","activities.png")
-        notEnough = joinPath("resources","locations","notEnough.png")
+        notEnoughAsk = joinPath("resources","locations","notEnoughAsk.png")
         tabBar = joinPath("resources","locations","tabBar.png")
         getItem= joinPath("resources","buttons","getItem.png")
         home = joinPath("resources","buttons","friends.png")
@@ -777,8 +780,9 @@ class JCZXGame:
                 x, y = locality
                 x0, y0 = x-w//2, y+h//2
                 x1, y1 = x+w//2, y+h//2+h
-                if self.findImageCenterLocation(self.Buttons.cannotSubmit_button, ((x0, y0), (x1, y1)), per = 0.95):
+                if self.findImageCenterLocation(self.ScreenLocs.notEnough, ((x0, y0), (x1, y1)), 0.8):
                     if not craft:
+                        self.log.info("当前订单材料不足")
                         # self._clickAndMsg(self.Buttons.cancel_button, wait = 0.3, cutPoints = self.ScreenCut.cut4x2(1, 1))
                         continue
                     self.click(*locality, 0.3)
@@ -1024,6 +1028,8 @@ class JCZXGame:
         else:
             x0, y0 = 0, 0
         screenshot_gray = self.grayScreenshot(cutPoints)
+        # cv2.imshow("1", screenshot_gray)
+        # cv2.waitKey()
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > per)

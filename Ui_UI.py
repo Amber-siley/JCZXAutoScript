@@ -414,6 +414,24 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.growthItems_Button.setObjectName("growthItems_Button")
+        self.choice_Chips_Button = QtWidgets.QPushButton(parent=self.scrollAreaWidgetContents_2)
+        self.choice_Chips_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
+        self.choice_Chips_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.choice_Chips_Button.setObjectName("choice_Chips_Button")
         self.scrollArea.setWidget(self.scrollAreaWidgetContents_2)
         self.functionALL_tabWidget.addTab(self.Charts_tab, "")
         self.orderList_scrollArea = QtWidgets.QScrollArea(parent=Form)
@@ -672,6 +690,7 @@ class Ui_Form(object):
         self.Chips_Button.setText(_translate("Form", "芯片获得途径一览"))
         self.ItemsEX_Button.setText(_translate("Form", "养成材料掉率一览"))
         self.growthItems_Button.setText(_translate("Form", "角色养成材料一览"))
+        self.choice_Chips_Button.setText(_translate("Form", "自选箱芯片一览"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.Charts_tab), _translate("Form", "图表"))
         self.order_exp1012w_checkBox.setText(_translate("Form", "10换12w经验"))
         self.order_coin1012w_checkBox.setText(_translate("Form", "10换12w星币"))

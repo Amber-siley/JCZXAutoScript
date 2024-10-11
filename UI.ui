@@ -851,6 +851,36 @@ QPushButton:pressed, QPushButton:checked {
         <string>角色养成材料一览</string>
        </property>
       </widget>
+      <widget class="QPushButton" name="choice_Chips_Button">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>126</y>
+         <width>175</width>
+         <height>42</height>
+        </rect>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+       </property>
+       <property name="text">
+        <string>自选箱芯片一览</string>
+       </property>
+      </widget>
      </widget>
     </widget>
    </widget>
