@@ -1085,6 +1085,7 @@ class JCZXGame:
             info = subprocess.check_output([self.adb_path, "devices"], startupinfo = self.startupinfo)
             return list(map(lambda x:x[:x.find("\t")], info.decode().split("\r\n")))[1:-2]
         except:
+            self.log.error("adb端口占用，或者模拟器未打开，请重启\打开模拟器，亦或者电脑")
             return []
             
 class WorkThread(QThread):
