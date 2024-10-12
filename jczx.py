@@ -808,8 +808,9 @@ class JCZXGame:
                         self.addAndCraft(expRawNum)
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
                     self.back(0.3)
-                    self.back(0.3)
-                    self._clickAndMsg(img, wait = 1)
+                    self.back(0.5)
+                    # self._clickAndMsg(img, wait = 1)
+                    self.click(*locality, 1)
                     self.makeSure2(2)
                     self.submitOrders.append(des)
                 else:
@@ -1080,8 +1081,12 @@ class JCZXGame:
     
     @check
     def devices(self) -> list[str]:
-        return list(map(lambda x:x[:x.find("\t")], subprocess.check_output([self.adb_path, "devices"], startupinfo = self.startupinfo).decode().split("\r\n")))[1:-2]
-
+        try:
+            info = subprocess.check_output([self.adb_path, "devices"], startupinfo = self.startupinfo)
+            return list(map(lambda x:x[:x.find("\t")], info.decode().split("\r\n")))[1:-2]
+        except:
+            return []
+            
 class WorkThread(QThread):
     ORDER = "交付订单"
     SWITCH = "矿场换班"
