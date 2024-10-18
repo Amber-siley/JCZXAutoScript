@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any,Callable
 from os.path import exists,join,abspath
 from os import startfile
 from json import load,dumps
@@ -57,8 +57,38 @@ DEFAULT_CONFIGS = {
             "enable": False,
             "craft": False
         }
+    },
+    "illusions":{
+        "level": {
+            "index": 0,
+            "illusionNum": 0,
+            "title": "戈里刻-阿瑞斯",
+            "SwipeUP": False
+        },
+        "teamNum": 0
     }
 }
+
+ILLUSION_LEVELS_SETTINGS = [
+    {
+        "index": 0,
+        "illusionNum": 0,
+        "title": "戈里刻-阿瑞斯",
+        "SwipeUP": False
+    },
+    {
+        "index": 1,
+        "illusionNum": 0,
+        "title": "戈里刻-宙斯",
+        "SwipeUP": True
+    },
+    {
+        "index": 2,
+        "illusionNum": 2,
+        "title": "尼克罗-弗利亚多",
+        "SwipeUP": True
+    }
+]
 
 class LoggerHandler(logging.Handler):
     def __init__(self, edit) -> None:
@@ -114,6 +144,7 @@ class MainManager(Ui_Form):
     
     def init(self):
         """初始化"""
+        self.__init_illusionSettings()
         self.__init_buttom()
         self.__init_menu()
         self.__init_orderlist()
@@ -153,15 +184,20 @@ class MainManager(Ui_Form):
         self.adb_devices_comboBox.currentTextChanged.connect(self.setDeviceConfig)
         self.start_switch_work_Button.clicked.connect(lambda: self.createWork(self.work_thread.SWITCH))
         self.start_spend_order_Button.clicked.connect(lambda: self.createWork(self.work_thread.ORDER))
+        self.start_spend_order_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(0))
         self.stop_all_task_Button.clicked.connect(self.stopTask)
         self.auto_agree_friend_Button.clicked.connect(lambda: self.createWork(self.work_thread.ACCEPT))
         self.brushing_surportAwards_Button.clicked.connect(lambda: self.createWork(self.work_thread.AWARD))
         self.only_checkSpendThisTradingPost_Button.clicked.connect(lambda: self.createWork(self.work_thread.ONLY_THIS_ORDERS))
+        self.start_smallCrystal_Button.clicked.connect(lambda: self.createWork(self.work_thread.SMALL_CRYSTAL))
         self.refresh_devices_Button.clicked.connect(self.__init_devices)
         self.growthItems_Button.clicked.connect(lambda: startfile(self.Chart.GrowthItems))
         self.ItemsEX_Button.clicked.connect(lambda: startfile(self.Chart.ItemsEX))
         self.Chips_Button.clicked.connect(lambda: startfile(self.Chart.Chips))
         self.choice_Chips_Button.clicked.connect(lambda: startfile(self.Chart.ChoiceChips))
+        self.start_smallCrystal_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(2))
+        self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
+        self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
         
         self.test_button.clicked.connect(self.__debug)
     
@@ -200,6 +236,12 @@ class MainManager(Ui_Form):
         self.craft_exp1012w_enable_checkBox.setChecked(self.config.exp1012.craft)
         self.order_exp1012w_checkBox.stateChanged.connect(lambda: self.config.set_config(("orders","exp_1012","enable"), self.order_exp1012w_checkBox.isChecked()))
         self.craft_exp1012w_enable_checkBox.stateChanged.connect(lambda: self.config.exp1012.setCraftEnable(self.craft_exp1012w_enable_checkBox.isChecked()))
+    
+    def __init_illusionSettings(self):
+        self.IllusionChoice_comboBox.addItems([i["title"] for i in ILLUSION_LEVELS_SETTINGS])
+        self.IllusionChoice_comboBox.setCurrentIndex(self.config.illusion.level.index)
+        self.IllusionChoiceTeam_comboBox.addItems(["1号队伍", "2号队伍"])
+        self.IllusionChoiceTeam_comboBox.setCurrentIndex(self.config.illusion.teamNum)
     
     def stopTask(self):
         if self.work_thread.isRunning():
@@ -295,6 +337,31 @@ class JsonConfig:
         
         def setCraftEnable(self, enable:bool) -> None:
             self.__config.set_config(("orders", self.opt, "craft"), enable)
+    
+    class IllusionSetting:
+        class Level:
+            def __init__(self, configs) -> None:
+                self.index = configs["index"]
+                self.title = configs["title"]
+                self.illusionNum = configs["illusionNum"]
+                self.swipeUP = configs["SwipeUP"]
+            
+        def __init__(self, config) -> None:
+            self.__config = config
+        
+        @property
+        def level(self) -> Level:
+            return self.Level(self.__config.get_config(("illusions", "level")))
+
+        def setLevel(self, index:int):
+            self.__config.set_config(("illusions", "level"), ILLUSION_LEVELS_SETTINGS[index])
+        
+        def setTeamNum(self, num:int):
+            self.__config.set_config(("illusions", "teamNum"), num)
+        
+        @property
+        def teamNum(self) -> int:
+            return self.__config.get_config(("illusions", "teamNum"))
         
     def __init__(self, path, default:dict = {}) -> None:
         self.path = path
@@ -303,6 +370,7 @@ class JsonConfig:
             self.set_default()
             
         self._configs:dict = load(open(self.path, encoding = "utf-8"))
+        self.illusion = self.IllusionSetting(self)
     
     def set_config(self,sec:str | tuple,value:Any):
         """设置配置项"""
@@ -384,7 +452,10 @@ class JCZXGame:
         
     class _Buttons:
         back_button = joinPath("resources","buttons","back.png")
+        skipAnimation_button = joinPath("resources","buttons","skipAnimation.png")
+        fightAuto_button = joinPath("resources","buttons","fightAuto.png")
         plane_button = joinPath("resources","buttons","plane.png")
+        ZhouSi_button = joinPath("resources","buttons","ZhouSi.png")
         sureQuit_button = joinPath("resources","buttons","sureQuit.png")
         startToAct_button = joinPath("resources","buttons","startToAct.png")
         fight_button = joinPath("resources","buttons","fight.png")
@@ -484,6 +555,19 @@ class JCZXGame:
     class _ScreenLocs:
         friend = joinPath("resources","locations","friend.png")
         levels = joinPath("resources","locations","levels.png")
+        enoughSmallCrytal = joinPath("resources","locations","enoughSmallCrytal.png")
+        fightWin = joinPath("resources","locations","fightWin.png")
+        onFight = joinPath("resources","locations","onFight.png")
+        inIllusions = joinPath("resources","locations","inIllusions.png")
+        ZhouSiDun = joinPath("resources","locations","ZhouSiDun.png")
+        ZhouSi_a_1 = joinPath("resources","locations","ZhouSi_a_1.png")
+        ZhouSi_a_3 = joinPath("resources","locations","ZhouSi_a_3.png")
+        ZhouSi_b_1 = joinPath("resources","locations","ZhouSi_b_1.png")
+        ZhouSi_b_2 = joinPath("resources","locations","ZhouSi_b_2.png")
+        ZhouSi_b_3 = joinPath("resources","locations","ZhouSi_b_3.png")
+        ZhouSiBoss_a = joinPath("resources","locations","ZhouSiBoss_a.png")
+        ZhouSiBoss_b = joinPath("resources","locations","ZhouSiBoss_b.png")
+        GeLiKeIllusionSwipe = joinPath("resources","locations","GeLiKeIllusionSwipe.png")
         notEnough = joinPath("resources","locations","notEnough.png")
         whateverTradingPost = joinPath("resources","locations","whateverTradingPost.png")
         illusionAward = joinPath("resources","locations","illusionAward.png")
@@ -554,8 +638,19 @@ class JCZXGame:
     @property
     def inLocationTradingPost(self): return self.inLocation(self.ScreenLocs.tradingPost, self.ScreenCut.cut7x2(0, 1))
     @property
+    def inLocationONfight(self): return self.inLocation(self.ScreenLocs.onFight, self.ScreenCut.cut4x3(0, 0), 0.5)
+    @property
+    def inLocationFightWin(self): return self.inLocation(self.ScreenLocs.fightWin, self.ScreenCut.cut2x2(0, 0))
+    @property
+    def inLocationGetItems(self): return self.inLocation(self.ScreenLocs.getItem, self.ScreenCut.cut3x2(1, 0), 0.8)
+    @property
+    def inLocationEnoughSmallCrystal(self): return self.inLocation(self.ScreenLocs.enoughSmallCrytal, self.ScreenCut.cut3x7(0, 6))
+    @property
     def inLocationWhateverTradingPost(self): return self.inLocation(self.ScreenLocs.whateverTradingPost, self.ScreenCut.cut7x2(0, 1))
-    
+    def inLocationWhateverIllusionLevelsFget(self): return self.inLocation(self.ScreenLocs.inIllusions, self.ScreenCut.cut4x3(0, 2))
+    @property
+    def inLocationWhateverIllusionLevels(self):  return self.inLocationWhateverIllusionLevelsFget()
+
     Buttons = _Buttons()
     Numbers = _Numbers()
     Orders = _Orders()
@@ -569,8 +664,8 @@ class JCZXGame:
                 return func(self, *args, **kwargs)
         return wrapper
     
-    def inLocation(self, screen_loc, cutPoints:tuple[tuple[int, int]] = None) -> bool:
-        return bool(self.findImageCenterLocations(screen_loc, cutPoints))
+    def inLocation(self, screen_loc, cutPoints:tuple[tuple[int, int]] = None, per = 0.9) -> bool:
+        return bool(self.findImageCenterLocations(screen_loc, cutPoints, per))
     
     def getScreenSize(self) -> tuple[int, int]:
         if self.size:
@@ -595,9 +690,20 @@ class JCZXGame:
     
     def click(self, x:int, y:int, wait:int = 0):
         subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)], startupinfo = self.startupinfo)
-        if wait:
-            sleep(wait)
+        sleep(wait)
     
+    def waitClick(self, x:int, y:int, newLocation:str | Callable, wait = 0):
+        while True:
+            self.click(x, y)
+            if isinstance(newLocation, str):
+                if self.inLocation(newLocation):
+                    break
+            else:
+                if newLocation():
+                    break
+            sleep(0.3)
+        sleep(wait)
+                    
     def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None, per = 0.9) -> tuple[int, int] | None:
         if locations := self.findImageCenterLocations(button_path, cutPoints, per):
             self.click(*locations[index], wait)
@@ -621,6 +727,9 @@ class JCZXGame:
     def clickGeLiKeillusion(self):
         return self._clickAndMsg(self.Buttons.GeLiKe_button, "前往【戈里克虚影】", "前往【戈里克虚影】失败", wait = 1, cutPoints = self.ScreenCut.cut1x2(0, 1))
     
+    def clickIllusionZhouSi(self):
+        return self._clickAndMsg(self.Buttons.ZhouSi_button, wait = 1, cutPoints = self.ScreenCut.cut3x1(1, 0))
+    
     def clickStartFight(self):
         if loc := self._clickAndMsg(self.Buttons.startFight_button, "准备战斗", "准备战斗异常", wait = 1, cutPoints = self.ScreenCut.cut3x4(2, 3)):
             if self.needSureEnterFight: self.makeSureEnter(2)
@@ -632,8 +741,14 @@ class JCZXGame:
     def clickCloseUseThisTeam(self, index:int = None):
         return self._clickAndMsg(self.Buttons.useTeam_button, index = index, wait = 0.1, cutPoints = self.ScreenCut.cut4x1(3, 0))
     
-    def clickStartToAct(self):
-        return self._clickAndMsg(self.Buttons.startToAct_button, "开始战斗", "开始战斗异常", wait = 6, cutPoints = self.ScreenCut.cut3x4(2, 3))
+    def clickStartToAct(self, wait, log = True):
+        if log:
+            return self._waitClickAndMsg(self.Buttons.startToAct_button, self.inLocationWhateverIllusionLevelsFget, "开始战斗", "开始战斗异常", wait = wait, cutPoints = self.ScreenCut.cut3x4(2, 3))
+        else:
+            return self._waitClickAndMsg(self.Buttons.startToAct_button, self.inLocationWhateverIllusionLevelsFget, wait = wait, cutPoints = self.ScreenCut.cut3x4(2, 3))
+    
+    def clickSkipAnimation(self, log = False):
+        return self._clickAndMsg(self.Buttons.skipAnimation_button, log = log, cutPoints = self.ScreenCut.cut4x3(3, 0), per = 0.8)
     
     def clickReadyTeamPlane(self):
         return self._clickAndMsg(self.Buttons.plane_button, wait = 0.7, log = False, cutPoints = self.ScreenCut.cut3x7(1, 6))
@@ -670,6 +785,10 @@ class JCZXGame:
         else:
             if loc := self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0)):
                 self.Pos.homePos = loc
+            else:
+                self.back(1)
+                self.makeSure(5)
+                self.gotoHome()
         sleep(3)
     
     def gotoLevels(self):
@@ -706,7 +825,44 @@ class JCZXGame:
         else:
             self.gotoIllusions()
             self.clickGeLiKeillusion()
+            self.gotoGeLiKeIllusion()
     
+    def gotoIllusionZhouSi(self):
+        self.gotoGeLiKeIllusion()
+        self.swipeUPIllusionList()
+        self.clickIllusionZhouSi()
+    
+    def playIllusionZhouSi(self):
+        if loc := self.findImageCenterLocation(self.ScreenLocs.ZhouSi_a_1, cutPoints = self.ScreenCut.cut2x1(1, 0), per = 0.95):
+            self.click(*loc, wait = 3)
+            # self.waitClick(loc[0], loc[1]+60, self.ScreenLocs.ZhouSi_a_3)
+            self.click(self.width//2, self.height//1.7, 7)
+            if not self._clickAndMsg(self.ScreenLocs.ZhouSi_a_3, wait = 3, log = False, cutPoints = self.ScreenCut.cut1x2(0, 0)):
+                self.autoPlayLevels()
+                self._clickAndMsg(self.ScreenLocs.ZhouSi_a_3, wait = 3, log = False, cutPoints = self.ScreenCut.cut1x2(0, 0))
+            self._clickAndMsg(self.ScreenLocs.ZhouSiBoss_a,  wait = 3, cutPoints = self.ScreenCut.cut1x2(0, 0), per = 0.8)
+            self.autoPlayLevels()
+        else:
+            self._clickAndMsg(self.ScreenLocs.ZhouSi_b_1, wait = 3, log = False, cutPoints = self.ScreenCut.cut2x1(0, 0))
+            self._clickAndMsg(self.ScreenLocs.ZhouSi_b_2, wait = 7, log = False, cutPoints = self.ScreenCut.cut3x3(1, 1))
+            if not self._clickAndMsg(self.ScreenLocs.ZhouSi_b_3, wait = 3, log = False, cutPoints = self.ScreenCut.cut1x2(0, 0)):
+                self.autoPlayLevels()
+                self._clickAndMsg(self.ScreenLocs.ZhouSi_b_3, wait = 3, log = False, cutPoints = self.ScreenCut.cut1x2(0, 0))
+            self._clickAndMsg(self.ScreenLocs.ZhouSiBoss_b, wait = 3, cutPoints = self.ScreenCut.cut1x2(0, 0), per = 0.8)
+            self.autoPlayLevels()
+    
+    def autoPlayLevels(self):
+        while not self.inLocationONfight:
+            self.clickSkipAnimation()
+            sleep(0.3)
+        self._clickAndMsg(self.Buttons.fightAuto_button, log = False, cutPoints = self.ScreenCut.cut4x3(3, 0), per = 0.8)
+        while not self.inLocationFightWin:
+            if self.inLocationGetItems:
+                self.click(self.width//2, self.height//2, 1)
+            sleep(0.3)
+        self.click(self.width//2, self.height//2, 1)
+        self.click(self.width//2, self.height//2, 7)
+        
     def gotoIllusions(self):
         if self.inLocationIllusions:
             return
@@ -872,13 +1028,17 @@ class JCZXGame:
             loc = self._clickAndMsg(self.Buttons.sureQuit_button, wait = wait, cutPoints = self.ScreenCut.cut2x2(1, 1))
             self.Pos.surePos = loc
     
+    def quitLevels(self):
+        self.back()
+        self.makeSureQuit()
+    
     def makeSure2(self, wait = 1):
         self.makeSure(wait)
         self.click(self.width//2, self.height//1.2, wait = 0.3)
     
     def craftSure(self):
         if self.Pos.craftPos:
-            self.click(*self.Pos.craftPos)
+            self.click(*self.Pos.craftPos, wait = 1)
         else:
             loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 1, cutPoints = self.ScreenCut.cut3x3(2, 2))
             self.Pos.craftPos = loc
@@ -980,6 +1140,21 @@ class JCZXGame:
             if warnMsg: self.log.warning(warnMsg)
             return None
     
+    def _waitClickAndMsg(self, button_path, newLocation: Callable | str, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = False, cutPoints = None, per = 0.9) -> None:
+        """等待并点击按钮，性能消耗较大,稳定性较差
+        - newLocation 点击按钮后前往的界面
+        """
+        while True:
+            self._clickAndMsg(button_path, infoMsg, warnMsg, index, 0, log, cutPoints, per)
+            if isinstance(newLocation, str):
+                if self.inLocation(newLocation):
+                    break
+            else:
+                if newLocation():
+                    break
+            sleep(0.3)
+        sleep(wait)
+    
     def findImageLeftUPLocations(self, button_path:str, cutPoints = None) -> list[tuple[int, int]] | None:
         if cutPoints:
             x0, y0 = cutPoints[0]
@@ -1069,9 +1244,16 @@ class JCZXGame:
         if wait:
             sleep(wait)
     
-    def swipeUPScreenCenter(self):
-        self.swipe(self.width//2, self.height//1.4, self.width//2, self.height//2, 200, 1.5)
+    def swipeUPScreenCenter(self, wait = 1.5):
+        self.swipe(self.width//2, self.height//1.4, self.width//2, self.height//2, 200, wait)
 
+    def swipeUPIllusionList(self):
+        if loc := self.findImageCenterLocations(self.ScreenLocs.GeLiKeIllusionSwipe, cutPoints = self.ScreenCut.cut3x1(1, 0), per = 0.8):
+            x, y = loc[-1]
+            self.log.debug(f"{loc}")
+            self.swipe(x, y, x, y-200, wait = 0.5)
+        return loc
+    
     def setDevice(self, device):
         self.device = device
         self.initDeviceInfor()
@@ -1095,6 +1277,7 @@ class WorkThread(QThread):
     ACCEPT = "自动同意申请"
     AWARD = "刷助战奖励"
     ONLY_THIS_ORDERS = "仅当前订单"
+    SMALL_CRYSTAL = "虚影微晶任务"
     
     def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
         super().__init__()
@@ -1130,13 +1313,15 @@ class WorkThread(QThread):
                     self.award()
                 case self.ONLY_THIS_ORDERS:
                     self.only_ths_orders()
+                case self.SMALL_CRYSTAL:
+                    self.small_crystal()
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
-        except:
-            self.log.error("捕获到错误抛出 请查看日志")
+        except Exception as e:
+            self.log.error(f"捕获到错误抛出 {e}")
 
     def __debug(self):
-        self.adb.checkAndSpendOrders()
+        self.adb.autoPlayLevels()
         ...
         
     def setADB(self, adb):
@@ -1214,8 +1399,7 @@ class WorkThread(QThread):
                 break
             self.adb.back(0.5)
             self.adb.clickStartToAct()
-            self.adb.back()
-            self.adb.makeSureQuit()
+            self.adb.quitLevels()
             self.log.info(f"助战 {i+1}次")
         self.adb.gotoHome()
         self.log.info("【助战任务】结束")
@@ -1231,6 +1415,29 @@ class WorkThread(QThread):
         self.adb.tellMeSubmitOrders()
         self.log.info("【检索交付当前订单】结束")
     
+    @check
+    def small_crystal(self):
+        self.log.info("开始【虚影微晶】任务")
+        adb = self.adb
+        match self.config.illusion.level.index:
+            case 0:
+                #阿瑞斯
+                self.log.info("哥，功能还没写呢，别用")
+            case 1:
+                #宙斯
+                adb.gotoGeLiKeIllusion()
+                while not adb.inLocationEnoughSmallCrystal:
+                    adb.gotoIllusionZhouSi()
+                    adb.clickStartFight()
+                    adb.clickCloseUseThisTeam(0 if self.config.illusion.teamNum else 1)
+                    adb.clickStartToAct(0, False)
+                    adb.playIllusionZhouSi()
+                self.log.info("微晶已满【虚影微晶】任务结束")
+            case 2:
+                #弗利亚多
+                self.log.info("哥，功能还没写呢，别用")
+                ...
+        
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     manager = MainManager(app)

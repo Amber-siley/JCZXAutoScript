@@ -177,17 +177,6 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.stop_all_task_Button.setObjectName("stop_all_task_Button")
-        self.oder_list_label = QtWidgets.QLabel(parent=Form)
-        self.oder_list_label.setGeometry(QtCore.QRect(400, 0, 121, 24))
-        self.oder_list_label.setToolTip("")
-        self.oder_list_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.oder_list_label.setIndent(-1)
-        self.oder_list_label.setObjectName("oder_list_label")
-        self.craft_enable_label = QtWidgets.QLabel(parent=Form)
-        self.craft_enable_label.setGeometry(QtCore.QRect(520, 0, 60, 24))
-        self.craft_enable_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.craft_enable_label.setIndent(-1)
-        self.craft_enable_label.setObjectName("craft_enable_label")
         self.adb_devices_comboBox = QtWidgets.QComboBox(parent=Form)
         self.adb_devices_comboBox.setGeometry(QtCore.QRect(70, 24, 105, 24))
         self.adb_devices_comboBox.setObjectName("adb_devices_comboBox")
@@ -290,6 +279,64 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.start_switch_work_Button.setObjectName("start_switch_work_Button")
+        self.start_smallCrystal_Button = QtWidgets.QPushButton(parent=self.function1_widget)
+        self.start_smallCrystal_Button.setGeometry(QtCore.QRect(0, 84, 175, 42))
+        self.start_smallCrystal_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_smallCrystal_Button.setObjectName("start_smallCrystal_Button")
+        self.start_smallCrystal_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
+        self.start_smallCrystal_settings_Button.setGeometry(QtCore.QRect(150, 84, 24, 42))
+        self.start_smallCrystal_settings_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        icon1 = QtGui.QIcon()
+        icon1.addPixmap(QtGui.QPixmap("C:/Users/enjoy/AppData/Local/New Technology Studio/Apps/OpenIV/Resources/Graphics/UI/Icons/settings.ico"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.start_smallCrystal_settings_Button.setIcon(icon1)
+        self.start_smallCrystal_settings_Button.setObjectName("start_smallCrystal_settings_Button")
+        self.start_spend_order_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
+        self.start_spend_order_settings_Button.setGeometry(QtCore.QRect(150, 0, 24, 42))
+        self.start_spend_order_settings_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_spend_order_settings_Button.setIcon(icon1)
+        self.start_spend_order_settings_Button.setObjectName("start_spend_order_settings_Button")
         self.functionALL_tabWidget.addTab(self.function1_tab, "")
         self.function2_tab = QtWidgets.QWidget()
         self.function2_tab.setObjectName("function2_tab")
@@ -434,156 +481,6 @@ class Ui_Form(object):
         self.choice_Chips_Button.setObjectName("choice_Chips_Button")
         self.scrollArea.setWidget(self.scrollAreaWidgetContents_2)
         self.functionALL_tabWidget.addTab(self.Charts_tab, "")
-        self.orderList_scrollArea = QtWidgets.QScrollArea(parent=Form)
-        self.orderList_scrollArea.setGeometry(QtCore.QRect(400, 24, 175, 160))
-        self.orderList_scrollArea.setWidgetResizable(True)
-        self.orderList_scrollArea.setObjectName("orderList_scrollArea")
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 175, 160))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.order_exp1012w_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.order_exp1012w_checkBox.setGeometry(QtCore.QRect(0, 120, 121, 20))
-        self.order_exp1012w_checkBox.setStyleSheet("QCheckBox {\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.order_exp1012w_checkBox.setShortcut("")
-        self.order_exp1012w_checkBox.setCheckable(True)
-        self.order_exp1012w_checkBox.setChecked(False)
-        self.order_exp1012w_checkBox.setAutoRepeat(False)
-        self.order_exp1012w_checkBox.setTristate(False)
-        self.order_exp1012w_checkBox.setObjectName("order_exp1012w_checkBox")
-        self.craft_build61_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.craft_build61_enable_checkBox.setGeometry(QtCore.QRect(120, 0, 60, 20))
-        self.craft_build61_enable_checkBox.setStyleSheet("QCheckBox {\n"
-"    padding-left: 20px;\n"
-"    border-top: 1px solid #dcdfe6;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.craft_build61_enable_checkBox.setText("")
-        self.craft_build61_enable_checkBox.setTristate(False)
-        self.craft_build61_enable_checkBox.setObjectName("craft_build61_enable_checkBox")
-        self.craft_build162_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.craft_build162_enable_checkBox.setGeometry(QtCore.QRect(120, 60, 60, 20))
-        self.craft_build162_enable_checkBox.setStyleSheet("QCheckBox {\n"
-"    padding-left: 20px;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.craft_build162_enable_checkBox.setText("")
-        self.craft_build162_enable_checkBox.setTristate(False)
-        self.craft_build162_enable_checkBox.setObjectName("craft_build162_enable_checkBox")
-        self.craft_build81_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.craft_build81_enable_checkBox.setGeometry(QtCore.QRect(120, 20, 60, 20))
-        self.craft_build81_enable_checkBox.setStyleSheet("QCheckBox {\n"
-"    padding-left: 20px;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.craft_build81_enable_checkBox.setText("")
-        self.craft_build81_enable_checkBox.setTristate(False)
-        self.craft_build81_enable_checkBox.setObjectName("craft_build81_enable_checkBox")
-        self.order_coin1012w_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.order_coin1012w_checkBox.setGeometry(QtCore.QRect(0, 100, 121, 20))
-        self.order_coin1012w_checkBox.setStyleSheet("QCheckBox {\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.order_coin1012w_checkBox.setShortcut("")
-        self.order_coin1012w_checkBox.setCheckable(True)
-        self.order_coin1012w_checkBox.setChecked(False)
-        self.order_coin1012w_checkBox.setAutoRepeat(False)
-        self.order_coin1012w_checkBox.setTristate(False)
-        self.order_coin1012w_checkBox.setObjectName("order_coin1012w_checkBox")
-        self.craft_coin1012w_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.craft_coin1012w_enable_checkBox.setGeometry(QtCore.QRect(120, 100, 60, 20))
-        self.craft_coin1012w_enable_checkBox.setStyleSheet("QCheckBox {\n"
-"    padding-left: 20px;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.craft_coin1012w_enable_checkBox.setText("")
-        self.craft_coin1012w_enable_checkBox.setTristate(False)
-        self.craft_coin1012w_enable_checkBox.setObjectName("craft_coin1012w_enable_checkBox")
-        self.order_build182_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.order_build182_checkBox.setGeometry(QtCore.QRect(0, 80, 121, 20))
-        self.order_build182_checkBox.setStyleSheet("QCheckBox {\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.order_build182_checkBox.setShortcut("")
-        self.order_build182_checkBox.setCheckable(True)
-        self.order_build182_checkBox.setChecked(True)
-        self.order_build182_checkBox.setAutoRepeat(False)
-        self.order_build182_checkBox.setTristate(False)
-        self.order_build182_checkBox.setObjectName("order_build182_checkBox")
-        self.craft_exp1012w_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.craft_exp1012w_enable_checkBox.setGeometry(QtCore.QRect(120, 120, 60, 20))
-        self.craft_exp1012w_enable_checkBox.setStyleSheet("QCheckBox {\n"
-"    padding-left: 20px;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.craft_exp1012w_enable_checkBox.setText("")
-        self.craft_exp1012w_enable_checkBox.setTristate(False)
-        self.craft_exp1012w_enable_checkBox.setObjectName("craft_exp1012w_enable_checkBox")
-        self.order_build61_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.order_build61_checkBox.setGeometry(QtCore.QRect(0, 0, 121, 20))
-        self.order_build61_checkBox.setStyleSheet("QCheckBox {\n"
-"    border-top: 1px solid #dcdfe6;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.order_build61_checkBox.setShortcut("")
-        self.order_build61_checkBox.setCheckable(True)
-        self.order_build61_checkBox.setChecked(True)
-        self.order_build61_checkBox.setAutoRepeat(False)
-        self.order_build61_checkBox.setTristate(False)
-        self.order_build61_checkBox.setObjectName("order_build61_checkBox")
-        self.order_build101_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.order_build101_checkBox.setGeometry(QtCore.QRect(0, 40, 121, 20))
-        self.order_build101_checkBox.setStyleSheet("QCheckBox {\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.order_build101_checkBox.setShortcut("")
-        self.order_build101_checkBox.setCheckable(True)
-        self.order_build101_checkBox.setChecked(False)
-        self.order_build101_checkBox.setAutoRepeat(False)
-        self.order_build101_checkBox.setTristate(False)
-        self.order_build101_checkBox.setObjectName("order_build101_checkBox")
-        self.order_build81_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.order_build81_checkBox.setGeometry(QtCore.QRect(0, 20, 121, 20))
-        self.order_build81_checkBox.setStyleSheet("QCheckBox {\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.order_build81_checkBox.setShortcut("")
-        self.order_build81_checkBox.setCheckable(True)
-        self.order_build81_checkBox.setChecked(True)
-        self.order_build81_checkBox.setAutoRepeat(False)
-        self.order_build81_checkBox.setTristate(False)
-        self.order_build81_checkBox.setObjectName("order_build81_checkBox")
-        self.craft_build182_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.craft_build182_enable_checkBox.setGeometry(QtCore.QRect(120, 80, 60, 20))
-        self.craft_build182_enable_checkBox.setStyleSheet("QCheckBox {\n"
-"    padding-left: 20px;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.craft_build182_enable_checkBox.setText("")
-        self.craft_build182_enable_checkBox.setTristate(False)
-        self.craft_build182_enable_checkBox.setObjectName("craft_build182_enable_checkBox")
-        self.order_build162_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.order_build162_checkBox.setGeometry(QtCore.QRect(0, 60, 121, 20))
-        self.order_build162_checkBox.setStyleSheet("QCheckBox {\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.order_build162_checkBox.setShortcut("")
-        self.order_build162_checkBox.setCheckable(True)
-        self.order_build162_checkBox.setChecked(True)
-        self.order_build162_checkBox.setAutoRepeat(False)
-        self.order_build162_checkBox.setTristate(False)
-        self.order_build162_checkBox.setObjectName("order_build162_checkBox")
-        self.craft_build101_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
-        self.craft_build101_enable_checkBox.setGeometry(QtCore.QRect(120, 40, 60, 20))
-        self.craft_build101_enable_checkBox.setStyleSheet("QCheckBox {\n"
-"    padding-left: 20px;\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"}")
-        self.craft_build101_enable_checkBox.setText("")
-        self.craft_build101_enable_checkBox.setTristate(False)
-        self.craft_build101_enable_checkBox.setObjectName("craft_build101_enable_checkBox")
-        self.orderList_scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.refresh_devices_Button = QtWidgets.QPushButton(parent=Form)
         self.refresh_devices_Button.setGeometry(QtCore.QRect(159, 24, 16, 24))
         self.refresh_devices_Button.setStyleSheet("QPushButton {\n"
@@ -602,33 +499,208 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.refresh_devices_Button.setText("")
-        icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
-        self.refresh_devices_Button.setIcon(icon1)
+        icon2 = QtGui.QIcon()
+        icon2.addPixmap(QtGui.QPixmap("D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        self.refresh_devices_Button.setIcon(icon2)
         self.refresh_devices_Button.setObjectName("refresh_devices_Button")
-        self.orderList_scrollArea.raise_()
-        self.adb_path_label.raise_()
-        self.adb_path_lineEdit.raise_()
-        self.adb_devices_label.raise_()
-        self.choice_adbpath_Button.raise_()
-        self.authername_label.raise_()
-        self.logger_Browser.raise_()
-        self.quarry_time_label.raise_()
-        self.quarry_time_lineEdit.raise_()
-        self.minute_unit_label.raise_()
-        self.save_config_Button.raise_()
-        self.stop_all_task_Button.raise_()
-        self.oder_list_label.raise_()
-        self.craft_enable_label.raise_()
-        self.adb_devices_comboBox.raise_()
-        self.test_button.raise_()
-        self.help_button.raise_()
-        self.help_textBrowser.raise_()
-        self.functionALL_tabWidget.raise_()
-        self.refresh_devices_Button.raise_()
+        self.stackedWidget = QtWidgets.QStackedWidget(parent=Form)
+        self.stackedWidget.setGeometry(QtCore.QRect(400, 0, 171, 191))
+        self.stackedWidget.setObjectName("stackedWidget")
+        self.OrderListSetting = QtWidgets.QWidget()
+        self.OrderListSetting.setObjectName("OrderListSetting")
+        self.orderList_scrollArea = QtWidgets.QScrollArea(parent=self.OrderListSetting)
+        self.orderList_scrollArea.setGeometry(QtCore.QRect(0, 0, 175, 191))
+        self.orderList_scrollArea.setWidgetResizable(True)
+        self.orderList_scrollArea.setObjectName("orderList_scrollArea")
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 175, 191))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.order_exp1012w_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.order_exp1012w_checkBox.setGeometry(QtCore.QRect(0, 140, 121, 20))
+        self.order_exp1012w_checkBox.setStyleSheet("QCheckBox {\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.order_exp1012w_checkBox.setShortcut("")
+        self.order_exp1012w_checkBox.setCheckable(True)
+        self.order_exp1012w_checkBox.setChecked(False)
+        self.order_exp1012w_checkBox.setAutoRepeat(False)
+        self.order_exp1012w_checkBox.setTristate(False)
+        self.order_exp1012w_checkBox.setObjectName("order_exp1012w_checkBox")
+        self.craft_build61_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.craft_build61_enable_checkBox.setGeometry(QtCore.QRect(120, 20, 60, 20))
+        self.craft_build61_enable_checkBox.setStyleSheet("QCheckBox {\n"
+"    padding-left: 20px;\n"
+"    border-top: 1px solid #dcdfe6;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.craft_build61_enable_checkBox.setText("")
+        self.craft_build61_enable_checkBox.setTristate(False)
+        self.craft_build61_enable_checkBox.setObjectName("craft_build61_enable_checkBox")
+        self.craft_build162_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.craft_build162_enable_checkBox.setGeometry(QtCore.QRect(120, 80, 60, 20))
+        self.craft_build162_enable_checkBox.setStyleSheet("QCheckBox {\n"
+"    padding-left: 20px;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.craft_build162_enable_checkBox.setText("")
+        self.craft_build162_enable_checkBox.setTristate(False)
+        self.craft_build162_enable_checkBox.setObjectName("craft_build162_enable_checkBox")
+        self.craft_build81_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.craft_build81_enable_checkBox.setGeometry(QtCore.QRect(120, 40, 60, 20))
+        self.craft_build81_enable_checkBox.setStyleSheet("QCheckBox {\n"
+"    padding-left: 20px;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.craft_build81_enable_checkBox.setText("")
+        self.craft_build81_enable_checkBox.setTristate(False)
+        self.craft_build81_enable_checkBox.setObjectName("craft_build81_enable_checkBox")
+        self.order_coin1012w_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.order_coin1012w_checkBox.setGeometry(QtCore.QRect(0, 120, 121, 20))
+        self.order_coin1012w_checkBox.setStyleSheet("QCheckBox {\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.order_coin1012w_checkBox.setShortcut("")
+        self.order_coin1012w_checkBox.setCheckable(True)
+        self.order_coin1012w_checkBox.setChecked(False)
+        self.order_coin1012w_checkBox.setAutoRepeat(False)
+        self.order_coin1012w_checkBox.setTristate(False)
+        self.order_coin1012w_checkBox.setObjectName("order_coin1012w_checkBox")
+        self.craft_coin1012w_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.craft_coin1012w_enable_checkBox.setGeometry(QtCore.QRect(120, 120, 60, 20))
+        self.craft_coin1012w_enable_checkBox.setStyleSheet("QCheckBox {\n"
+"    padding-left: 20px;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.craft_coin1012w_enable_checkBox.setText("")
+        self.craft_coin1012w_enable_checkBox.setTristate(False)
+        self.craft_coin1012w_enable_checkBox.setObjectName("craft_coin1012w_enable_checkBox")
+        self.order_build182_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.order_build182_checkBox.setGeometry(QtCore.QRect(0, 100, 121, 20))
+        self.order_build182_checkBox.setStyleSheet("QCheckBox {\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.order_build182_checkBox.setShortcut("")
+        self.order_build182_checkBox.setCheckable(True)
+        self.order_build182_checkBox.setChecked(True)
+        self.order_build182_checkBox.setAutoRepeat(False)
+        self.order_build182_checkBox.setTristate(False)
+        self.order_build182_checkBox.setObjectName("order_build182_checkBox")
+        self.craft_exp1012w_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.craft_exp1012w_enable_checkBox.setGeometry(QtCore.QRect(120, 140, 60, 20))
+        self.craft_exp1012w_enable_checkBox.setStyleSheet("QCheckBox {\n"
+"    padding-left: 20px;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.craft_exp1012w_enable_checkBox.setText("")
+        self.craft_exp1012w_enable_checkBox.setTristate(False)
+        self.craft_exp1012w_enable_checkBox.setObjectName("craft_exp1012w_enable_checkBox")
+        self.order_build61_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.order_build61_checkBox.setGeometry(QtCore.QRect(0, 20, 121, 20))
+        self.order_build61_checkBox.setStyleSheet("QCheckBox {\n"
+"    border-top: 1px solid #dcdfe6;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.order_build61_checkBox.setShortcut("")
+        self.order_build61_checkBox.setCheckable(True)
+        self.order_build61_checkBox.setChecked(True)
+        self.order_build61_checkBox.setAutoRepeat(False)
+        self.order_build61_checkBox.setTristate(False)
+        self.order_build61_checkBox.setObjectName("order_build61_checkBox")
+        self.order_build101_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.order_build101_checkBox.setGeometry(QtCore.QRect(0, 60, 121, 20))
+        self.order_build101_checkBox.setStyleSheet("QCheckBox {\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.order_build101_checkBox.setShortcut("")
+        self.order_build101_checkBox.setCheckable(True)
+        self.order_build101_checkBox.setChecked(False)
+        self.order_build101_checkBox.setAutoRepeat(False)
+        self.order_build101_checkBox.setTristate(False)
+        self.order_build101_checkBox.setObjectName("order_build101_checkBox")
+        self.order_build81_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.order_build81_checkBox.setGeometry(QtCore.QRect(0, 40, 121, 20))
+        self.order_build81_checkBox.setStyleSheet("QCheckBox {\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.order_build81_checkBox.setShortcut("")
+        self.order_build81_checkBox.setCheckable(True)
+        self.order_build81_checkBox.setChecked(True)
+        self.order_build81_checkBox.setAutoRepeat(False)
+        self.order_build81_checkBox.setTristate(False)
+        self.order_build81_checkBox.setObjectName("order_build81_checkBox")
+        self.craft_build182_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.craft_build182_enable_checkBox.setGeometry(QtCore.QRect(120, 100, 60, 20))
+        self.craft_build182_enable_checkBox.setStyleSheet("QCheckBox {\n"
+"    padding-left: 20px;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.craft_build182_enable_checkBox.setText("")
+        self.craft_build182_enable_checkBox.setTristate(False)
+        self.craft_build182_enable_checkBox.setObjectName("craft_build182_enable_checkBox")
+        self.order_build162_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.order_build162_checkBox.setGeometry(QtCore.QRect(0, 80, 121, 20))
+        self.order_build162_checkBox.setStyleSheet("QCheckBox {\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.order_build162_checkBox.setShortcut("")
+        self.order_build162_checkBox.setCheckable(True)
+        self.order_build162_checkBox.setChecked(True)
+        self.order_build162_checkBox.setAutoRepeat(False)
+        self.order_build162_checkBox.setTristate(False)
+        self.order_build162_checkBox.setObjectName("order_build162_checkBox")
+        self.craft_build101_enable_checkBox = QtWidgets.QCheckBox(parent=self.scrollAreaWidgetContents)
+        self.craft_build101_enable_checkBox.setGeometry(QtCore.QRect(120, 60, 60, 20))
+        self.craft_build101_enable_checkBox.setStyleSheet("QCheckBox {\n"
+"    padding-left: 20px;\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"}")
+        self.craft_build101_enable_checkBox.setText("")
+        self.craft_build101_enable_checkBox.setTristate(False)
+        self.craft_build101_enable_checkBox.setObjectName("craft_build101_enable_checkBox")
+        self.oder_list_label = QtWidgets.QLabel(parent=self.scrollAreaWidgetContents)
+        self.oder_list_label.setGeometry(QtCore.QRect(0, 0, 121, 24))
+        self.oder_list_label.setToolTip("")
+        self.oder_list_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.oder_list_label.setIndent(-1)
+        self.oder_list_label.setObjectName("oder_list_label")
+        self.craft_enable_label = QtWidgets.QLabel(parent=self.scrollAreaWidgetContents)
+        self.craft_enable_label.setGeometry(QtCore.QRect(110, 0, 60, 24))
+        self.craft_enable_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.craft_enable_label.setIndent(-1)
+        self.craft_enable_label.setObjectName("craft_enable_label")
+        self.orderList_scrollArea.setWidget(self.scrollAreaWidgetContents)
+        self.stackedWidget.addWidget(self.OrderListSetting)
+        self.SwitchWorkSetting = QtWidgets.QWidget()
+        self.SwitchWorkSetting.setObjectName("SwitchWorkSetting")
+        self.stackedWidget.addWidget(self.SwitchWorkSetting)
+        self.IllusionTaskSetting = QtWidgets.QWidget()
+        self.IllusionTaskSetting.setObjectName("IllusionTaskSetting")
+        self.IllusionTaskSetting_widget = QtWidgets.QWidget(parent=self.IllusionTaskSetting)
+        self.IllusionTaskSetting_widget.setGeometry(QtCore.QRect(0, 0, 175, 191))
+        self.IllusionTaskSetting_widget.setObjectName("IllusionTaskSetting_widget")
+        self.illusionChoice_Label = QtWidgets.QLabel(parent=self.IllusionTaskSetting_widget)
+        self.illusionChoice_Label.setGeometry(QtCore.QRect(0, 0, 61, 24))
+        self.illusionChoice_Label.setToolTip("")
+        self.illusionChoice_Label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.illusionChoice_Label.setIndent(-1)
+        self.illusionChoice_Label.setObjectName("illusionChoice_Label")
+        self.IllusionChoice_comboBox = QtWidgets.QComboBox(parent=self.IllusionTaskSetting_widget)
+        self.IllusionChoice_comboBox.setGeometry(QtCore.QRect(63, 0, 111, 24))
+        self.IllusionChoice_comboBox.setObjectName("IllusionChoice_comboBox")
+        self.illusionChoiceTeam_Label = QtWidgets.QLabel(parent=self.IllusionTaskSetting_widget)
+        self.illusionChoiceTeam_Label.setGeometry(QtCore.QRect(0, 24, 61, 24))
+        self.illusionChoiceTeam_Label.setToolTip("")
+        self.illusionChoiceTeam_Label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.illusionChoiceTeam_Label.setIndent(-1)
+        self.illusionChoiceTeam_Label.setObjectName("illusionChoiceTeam_Label")
+        self.IllusionChoiceTeam_comboBox = QtWidgets.QComboBox(parent=self.IllusionTaskSetting_widget)
+        self.IllusionChoiceTeam_comboBox.setGeometry(QtCore.QRect(63, 24, 111, 24))
+        self.IllusionChoiceTeam_comboBox.setObjectName("IllusionChoiceTeam_comboBox")
+        self.stackedWidget.addWidget(self.IllusionTaskSetting)
 
         self.retranslateUi(Form)
         self.functionALL_tabWidget.setCurrentIndex(0)
+        self.stackedWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
@@ -646,9 +718,6 @@ class Ui_Form(object):
         self.save_config_Button.setText(_translate("Form", "保存用户配置"))
         self.stop_all_task_Button.setToolTip(_translate("Form", "停止脚本操作游戏"))
         self.stop_all_task_Button.setText(_translate("Form", "停止所有任务"))
-        self.oder_list_label.setText(_translate("Form", " 订单列表"))
-        self.craft_enable_label.setToolTip(_translate("Form", "是否启用合成"))
-        self.craft_enable_label.setText(_translate("Form", "启用合成"))
         self.test_button.setToolTip(_translate("Form", "test"))
         self.test_button.setText(_translate("Form", "test"))
         self.help_button.setToolTip(_translate("Form", "帮助"))
@@ -660,7 +729,6 @@ class Ui_Form(object):
 "li.unchecked::marker { content: \"\\2610\"; }\n"
 "li.checked::marker { content: \"\\2612\"; }\n"
 "</style></head><body style=\" font-family:\'Microsoft YaHei UI\'; font-size:9pt; font-weight:400; font-style:normal;\">\n"
-"<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:10pt; font-weight:700;\">Version: Alpha 0.1.3 帮助文档</span></p>\n"
 "<p align=\"center\" style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-weight:700;\">该版本为</span><span style=\" font-weight:700; color:#0055ff;\">开发版本</span><span style=\" font-weight:700;\">，功能可能</span><span style=\" font-weight:700; color:#ff5500;\">不稳定</span></p>\n"
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">ADB路径</span><span style=\" font-size:8pt;\">：模拟器目录下的</span><span style=\" font-size:8pt; color:#ff0000;\">ADB.exe</span><span style=\" font-size:8pt;\">调试程序路径</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">设备列表</span><span style=\" font-size:8pt;\">：模拟器下的设备，默认获取第一个设备</span></p>\n"
@@ -679,6 +747,8 @@ class Ui_Form(object):
         self.start_spend_order_Button.setText(_translate("Form", "启动交付订单"))
         self.start_switch_work_Button.setToolTip(_translate("Form", "<html><head/><body><p>进行矿场员工换班任务</p><p>【手动停止】</p></body></html>"))
         self.start_switch_work_Button.setText(_translate("Form", "启动换班任务"))
+        self.start_smallCrystal_Button.setToolTip(_translate("Form", "<html><head/><body><p>根据设置通关虚影</p><p>【自动停止】</p></body></html>"))
+        self.start_smallCrystal_Button.setText(_translate("Form", "启动虚影任务"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function1_tab), _translate("Form", "功能1"))
         self.auto_agree_friend_Button.setToolTip(_translate("Form", "<html><head/><body><p>自动同意好友申请</p><p>【手动停止】</p></body></html>"))
         self.auto_agree_friend_Button.setText(_translate("Form", "自动同意好友申请"))
@@ -692,6 +762,7 @@ class Ui_Form(object):
         self.growthItems_Button.setText(_translate("Form", "角色养成材料一览"))
         self.choice_Chips_Button.setText(_translate("Form", "自选箱芯片一览"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.Charts_tab), _translate("Form", "图表"))
+        self.refresh_devices_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷新</p></body></html>"))
         self.order_exp1012w_checkBox.setText(_translate("Form", "10换12w经验"))
         self.order_coin1012w_checkBox.setText(_translate("Form", "10换12w星币"))
         self.order_build182_checkBox.setText(_translate("Form", "18换2构建"))
@@ -699,4 +770,8 @@ class Ui_Form(object):
         self.order_build101_checkBox.setText(_translate("Form", "10换1构建"))
         self.order_build81_checkBox.setText(_translate("Form", "8换1构建"))
         self.order_build162_checkBox.setText(_translate("Form", "16换2构建"))
-        self.refresh_devices_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷新</p></body></html>"))
+        self.oder_list_label.setText(_translate("Form", " 订单列表"))
+        self.craft_enable_label.setToolTip(_translate("Form", "是否启用合成"))
+        self.craft_enable_label.setText(_translate("Form", "启用合成"))
+        self.illusionChoice_Label.setText(_translate("Form", "虚影关卡："))
+        self.illusionChoiceTeam_Label.setText(_translate("Form", "选择队伍："))
