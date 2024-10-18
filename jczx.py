@@ -60,10 +60,10 @@ DEFAULT_CONFIGS = {
     },
     "illusions":{
         "level": {
-            "index": 0,
+            "index": 1,
             "illusionNum": 0,
-            "title": "戈里刻-阿瑞斯",
-            "SwipeUP": False
+            "title": "戈里刻-宙斯",
+            "SwipeUP": True
         },
         "teamNum": 0
     }
