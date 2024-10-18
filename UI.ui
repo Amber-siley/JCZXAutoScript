@@ -807,8 +807,8 @@ QPushButton:pressed, QPushButton:checked {
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>171</width>
-        <height>164</height>
+        <width>169</width>
+        <height>162</height>
        </rect>
       </property>
       <widget class="QPushButton" name="Chips_Button">
@@ -1518,6 +1518,24 @@ QPushButton:pressed, QPushButton:checked {
     </widget>
    </widget>
   </widget>
+  <zorder>adb_path_label</zorder>
+  <zorder>adb_path_lineEdit</zorder>
+  <zorder>adb_devices_label</zorder>
+  <zorder>choice_adbpath_Button</zorder>
+  <zorder>authername_label</zorder>
+  <zorder>logger_Browser</zorder>
+  <zorder>quarry_time_label</zorder>
+  <zorder>quarry_time_lineEdit</zorder>
+  <zorder>minute_unit_label</zorder>
+  <zorder>save_config_Button</zorder>
+  <zorder>adb_devices_comboBox</zorder>
+  <zorder>test_button</zorder>
+  <zorder>help_button</zorder>
+  <zorder>help_textBrowser</zorder>
+  <zorder>functionALL_tabWidget</zorder>
+  <zorder>refresh_devices_Button</zorder>
+  <zorder>stackedWidget</zorder>
+  <zorder>stop_all_task_Button</zorder>
  </widget>
  <resources/>
  <connections/>
