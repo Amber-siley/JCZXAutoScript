@@ -405,7 +405,7 @@ class Ui_Form(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 169, 162))
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 171, 164))
         self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
         self.Chips_Button = QtWidgets.QPushButton(parent=self.scrollAreaWidgetContents_2)
         self.Chips_Button.setGeometry(QtCore.QRect(0, 84, 175, 42))
@@ -757,7 +757,7 @@ class Ui_Form(object):
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">为主号刷助战奖励</span><span style=\" font-size:8pt;\">：（助战奖励只有4w，蚊子腿）确保当前使用为</span><span style=\" font-size:8pt; color:#ff0000;\">小号</span><span style=\" font-size:8pt;\">，至少通过了一次</span><span style=\" font-size:8pt; color:#ff0000;\">虚影阿瑞斯</span><span style=\" font-size:8pt;\">，且小号只有主号</span><span style=\" font-size:8pt; color:#ff0000;\">一个好友</span><span style=\" font-size:8pt;\">，同时一号队伍留有</span><span style=\" font-size:8pt; color:#ff0000;\">2x2的位置</span><span style=\" font-size:8pt; color:#000000;\">。</span><span style=\" font-size:8pt;\">关于双倍助战：助战奖励分割时间为</span><span style=\" font-size:8pt; color:#ff0000;\">每天凌晨3点</span><span style=\" font-size:8pt; color:#000000;\">，在3点之前进行20次助战，3点过后进行20次助战，3点后到第二次刷助战期间主号</span><span style=\" font-size:8pt; color:#ff0000;\">不要登录</span><span style=\" font-size:8pt; color:#000000;\">，次日双倍助战奖励</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">检索交付当前订单</span><span style=\" font-size:8pt; color:#000000;\">：</span><span style=\" font-size:8pt;\">仅只检索当前订单并自动交付，若</span><span style=\" font-size:8pt; color:#ff0000;\">没有</span><span style=\" font-size:8pt;\">在订单页则前往</span><span style=\" font-size:8pt; color:#ff0000;\">交易所</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">停止所有任务</span><span style=\" font-size:8pt;\">：无视所有情况，强制停止脚本任务</span></p>\n"
-"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">保存用户配置</span><span style=\" font-size:8pt;\">：使用手动修改方式并不会触发自动保存，推荐修改配置项后手动保存配置</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">保存用户配置</span><span style=\" font-size:8pt;\">：使用手动修改方式并不会触发自动保存（仅ADB路径与矿场结算时间），推荐修改配置项后手动保存配置</span></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"><br /></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
