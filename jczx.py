@@ -679,8 +679,8 @@ class JCZXGame:
                 return func(self, *args, **kwargs)
         return wrapper
     
-    def inLocation(self, screen_loc, cutPoints:tuple[tuple[int, int]] = None, per = 0.9) -> bool:
-        return bool(self.findImageCenterLocations(screen_loc, cutPoints, per))
+    def inLocation(self, screen_loc, cutPoints:tuple[tuple[int, int]] = None, per = 0.9, grayScreenshot = None) -> bool:
+        return bool(self.findImageCenterLocations(screen_loc, cutPoints, per, grayScreenshot))
     
     def getScreenSize(self) -> tuple[int, int]:
         if self.size:
@@ -978,6 +978,13 @@ class JCZXGame:
                 self.gotoChoiceFriendTradingPost()
         sleep(0.3)
     
+    def clickChoiceFriendTradingPost(self):
+        if loc := self.Pos.choiceFriendTPPos:
+            self.click(*loc)
+        else:
+            loc = self._clickAndMsg(self.Buttons.choiceFriendTP_button, wait = 0.3, cutPoints = self.ScreenCut.cut7x2(0, 1))
+        return loc
+    
     def addAndCraft(self, num:int):
         loc = self.findImageCenterLocation(self.Buttons.add_button, cutPoints = self.ScreenCut.cut3x3(2, 1))
         for i in range(num - 1):
@@ -987,17 +994,19 @@ class JCZXGame:
     
     def checkAndSpendOrders(self):
         """检查并交付订单"""
-        self.__checkOrders()
-        if self.inLocation(self.ScreenLocs.tabBar, self.ScreenCut.cut7x1(6, 0)):
+        grayScreenshot = self.grayScreenshot()
+        self.__checkOrders(grayScreenshot = grayScreenshot)
+        if self.inLocation(self.ScreenLocs.tabBar, self.ScreenCut.cut7x1(6, 0), grayScreenshot = grayScreenshot):
             self.swipeUPScreenCenter()
             self.__checkOrders(self.ScreenCut.cut1x2(0, 1))
     
-    def __checkOrders(self, cutPoints = None):
+    def __checkOrders(self, cutPoints = None, grayScreenshot = None):
         self.log.info("正在检索【订单】")
-        grayScreenshot = self.grayScreenshot()
+        if grayScreenshot is None:
+            grayScreenshot = self.grayScreenshot()
         for img,des,craft in self.getUserOrderPaths():
             # if self._clickAndMsg(img, wait = 0.3, log = False, per = 0.95):
-            if locality := self.findImageCenterLocation(img, cutPoints, per = 0.95, grayScreenshot = grayScreenshot):
+            if locality := self.findImageCenterLocation(img, cutPoints, per = 0.94, grayScreenshot = grayScreenshot):
                 self.log.info(f"发现订单【{des}】")
                 # if self.findImageCenterLocation(self.ScreenLocs.notEnough, self.ScreenCut.cut3x3(1, 1)):
                 templete = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
@@ -1005,7 +1014,7 @@ class JCZXGame:
                 x, y = locality
                 x0, y0 = x-w//2, y+h//2
                 x1, y1 = x+w//2, y+h//2+h
-                if self.findImageCenterLocation(self.ScreenLocs.notEnough, ((x0, y0), (x1, y1)), 0.8):
+                if self.findImageCenterLocation(self.ScreenLocs.notEnough, ((x0, y0), (x1, y1)), 0.8, grayScreenshot):
                     if not craft:
                         self.log.info("当前订单材料不足")
                         # self._clickAndMsg(self.Buttons.cancel_button, wait = 0.3, cutPoints = self.ScreenCut.cut4x2(1, 1))
@@ -1148,9 +1157,10 @@ class JCZXGame:
                     self.click(*loc, wait = 1.5)
                     self.log.info(f"进入【好友交易所】{index}")
                     self.checkAndSpendOrders()
-                    self.gotoChoiceFriendTradingPost()
+                    # self.gotoChoiceFriendTradingPost()
+                    self.clickChoiceFriendTradingPost()
                 self.swipeLeftScreenCenter()
-        self.gotoHome()
+        self.click(self.width//2, self.height//1.2, 0.3)
         self.gotoHome()
     
     def useFriendListCheckOrderAndSpend(self):
@@ -1548,6 +1558,7 @@ class WorkThread(QThread):
                     adb.clickCloseUseThisTeam(0 if self.config.illusion.teamNum else 1)
                     adb.clickStartToAct(0, False)
                     adb.playIllusionZhouSi()
+                adb.gotoHome()
                 self.log.info("微晶已满【虚影微晶】任务结束")
         
 if __name__ == "__main__":
