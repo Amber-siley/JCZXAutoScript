@@ -24,6 +24,8 @@ def joinPath(*args):
 LOG_LEVEL = logging.INFO
 # LOG_LEVEL = logging.DEBUG
 
+VERSION = "0.1.5A"
+
 DEFAULT_CONFIGS = {
     "adb_path": None,
     "adb_device": None,
@@ -126,6 +128,7 @@ class MainManager(Ui_Form):
         ItemsEX = joinPath("resources","toolChart","材料掉率一图流.jpg")
         Chips = joinPath("resources","toolChart","芯片获得途径.jpg")
         ChoiceChips = joinPath("resources","toolChart","自选芯片.jpg")
+        roleRecommend = joinPath("resources","toolChart","角色养成推荐.png")
     
     Chart = _Chart()
     
@@ -144,6 +147,7 @@ class MainManager(Ui_Form):
     
     def init(self):
         """初始化"""
+        self.__init_title()
         self.__init_illusionSettings()
         self.__init_buttom()
         self.__init_menu()
@@ -160,6 +164,9 @@ class MainManager(Ui_Form):
     def adb_path(self) -> str:  return self.config.adb_path
     @property
     def quarry_time(self) -> int: return self.config.quarry_time
+    
+    def __init_title(self):
+        self.form.setWindowTitle(f"交错战线AutoScript Ver-{VERSION}")
     
     def __init_menu(self):
         self.help_textBrowser.setHidden(True)
@@ -195,6 +202,7 @@ class MainManager(Ui_Form):
         self.ItemsEX_Button.clicked.connect(lambda: startfile(self.Chart.ItemsEX))
         self.Chips_Button.clicked.connect(lambda: startfile(self.Chart.Chips))
         self.choice_Chips_Button.clicked.connect(lambda: startfile(self.Chart.ChoiceChips))
+        self.role_recommend_Button.clicked.connect(lambda: startfile(self.Chart.roleRecommend))
         self.start_smallCrystal_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(2))
         self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
         self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
@@ -453,6 +461,9 @@ class JCZXGame:
     class _Buttons:
         back_button = joinPath("resources","buttons","back.png")
         visit_button = joinPath("resources","buttons","visit.png")
+        login_button = joinPath("resources","buttons","login.png")
+        signIn_button = joinPath("resources","buttons","sign-in.png")
+        userLogin_button = joinPath("resources","buttons","userLogin.png")
         choiceFriendTP_button = joinPath("resources","locations","whateverTradingPost.png")
         skipAnimation_button = joinPath("resources","buttons","skipAnimation.png")
         fightAuto_button = joinPath("resources","buttons","fightAuto.png")
@@ -774,8 +785,8 @@ class JCZXGame:
     def clickSkipAnimation(self, log = False):
         return self._clickAndMsg(self.Buttons.skipAnimation_button, log = log, cutPoints = self.ScreenCut.cut4x3(3, 0), per = 0.8)
     
-    def clickReadyTeamPlane(self):
-        return self._clickAndMsg(self.Buttons.plane_button, wait = 0.7, log = False, cutPoints = self.ScreenCut.cut3x7(1, 6))
+    def clickReadyTeamPlane(self, wait = 0.7):
+        return self._clickAndMsg(self.Buttons.plane_button, wait = wait, log = False, cutPoints = self.ScreenCut.cut3x7(1, 6))
     
     def clickGetItems(self, wait = 0.3, log = False):
         return self._clickAndMsg(self.ScreenLocs.getItem, wait = wait, log = log, cutPoints = self.ScreenCut.cut3x2(1, 0), per = 0.8)
@@ -802,6 +813,15 @@ class JCZXGame:
             else:
                 self.gotoBase()
             sleep(60)
+    
+    def loginJCZX(self):
+        if self.startJCZX():
+            self.log.info("启动交错战线")
+            self._waitClickAndMsg(self.Buttons.userLogin_button, self.Buttons.login_button, wait = 0.6)
+            self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.friends_button, wait = 2, waitFunc = lambda: self.click(self.width//2, self.height//2, wait = 0.3))
+            self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.5, maxWaitSecond = 3, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1))
+            self._waitClickAndMsg(self.Buttons.signIn_button, wait = 1, maxWaitSecond = 2, func = lambda: (self.clickGetItems(), self.back()))
+            self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.3, maxWaitSecond = 2, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
     
     def gotoHome(self):
         if self.inLocation(self.ScreenLocs.home, self.ScreenCut.cut3x7(0,6)):
@@ -989,7 +1009,6 @@ class JCZXGame:
         loc = self.findImageCenterLocation(self.Buttons.add_button, cutPoints = self.ScreenCut.cut3x3(2, 1))
         for i in range(num - 1):
             self.click(*loc, wait = 0.1)
-        sleep(0.5)
         self.craftSure()
     
     def checkAndSpendOrders(self):
@@ -1041,7 +1060,7 @@ class JCZXGame:
                         self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x1(2, 0))
                         self.addAndCraft(expRawNum)
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
-                    self.back(0.3)
+                    self.back(0.5)
                     self.back(0.5)
                     # self._clickAndMsg(img, wait = 1)
                     self.click(*locality, 1)
@@ -1119,9 +1138,10 @@ class JCZXGame:
         if self.Pos.craftPos:
             self.click(*self.Pos.craftPos, wait = 1)
         else:
-            loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 1, cutPoints = self.ScreenCut.cut3x3(2, 2))
+            loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 2, cutPoints = self.ScreenCut.cut3x3(2, 2))
             self.Pos.craftPos = loc
-        self.click(self.width//2, self.height//1.2, wait = 0.5)
+        # self.click(self.width//2, self.height//1.2, wait = 1)
+        self.clickGetItems(0.5)
     
     def tellMeSubmitOrders(self):
         """告知我已交付订单"""
@@ -1161,7 +1181,6 @@ class JCZXGame:
                     self.clickChoiceFriendTradingPost()
                 self.swipeLeftScreenCenter()
         self.click(self.width//2, self.height//1.2, 0.3)
-        self.gotoHome()
     
     def useFriendListCheckOrderAndSpend(self):
         """使用好友列表进入订单库进行检测交付，稳定性较差，只是固定次数进入好友订单库进行检测，不建议使用"""
@@ -1251,20 +1270,31 @@ class JCZXGame:
             if warnMsg: self.log.warning(warnMsg)
             return None
     
-    def _waitClickAndMsg(self, button_path, newLocation: Callable | str, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, log:bool = False, cutPoints = None, per = 0.9) -> None:
+    def _waitClickAndMsg(self, button_path, newLocation: Callable | str = None, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, maxWaitSecond:int = 0, log:bool = False, cutPoints = None, per = 0.9, waitFunc:Callable = lambda: ..., func: Callable = lambda: ...) -> None:
         """等待并点击按钮，性能消耗较大,稳定性较差
         - newLocation 点击按钮后前往的界面
         """
+        startTime = datetime.now()
         while True:
-            self._clickAndMsg(button_path, infoMsg, warnMsg, index, 0, log, cutPoints, per)
-            if isinstance(newLocation, str):
-                if self.inLocation(newLocation):
-                    break
-            else:
-                if newLocation():
-                    break
+            loc = self._clickAndMsg(button_path, infoMsg, warnMsg, index, 0, log, cutPoints, per)
+            waitFunc()
+            if newLocation:
+                if isinstance(newLocation, str):
+                    if self.inLocation(newLocation):
+                        break
+                else:
+                    if newLocation():
+                        break
+            elif loc:
+                break
             sleep(0.3)
+            runningTime = (datetime.now() - startTime).seconds
+            if maxWaitSecond:
+                if runningTime >= maxWaitSecond:
+                    sleep(wait)
+                    return
         sleep(wait)
+        func()
     
     def findImageLeftUPLocations(self, button_path:str, cutPoints = None) -> list[tuple[int, int]] | None:
         if cutPoints:
@@ -1356,8 +1386,7 @@ class JCZXGame:
     
     def dragAndDrop(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
         subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "draganddrop", str(x1), str(y1), str(x2), str(y2), str(duration)], startupinfo = self.startupinfo)
-        if wait:
-            sleep(wait)
+        sleep(wait)
     
     def swipeUPScreenCenter(self, wait = 1.5):
         self.swipe(self.width//2, self.height//1.4, self.width//2, self.height//2, 200, wait)
@@ -1378,6 +1407,17 @@ class JCZXGame:
     
     def setADBPath(self, path):
         self.adb_path = path
+    
+    def startAPP(self, activity:str):
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "am", "start", activity], startupinfo = self.startupinfo)
+    
+    def startJCZX(self):
+        try:
+            subprocess.check_output([self.adb_path, "-s", self.device, "shell", "pidof", "com.megagame.crosscore"], startupinfo = self.startupinfo)
+            return False
+        except:
+            self.startAPP("com.megagame.crosscore/com.mjsdk.app.MJUnityActivity")
+            return True
     
     @check
     def devices(self) -> list[str]:
@@ -1418,6 +1458,7 @@ class WorkThread(QThread):
     
     def run(self) -> None:
         try:
+            self.adb.loginJCZX()
             match self.mode:
                 case self.ORDER:
                     self.spendOrder()
@@ -1439,8 +1480,7 @@ class WorkThread(QThread):
             self.log.error(f"捕获到错误抛出 {e}")
 
     def __debug(self):
-        self.adb.gotoChoiceFriendTradingPost()
-        self.adb.swipeLeftScreenCenter()
+        self.adb.loginJCZX()
         ...
         
     def setADB(self, adb):
@@ -1468,6 +1508,7 @@ class WorkThread(QThread):
         #check orders
         self.adb.checkAndSpendOrders()
         self.adb.gotoFriendOrdersAndSpend()
+        self.adb.gotoHome()
         self.log.info("【交付订单】任务结束")
     
     @check
@@ -1504,7 +1545,7 @@ class WorkThread(QThread):
             self.adb.clickStartFight()
             # self.adb.clickCloseUseThisTeam(1)
             self.adb.clickHelpFight(0)
-            self.adb.clickReadyTeamPlane()
+            self.adb.clickReadyTeamPlane(1.2)
             if FriendsWifeLocations := self.adb.findHelpFightFriendsWifeLocations():
                 if emptyLocation := self.adb.findImageCenterLocation(self.adb.ScreenLocs.emptyPlace2x2):
                     self.adb.dragAndDrop(*FriendsWifeLocations[0], *emptyLocation, 500, wait = 0.5)
@@ -1532,6 +1573,7 @@ class WorkThread(QThread):
             self.adb.gotoTradingPost()
             self.adb.checkAndSpendOrders()
         self.adb.tellMeSubmitOrders()
+        self.adb.gotoHome()
         self.log.info("【检索交付当前订单】结束")
     
     @check

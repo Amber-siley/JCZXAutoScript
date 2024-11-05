@@ -405,63 +405,15 @@ class Ui_Form(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 171, 164))
+        self.scrollAreaWidgetContents_2.setEnabled(True)
+        self.scrollAreaWidgetContents_2.setGeometry(QtCore.QRect(0, 0, 166, 311))
+        self.scrollAreaWidgetContents_2.setMinimumSize(QtCore.QSize(0, 311))
+        self.scrollAreaWidgetContents_2.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
-        self.Chips_Button = QtWidgets.QPushButton(parent=self.scrollAreaWidgetContents_2)
-        self.Chips_Button.setGeometry(QtCore.QRect(0, 84, 175, 42))
-        self.Chips_Button.setStyleSheet("QPushButton {\n"
-"    background-color: #ffffff;\n"
-"    border: 1px solid #dcdfe6;\n"
-"    border-radius: 1px;\n"
-"}\n"
-"\n"
-"QPushButton:hover {\n"
-"    background-color: #ecf5ff;\n"
-"    color: #409eff;\n"
-"}\n"
-"\n"
-"QPushButton:pressed, QPushButton:checked {\n"
-"    border: 1px solid #3a8ee6;\n"
-"    color: #409eff;\n"
-"}")
-        self.Chips_Button.setObjectName("Chips_Button")
-        self.ItemsEX_Button = QtWidgets.QPushButton(parent=self.scrollAreaWidgetContents_2)
-        self.ItemsEX_Button.setGeometry(QtCore.QRect(0, 42, 175, 42))
-        self.ItemsEX_Button.setStyleSheet("QPushButton {\n"
-"    background-color: #ffffff;\n"
-"    border: 1px solid #dcdfe6;\n"
-"    border-radius: 1px;\n"
-"}\n"
-"\n"
-"QPushButton:hover {\n"
-"    background-color: #ecf5ff;\n"
-"    color: #409eff;\n"
-"}\n"
-"\n"
-"QPushButton:pressed, QPushButton:checked {\n"
-"    border: 1px solid #3a8ee6;\n"
-"    color: #409eff;\n"
-"}")
-        self.ItemsEX_Button.setObjectName("ItemsEX_Button")
-        self.growthItems_Button = QtWidgets.QPushButton(parent=self.scrollAreaWidgetContents_2)
-        self.growthItems_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
-        self.growthItems_Button.setStyleSheet("QPushButton {\n"
-"    background-color: #ffffff;\n"
-"    border: 1px solid #dcdfe6;\n"
-"    border-radius: 1px;\n"
-"}\n"
-"\n"
-"QPushButton:hover {\n"
-"    background-color: #ecf5ff;\n"
-"    color: #409eff;\n"
-"}\n"
-"\n"
-"QPushButton:pressed, QPushButton:checked {\n"
-"    border: 1px solid #3a8ee6;\n"
-"    color: #409eff;\n"
-"}")
-        self.growthItems_Button.setObjectName("growthItems_Button")
-        self.choice_Chips_Button = QtWidgets.QPushButton(parent=self.scrollAreaWidgetContents_2)
+        self.widget = QtWidgets.QWidget(parent=self.scrollAreaWidgetContents_2)
+        self.widget.setGeometry(QtCore.QRect(0, 0, 171, 311))
+        self.widget.setObjectName("widget")
+        self.choice_Chips_Button = QtWidgets.QPushButton(parent=self.widget)
         self.choice_Chips_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
         self.choice_Chips_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
@@ -479,6 +431,78 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.choice_Chips_Button.setObjectName("choice_Chips_Button")
+        self.ItemsEX_Button = QtWidgets.QPushButton(parent=self.widget)
+        self.ItemsEX_Button.setGeometry(QtCore.QRect(0, 42, 175, 42))
+        self.ItemsEX_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.ItemsEX_Button.setObjectName("ItemsEX_Button")
+        self.Chips_Button = QtWidgets.QPushButton(parent=self.widget)
+        self.Chips_Button.setGeometry(QtCore.QRect(0, 84, 175, 42))
+        self.Chips_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.Chips_Button.setObjectName("Chips_Button")
+        self.growthItems_Button = QtWidgets.QPushButton(parent=self.widget)
+        self.growthItems_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
+        self.growthItems_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.growthItems_Button.setObjectName("growthItems_Button")
+        self.role_recommend_Button = QtWidgets.QPushButton(parent=self.widget)
+        self.role_recommend_Button.setGeometry(QtCore.QRect(0, 168, 175, 42))
+        self.role_recommend_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.role_recommend_Button.setObjectName("role_recommend_Button")
         self.scrollArea.setWidget(self.scrollAreaWidgetContents_2)
         self.functionALL_tabWidget.addTab(self.Charts_tab, "")
         self.refresh_devices_Button = QtWidgets.QPushButton(parent=Form)
@@ -775,10 +799,16 @@ class Ui_Form(object):
         self.only_checkSpendThisTradingPost_Button.setToolTip(_translate("Form", "<html><head/><body><p>仅只检索当前订单并自动交付</p><p>【自动停止】</p></body></html>"))
         self.only_checkSpendThisTradingPost_Button.setText(_translate("Form", "检索交付当前订单"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function2_tab), _translate("Form", "功能2"))
-        self.Chips_Button.setText(_translate("Form", "芯片获得途径一览"))
-        self.ItemsEX_Button.setText(_translate("Form", "养成材料掉率一览"))
-        self.growthItems_Button.setText(_translate("Form", "角色养成材料一览"))
+        self.choice_Chips_Button.setToolTip(_translate("Form", "来源：未知"))
         self.choice_Chips_Button.setText(_translate("Form", "自选箱芯片一览"))
+        self.ItemsEX_Button.setToolTip(_translate("Form", "来源：贴吧@提多米尔斯"))
+        self.ItemsEX_Button.setText(_translate("Form", "养成材料掉率一览"))
+        self.Chips_Button.setToolTip(_translate("Form", "来源：b站@莉莉维斯的头"))
+        self.Chips_Button.setText(_translate("Form", "芯片获得途径一览"))
+        self.growthItems_Button.setToolTip(_translate("Form", "来源：@思默fine"))
+        self.growthItems_Button.setText(_translate("Form", "角色养成材料一览"))
+        self.role_recommend_Button.setToolTip(_translate("Form", "来源：b站@莉莉维斯的头"))
+        self.role_recommend_Button.setText(_translate("Form", "角色养成推荐一览"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.Charts_tab), _translate("Form", "图表"))
         self.refresh_devices_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷新</p></body></html>"))
         self.order_exp1012w_checkBox.setText(_translate("Form", "10换12w经验"))

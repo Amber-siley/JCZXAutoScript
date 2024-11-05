@@ -803,85 +803,52 @@ QPushButton:pressed, QPushButton:checked {
       <bool>true</bool>
      </property>
      <widget class="QWidget" name="scrollAreaWidgetContents_2">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>171</width>
-        <height>164</height>
+        <width>166</width>
+        <height>311</height>
        </rect>
       </property>
-      <widget class="QPushButton" name="Chips_Button">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>84</y>
-         <width>175</width>
-         <height>42</height>
-        </rect>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">QPushButton {
-    background-color: #ffffff;
-    border: 1px solid #dcdfe6;
-    border-radius: 1px;
-}
-
-QPushButton:hover {
-    background-color: #ecf5ff;
-    color: #409eff;
-}
-
-QPushButton:pressed, QPushButton:checked {
-    border: 1px solid #3a8ee6;
-    color: #409eff;
-}</string>
-       </property>
-       <property name="text">
-        <string>芯片获得途径一览</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="ItemsEX_Button">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>42</y>
-         <width>175</width>
-         <height>42</height>
-        </rect>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">QPushButton {
-    background-color: #ffffff;
-    border: 1px solid #dcdfe6;
-    border-radius: 1px;
-}
-
-QPushButton:hover {
-    background-color: #ecf5ff;
-    color: #409eff;
-}
-
-QPushButton:pressed, QPushButton:checked {
-    border: 1px solid #3a8ee6;
-    color: #409eff;
-}</string>
-       </property>
-       <property name="text">
-        <string>养成材料掉率一览</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="growthItems_Button">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>311</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <widget class="QWidget" name="widget" native="true">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>175</width>
-         <height>42</height>
+         <width>171</width>
+         <height>311</height>
         </rect>
        </property>
-       <property name="styleSheet">
-        <string notr="true">QPushButton {
+       <widget class="QPushButton" name="choice_Chips_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>126</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>来源：未知</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -896,22 +863,25 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-       </property>
-       <property name="text">
-        <string>角色养成材料一览</string>
-       </property>
-      </widget>
-      <widget class="QPushButton" name="choice_Chips_Button">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>126</y>
-         <width>175</width>
-         <height>42</height>
-        </rect>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>自选箱芯片一览</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="ItemsEX_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>42</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>来源：贴吧@提多米尔斯</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -926,10 +896,110 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-       </property>
-       <property name="text">
-        <string>自选箱芯片一览</string>
-       </property>
+        </property>
+        <property name="text">
+         <string>养成材料掉率一览</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="Chips_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>84</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>来源：b站@莉莉维斯的头</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+        </property>
+        <property name="text">
+         <string>芯片获得途径一览</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="growthItems_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>来源：@思默fine</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+        </property>
+        <property name="text">
+         <string>角色养成材料一览</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="role_recommend_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>168</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>来源：b站@莉莉维斯的头</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+        </property>
+        <property name="text">
+         <string>角色养成推荐一览</string>
+        </property>
+       </widget>
       </widget>
      </widget>
     </widget>
