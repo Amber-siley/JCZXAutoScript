@@ -8,7 +8,9 @@ from Ui_UI import Ui_Form
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog
 from PyQt6.QtGui import QIntValidator,QTextCursor
-from PyQt6.QtCore import QThread
+from PyQt6.QtCore import QThread,pyqtSignal
+
+from jczxFM import FileManage,UrlManage
 
 import subprocess
 import logging
@@ -24,7 +26,7 @@ def joinPath(*args):
 LOG_LEVEL = logging.INFO
 # LOG_LEVEL = logging.DEBUG
 
-VERSION = "0.1.5A"
+VERSION = "0.1.6A"
 
 DEFAULT_CONFIGS = {
     "adb_path": None,
@@ -91,6 +93,8 @@ ILLUSION_LEVELS_SETTINGS = [
     #     "SwipeUP": True
     # }
 ]
+
+ADB_TOOLS_URL = "https://googledownloads.cn/android/repository/platform-tools-latest-windows.zip"
 
 class LoggerHandler(logging.Handler):
     def __init__(self, edit) -> None:
@@ -207,6 +211,8 @@ class MainManager(Ui_Form):
         self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
         self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
         
+        self.work_thread.referADBSignal.connect(lambda x: (self.setADBPathConfig(x), self.referMenuConfig()))
+        
         self.test_button.clicked.connect(self.__debug)
     
     def __init_orderlist(self):
@@ -282,10 +288,13 @@ class MainManager(Ui_Form):
         self.work_thread.start()
     
     def __init_devices(self):
+        if not self.adb.adb_path:
+            self.work_thread.setMode(WorkThread.SET_ADBTOOLS)
+            self.work_thread.start()
         if devices := self.adb.devices():
             self.adb_devices_comboBox.clear()
             self.adb_devices_comboBox.addItems(devices)
-    
+
     def __start_app(self):
         """初始化app"""
         self.form.show()
@@ -304,7 +313,7 @@ class MainManager(Ui_Form):
         self.adb_devices_comboBox.setCurrentText(self.adb_device)
         self.quarry_time_lineEdit.setText(str(self.quarry_time))
     
-    def setADBPathConfig(self,adb_path):
+    def setADBPathConfig(self, adb_path):
         self.config.set_config("adb_path", adb_path)
         self.adb.setADBPath(adb_path)
         self.__init_devices()
@@ -432,8 +441,8 @@ class JCZXGame:
     class _ScreenCut:
         class Point: ...
         def __init__(self, w, h) -> None:
-            self.w = w
-            self.h = h
+            self.w = max(w, h)
+            self.h = min(w, h)
         
         def cut(self, cx, cy, x, y) ->tuple[Point, Point]:
             w = self.w//cx
@@ -627,6 +636,7 @@ class JCZXGame:
     
     def __init__(self, adb_path: str, logger:logging.Logger, config:JsonConfig) -> None:
         self.adb_path = adb_path
+        self.device = None
         self.log = logger
         self.config = config
         self.startupinfo = subprocess.STARTUPINFO()
@@ -634,6 +644,13 @@ class JCZXGame:
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
         self.submitOrders = []
         self.size = None
+    
+    def dowloadADBTools(self) -> str:
+        self.log.info("未指定adb路径，已添加下载任务")
+        FileManage(file_path = UrlManage.dowload(ADB_TOOLS_URL)).unzip(retain = False)
+        adb_path = join("platform-tools", "adb.exe")
+        self.log.info("解压完成")
+        return adb_path
     
     def initDeviceInfor(self):
         """更新设备信息"""
@@ -699,15 +716,22 @@ class JCZXGame:
         else:
             msg = subprocess.check_output([self.adb_path, "-s", self.device, "shell", "wm", "size"], startupinfo = self.startupinfo).decode().split(" ")[-1].replace("\r\n","")
             w, h = map(int, msg.split("x"))
-            self.size = (w, h)
-        return (w, h)
+            self.size = (max(w, h), min(w, h))
+        return self.size
     
     @check
     def screenshot(self) -> bytes:
-        return subprocess.check_output([self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"], startupinfo = self.startupinfo)
+        data = subprocess.check_output([self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"], startupinfo = self.startupinfo)
+        # self.log.debug(f"data size {len(data)}, {img.shape}")
+        return data
     
     def grayScreenshot(self, cutPoints = None):
         screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_GRAYSCALE)
+        # self.log.debug(f"截图 size {screenshot.shape}")
+        # self.log.debug(f"截取范围 {cutPoints}")
+        return self.cutScreenshot(screenshot, cutPoints)
+
+    def cutScreenshot(self, screenshot, cutPoints = None):
         if cutPoints:
             (x0, y0), (x1, y1) = cutPoints
             return screenshot[y0:y1, x0:x1]
@@ -715,7 +739,9 @@ class JCZXGame:
             return screenshot
     
     def click(self, x:int, y:int, wait:int = 0):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)], startupinfo = self.startupinfo)
+        cmd = [self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)]
+        subprocess.run(cmd, startupinfo = self.startupinfo)
+        self.log.debug(f"执行 {' '.join(cmd)}")
         sleep(wait)
     
     def waitClick(self, x:int, y:int, newLocation:str | Callable, wait = 0):
@@ -833,6 +859,7 @@ class JCZXGame:
             if loc := self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0)):
                 self.Pos.homePos = loc
             else:
+                self.click(self.width//2, self.height//2, 1)
                 self.back(1)
                 self.makeSure(5)
                 self.gotoHome()
@@ -1007,7 +1034,7 @@ class JCZXGame:
     
     def addAndCraft(self, num:int):
         loc = self.findImageCenterLocation(self.Buttons.add_button, cutPoints = self.ScreenCut.cut3x3(2, 1))
-        for i in range(num - 1):
+        for _ in range(num - 1):
             self.click(*loc, wait = 0.1)
         self.craftSure()
     
@@ -1104,11 +1131,11 @@ class JCZXGame:
         if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a1, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 1
         if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a0, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 0
     
-    def makeSure(self, wait = 0.3):
+    def makeSure(self, wait = 0.3, log = False):
         if self.Pos.surePos:
             self.click(*self.Pos.surePos, wait)
         else:
-            loc = self._clickAndMsg(self.Buttons.sure_button, wait = wait, cutPoints = self.ScreenCut.cut4x2(2, 1))
+            loc = self._clickAndMsg(self.Buttons.sure_button, wait = wait, log = log, cutPoints = self.ScreenCut.cut4x2(2, 1))
             self.Pos.surePos = loc
     
     def makeSureEnter(self, wait = 0.5):
@@ -1141,7 +1168,7 @@ class JCZXGame:
             loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 2, cutPoints = self.ScreenCut.cut3x3(2, 2))
             self.Pos.craftPos = loc
         # self.click(self.width//2, self.height//1.2, wait = 1)
-        self.clickGetItems(0.5)
+        self.clickGetItems(1)
     
     def tellMeSubmitOrders(self):
         """告知我已交付订单"""
@@ -1209,12 +1236,12 @@ class JCZXGame:
                 break
         self.gotoHome()
     
-    def back(self, wait:int = 1):
+    def back(self, wait:int = 1, log = False):
         if self.Pos.backPos:
             self.click(*self.Pos.backPos, wait)
             self.log.info("返回上一界面")
         else:
-            loc = self._clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = wait, cutPoints = self.ScreenCut.cut3x7(0, 0))
+            loc = self._clickAndMsg(self.Buttons.back_button, "返回上一界面", "返回上一界面失败", wait = wait, log = log, cutPoints = self.ScreenCut.cut3x7(0, 0))
             self.Pos.backPos = loc
     
     def takeOre(self):
@@ -1271,7 +1298,7 @@ class JCZXGame:
             return None
     
     def _waitClickAndMsg(self, button_path, newLocation: Callable | str = None, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, maxWaitSecond:int = 0, log:bool = False, cutPoints = None, per = 0.9, waitFunc:Callable = lambda: ..., func: Callable = lambda: ...) -> None:
-        """等待并点击按钮，性能消耗较大,稳定性较差
+        """等待并点击按钮
         - newLocation 点击按钮后前往的界面
         """
         startTime = datetime.now()
@@ -1347,12 +1374,14 @@ class JCZXGame:
         if grayScreenshot is None:
             screenshot_gray = self.grayScreenshot(cutPoints)
         else:
-            if cutPoints:
-                (x0, y0), (x1, y1) = cutPoints
-                screenshot_gray = grayScreenshot[y0:y1, x0:x1]
-            else:
-                screenshot_gray = grayScreenshot
+            screenshot_gray = self.cutScreenshot(grayScreenshot, cutPoints)
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
+        # cv2.imshow("1", screenshot_gray)
+        # self.log.debug(f"模板 {button_path}")
+        # self.log.debug(f"模板大小 {template_gray.shape}")
+        # self.log.debug(f"截图大小 {screenshot_gray.shape}")
+        # self.log.debug(f"截取范围 {cutPoints}")
+        # cv2.waitKey()
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > per)
         h, w= template_gray.shape[0:2]
@@ -1436,6 +1465,9 @@ class WorkThread(QThread):
     AWARD = "刷助战奖励"
     ONLY_THIS_ORDERS = "仅当前订单"
     SMALL_CRYSTAL = "虚影微晶任务"
+    SET_ADBTOOLS = "下载ADB工具"
+    
+    referADBSignal = pyqtSignal(str)
     
     def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
         super().__init__()
@@ -1457,8 +1489,9 @@ class WorkThread(QThread):
         self.mode = mode
     
     def run(self) -> None:
-        try:
-            self.adb.loginJCZX()
+        def _():
+            if self.adb.device:
+                self.adb.loginJCZX()
             match self.mode:
                 case self.ORDER:
                     self.spendOrder()
@@ -1474,10 +1507,18 @@ class WorkThread(QThread):
                     self.only_ths_orders()
                 case self.SMALL_CRYSTAL:
                     self.small_crystal()
+                case self.SET_ADBTOOLS:
+                    self.referADB()
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
-        except Exception as e:
-            self.log.error(f"捕获到错误抛出 {e}")
+        
+        if LOG_LEVEL == logging.INFO:
+            try:
+                _()
+            except Exception as e:
+                self.log.error(f"捕获到错误抛出 {e}")
+        else:
+            _()
 
     def __debug(self):
         self.adb.loginJCZX()
@@ -1500,7 +1541,10 @@ class WorkThread(QThread):
             else:
                 self.log.error("当前未选择【ADB调试路径】")
         return _
-        
+    
+    def referADB(self):
+        self.referADBSignal.emit(self.adb.dowloadADBTools())
+    
     @check
     def spendOrder(self):
         self.log.info("开始【交付订单】任务")
