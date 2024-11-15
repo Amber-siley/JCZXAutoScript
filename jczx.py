@@ -11,6 +11,7 @@ from PyQt6.QtGui import QIntValidator,QTextCursor
 from PyQt6.QtCore import QThread,pyqtSignal
 
 from jczxFM import FileManage,UrlManage
+from resources.icon.icon import *
 
 import subprocess
 import logging
@@ -208,6 +209,7 @@ class MainManager(Ui_Form):
         self.choice_Chips_Button.clicked.connect(lambda: startfile(self.Chart.ChoiceChips))
         self.role_recommend_Button.clicked.connect(lambda: startfile(self.Chart.roleRecommend))
         self.start_smallCrystal_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(2))
+        self.start_switch_work_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
         self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
         self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
         
@@ -1168,7 +1170,7 @@ class JCZXGame:
             loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 2, cutPoints = self.ScreenCut.cut3x3(2, 2))
             self.Pos.craftPos = loc
         # self.click(self.width//2, self.height//1.2, wait = 1)
-        self.clickGetItems(1)
+        self.clickGetItems(2)
     
     def tellMeSubmitOrders(self):
         """告知我已交付订单"""

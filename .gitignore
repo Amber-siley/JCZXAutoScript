@@ -167,5 +167,7 @@ quarry.py
 schedule_lite.py
 test_quarry.py
 test.py
+test
+platform-tools
 tmp.png
 resources/screenshot.py

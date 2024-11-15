@@ -8,7 +8,6 @@
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -101,7 +100,7 @@ class Ui_Form(object):
 "}")
         self.choice_adbpath_Button.setText("")
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("C:/ProgramData/Microsoft/Device Stage/Task/{e35be42d-f742-4d96-a50a-1775fb1a7a42}/folder.ico"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon.addPixmap(QtGui.QPixmap(":/icon/files.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.choice_adbpath_Button.setIcon(icon)
         self.choice_adbpath_Button.setObjectName("choice_adbpath_Button")
         self.authername_label = QtWidgets.QLabel(parent=Form)
@@ -122,25 +121,6 @@ class Ui_Form(object):
 "    border-radius: 1px;\n"
 "}")
         self.logger_Browser.setObjectName("logger_Browser")
-        self.quarry_time_label = QtWidgets.QLabel(parent=Form)
-        self.quarry_time_label.setGeometry(QtCore.QRect(0, 48, 71, 24))
-        self.quarry_time_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.quarry_time_label.setIndent(-1)
-        self.quarry_time_label.setObjectName("quarry_time_label")
-        self.quarry_time_lineEdit = QtWidgets.QLineEdit(parent=Form)
-        self.quarry_time_lineEdit.setGeometry(QtCore.QRect(70, 48, 105, 24))
-        self.quarry_time_lineEdit.setText("")
-        self.quarry_time_lineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.quarry_time_lineEdit.setObjectName("quarry_time_lineEdit")
-        self.minute_unit_label = QtWidgets.QLabel(parent=Form)
-        self.minute_unit_label.setGeometry(QtCore.QRect(150, 48, 25, 24))
-        self.minute_unit_label.setStyleSheet("QLabel {\n"
-"    border-bottom: 1px solid #dcdfe6;\n"
-"    border-top: 1px solid #dcdfe6;\n"
-"}")
-        self.minute_unit_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.minute_unit_label.setIndent(-1)
-        self.minute_unit_label.setObjectName("minute_unit_label")
         self.save_config_Button = QtWidgets.QPushButton(parent=Form)
         self.save_config_Button.setGeometry(QtCore.QRect(400, 223, 175, 42))
         self.save_config_Button.setStyleSheet("QPushButton {\n"
@@ -222,7 +202,7 @@ class Ui_Form(object):
         self.help_textBrowser.setGeometry(QtCore.QRect(175, 24, 225, 241))
         self.help_textBrowser.setObjectName("help_textBrowser")
         self.functionALL_tabWidget = QtWidgets.QTabWidget(parent=Form)
-        self.functionALL_tabWidget.setGeometry(QtCore.QRect(0, 72, 175, 192))
+        self.functionALL_tabWidget.setGeometry(QtCore.QRect(0, 48, 175, 221))
         self.functionALL_tabWidget.setStyleSheet("QTabBar::tab {\n"
 "    width: 58px;\n"
 "    height:  24px;\n"
@@ -241,7 +221,7 @@ class Ui_Form(object):
         self.function1_tab = QtWidgets.QWidget()
         self.function1_tab.setObjectName("function1_tab")
         self.function1_widget = QtWidgets.QWidget(parent=self.function1_tab)
-        self.function1_widget.setGeometry(QtCore.QRect(0, 0, 175, 168))
+        self.function1_widget.setGeometry(QtCore.QRect(0, 0, 175, 191))
         self.function1_widget.setObjectName("function1_widget")
         self.start_spend_order_Button = QtWidgets.QPushButton(parent=self.function1_widget)
         self.start_spend_order_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
@@ -315,7 +295,7 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         icon1 = QtGui.QIcon()
-        icon1.addPixmap(QtGui.QPixmap("C:/Users/enjoy/AppData/Local/New Technology Studio/Apps/OpenIV/Resources/Graphics/UI/Icons/settings.ico"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon1.addPixmap(QtGui.QPixmap(":/icon/settings.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.start_smallCrystal_settings_Button.setIcon(icon1)
         self.start_smallCrystal_settings_Button.setObjectName("start_smallCrystal_settings_Button")
         self.start_spend_order_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
@@ -337,11 +317,30 @@ class Ui_Form(object):
 "}")
         self.start_spend_order_settings_Button.setIcon(icon1)
         self.start_spend_order_settings_Button.setObjectName("start_spend_order_settings_Button")
+        self.start_switch_work_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
+        self.start_switch_work_settings_Button.setGeometry(QtCore.QRect(150, 42, 24, 42))
+        self.start_switch_work_settings_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_switch_work_settings_Button.setIcon(icon1)
+        self.start_switch_work_settings_Button.setObjectName("start_switch_work_settings_Button")
         self.functionALL_tabWidget.addTab(self.function1_tab, "")
         self.function2_tab = QtWidgets.QWidget()
         self.function2_tab.setObjectName("function2_tab")
         self.function1_widget_2 = QtWidgets.QWidget(parent=self.function2_tab)
-        self.function1_widget_2.setGeometry(QtCore.QRect(0, 0, 175, 168))
+        self.function1_widget_2.setGeometry(QtCore.QRect(0, 0, 175, 201))
         self.function1_widget_2.setObjectName("function1_widget_2")
         self.auto_agree_friend_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
         self.auto_agree_friend_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
@@ -401,7 +400,7 @@ class Ui_Form(object):
         self.Charts_tab = QtWidgets.QWidget()
         self.Charts_tab.setObjectName("Charts_tab")
         self.scrollArea = QtWidgets.QScrollArea(parent=self.Charts_tab)
-        self.scrollArea.setGeometry(QtCore.QRect(0, 0, 171, 164))
+        self.scrollArea.setGeometry(QtCore.QRect(0, 0, 171, 191))
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents_2 = QtWidgets.QWidget()
@@ -411,7 +410,7 @@ class Ui_Form(object):
         self.scrollAreaWidgetContents_2.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.scrollAreaWidgetContents_2.setObjectName("scrollAreaWidgetContents_2")
         self.widget = QtWidgets.QWidget(parent=self.scrollAreaWidgetContents_2)
-        self.widget.setGeometry(QtCore.QRect(0, 0, 171, 311))
+        self.widget.setGeometry(QtCore.QRect(0, 0, 171, 341))
         self.widget.setObjectName("widget")
         self.choice_Chips_Button = QtWidgets.QPushButton(parent=self.widget)
         self.choice_Chips_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
@@ -524,8 +523,9 @@ class Ui_Form(object):
 "}")
         self.refresh_devices_Button.setText("")
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
+        icon2.addPixmap(QtGui.QPixmap(":/icon/refresh.png"), QtGui.QIcon.Mode.Normal, QtGui.QIcon.State.Off)
         self.refresh_devices_Button.setIcon(icon2)
+        self.refresh_devices_Button.setIconSize(QtCore.QSize(10, 10))
         self.refresh_devices_Button.setObjectName("refresh_devices_Button")
         self.stackedWidget = QtWidgets.QStackedWidget(parent=Form)
         self.stackedWidget.setGeometry(QtCore.QRect(400, 0, 171, 191))
@@ -696,6 +696,25 @@ class Ui_Form(object):
         self.stackedWidget.addWidget(self.OrderListSetting)
         self.SwitchWorkSetting = QtWidgets.QWidget()
         self.SwitchWorkSetting.setObjectName("SwitchWorkSetting")
+        self.quarry_time_lineEdit = QtWidgets.QLineEdit(parent=self.SwitchWorkSetting)
+        self.quarry_time_lineEdit.setGeometry(QtCore.QRect(70, 0, 105, 24))
+        self.quarry_time_lineEdit.setText("")
+        self.quarry_time_lineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.quarry_time_lineEdit.setObjectName("quarry_time_lineEdit")
+        self.quarry_time_label = QtWidgets.QLabel(parent=self.SwitchWorkSetting)
+        self.quarry_time_label.setGeometry(QtCore.QRect(0, 0, 71, 24))
+        self.quarry_time_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.quarry_time_label.setIndent(-1)
+        self.quarry_time_label.setObjectName("quarry_time_label")
+        self.minute_unit_label = QtWidgets.QLabel(parent=self.SwitchWorkSetting)
+        self.minute_unit_label.setGeometry(QtCore.QRect(150, 0, 25, 24))
+        self.minute_unit_label.setStyleSheet("QLabel {\n"
+"    border-bottom: 1px solid #dcdfe6;\n"
+"    border-top: 1px solid #dcdfe6;\n"
+"}")
+        self.minute_unit_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.minute_unit_label.setIndent(-1)
+        self.minute_unit_label.setObjectName("minute_unit_label")
         self.stackedWidget.addWidget(self.SwitchWorkSetting)
         self.IllusionTaskSetting = QtWidgets.QWidget()
         self.IllusionTaskSetting.setObjectName("IllusionTaskSetting")
@@ -727,9 +746,6 @@ class Ui_Form(object):
         self.choice_adbpath_Button.raise_()
         self.authername_label.raise_()
         self.logger_Browser.raise_()
-        self.quarry_time_label.raise_()
-        self.quarry_time_lineEdit.raise_()
-        self.minute_unit_label.raise_()
         self.save_config_Button.raise_()
         self.adb_devices_comboBox.raise_()
         self.test_button.raise_()
@@ -752,10 +768,6 @@ class Ui_Form(object):
         self.adb_devices_label.setText(_translate("Form", "设备列表："))
         self.choice_adbpath_Button.setToolTip(_translate("Form", "选择ADB调试程序"))
         self.authername_label.setText(_translate("Form", "Created by 思默fine"))
-        self.quarry_time_label.setText(_translate("Form", "矿场结算："))
-        self.quarry_time_lineEdit.setToolTip(_translate("Form", "第一次矿场结算时间 会自动获取"))
-        self.minute_unit_label.setToolTip(_translate("Form", "第一次矿场结算时间 会自动获取"))
-        self.minute_unit_label.setText(_translate("Form", "M"))
         self.save_config_Button.setToolTip(_translate("Form", "保存当前配置并应用"))
         self.save_config_Button.setText(_translate("Form", "保存用户配置"))
         self.stop_all_task_Button.setToolTip(_translate("Form", "停止脚本操作游戏"))
@@ -821,5 +833,9 @@ class Ui_Form(object):
         self.oder_list_label.setText(_translate("Form", " 订单列表"))
         self.craft_enable_label.setToolTip(_translate("Form", "是否启用合成"))
         self.craft_enable_label.setText(_translate("Form", "启用合成"))
+        self.quarry_time_lineEdit.setToolTip(_translate("Form", "第一次矿场结算时间 会自动获取"))
+        self.quarry_time_label.setText(_translate("Form", "矿场结算："))
+        self.minute_unit_label.setToolTip(_translate("Form", "第一次矿场结算时间 会自动获取"))
+        self.minute_unit_label.setText(_translate("Form", "M"))
         self.illusionChoice_Label.setText(_translate("Form", "虚影关卡："))
         self.illusionChoiceTeam_Label.setText(_translate("Form", "选择队伍："))

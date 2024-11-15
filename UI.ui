@@ -162,8 +162,8 @@ QPushButton:pressed, QPushButton:checked {
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>C:/ProgramData/Microsoft/Device Stage/Task/{e35be42d-f742-4d96-a50a-1775fb1a7a42}/folder.ico</normaloff>C:/ProgramData/Microsoft/Device Stage/Task/{e35be42d-f742-4d96-a50a-1775fb1a7a42}/folder.ico</iconset>
+    <iconset resource="resources/icon/icon.qrc">
+     <normaloff>:/icon/files.png</normaloff>:/icon/files.png</iconset>
    </property>
   </widget>
   <widget class="QLabel" name="authername_label">
@@ -209,72 +209,6 @@ QPushButton:pressed, QPushButton:checked {
 	border: 2px solid rgb(238, 238, 238);
 	border-radius: 1px;
 }</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="quarry_time_label">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>48</y>
-     <width>71</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>矿场结算：</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="indent">
-    <number>-1</number>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="quarry_time_lineEdit">
-   <property name="geometry">
-    <rect>
-     <x>70</x>
-     <y>48</y>
-     <width>105</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>第一次矿场结算时间 会自动获取</string>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QLabel" name="minute_unit_label">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>48</y>
-     <width>25</width>
-     <height>24</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>第一次矿场结算时间 会自动获取</string>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">QLabel {
-	border-bottom: 1px solid #dcdfe6;
-	border-top: 1px solid #dcdfe6;
-}</string>
-   </property>
-   <property name="text">
-    <string>M</string>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="indent">
-    <number>-1</number>
    </property>
   </widget>
   <widget class="QPushButton" name="save_config_Button">
@@ -460,9 +394,9 @@ li.checked::marker { content: &quot;\2612&quot;; }
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>72</y>
+     <y>48</y>
      <width>175</width>
-     <height>192</height>
+     <height>221</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -506,7 +440,7 @@ QTabBar::tab:selected {
        <x>0</x>
        <y>0</y>
        <width>175</width>
-       <height>168</height>
+       <height>191</height>
       </rect>
      </property>
      <widget class="QPushButton" name="start_spend_order_Button">
@@ -635,8 +569,8 @@ QPushButton:pressed, QPushButton:checked {
 }</string>
       </property>
       <property name="icon">
-       <iconset>
-        <normaloff>C:/Users/enjoy/AppData/Local/New Technology Studio/Apps/OpenIV/Resources/Graphics/UI/Icons/settings.ico</normaloff>C:/Users/enjoy/AppData/Local/New Technology Studio/Apps/OpenIV/Resources/Graphics/UI/Icons/settings.ico</iconset>
+       <iconset resource="resources/icon/icon.qrc">
+        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
       </property>
      </widget>
      <widget class="QPushButton" name="start_spend_order_settings_Button">
@@ -666,8 +600,39 @@ QPushButton:pressed, QPushButton:checked {
 }</string>
       </property>
       <property name="icon">
-       <iconset>
-        <normaloff>C:/Users/enjoy/AppData/Local/New Technology Studio/Apps/OpenIV/Resources/Graphics/UI/Icons/settings.ico</normaloff>C:/Users/enjoy/AppData/Local/New Technology Studio/Apps/OpenIV/Resources/Graphics/UI/Icons/settings.ico</iconset>
+       <iconset resource="resources/icon/icon.qrc">
+        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="start_switch_work_settings_Button">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>42</y>
+        <width>24</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+      </property>
+      <property name="icon">
+       <iconset resource="resources/icon/icon.qrc">
+        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
       </property>
      </widget>
     </widget>
@@ -682,7 +647,7 @@ QPushButton:pressed, QPushButton:checked {
        <x>0</x>
        <y>0</y>
        <width>175</width>
-       <height>168</height>
+       <height>201</height>
       </rect>
      </property>
      <widget class="QPushButton" name="auto_agree_friend_Button">
@@ -796,7 +761,7 @@ QPushButton:pressed, QPushButton:checked {
        <x>0</x>
        <y>0</y>
        <width>171</width>
-       <height>164</height>
+       <height>191</height>
       </rect>
      </property>
      <property name="widgetResizable">
@@ -832,7 +797,7 @@ QPushButton:pressed, QPushButton:checked {
          <x>0</x>
          <y>0</y>
          <width>171</width>
-         <height>311</height>
+         <height>341</height>
         </rect>
        </property>
        <widget class="QPushButton" name="choice_Chips_Button">
@@ -1038,8 +1003,14 @@ QPushButton:pressed, QPushButton:checked {
     <string/>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png</normaloff>D:/steam-games/steamapps/common/Counter-Strike Global Offensive/game/core/tools/images/common/refresh.png</iconset>
+    <iconset resource="resources/icon/icon.qrc">
+     <normaloff>:/icon/refresh.png</normaloff>:/icon/refresh.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>10</width>
+     <height>10</height>
+    </size>
    </property>
   </widget>
   <widget class="QStackedWidget" name="stackedWidget">
@@ -1510,7 +1481,74 @@ QPushButton:pressed, QPushButton:checked {
      </widget>
     </widget>
    </widget>
-   <widget class="QWidget" name="SwitchWorkSetting"/>
+   <widget class="QWidget" name="SwitchWorkSetting">
+    <widget class="QLineEdit" name="quarry_time_lineEdit">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>0</y>
+       <width>105</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>第一次矿场结算时间 会自动获取</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="quarry_time_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>矿场结算：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="minute_unit_label">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>0</y>
+       <width>25</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>第一次矿场结算时间 会自动获取</string>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLabel {
+	border-bottom: 1px solid #dcdfe6;
+	border-top: 1px solid #dcdfe6;
+}</string>
+     </property>
+     <property name="text">
+      <string>M</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+   </widget>
    <widget class="QWidget" name="IllusionTaskSetting">
     <widget class="QWidget" name="IllusionTaskSetting_widget" native="true">
      <property name="geometry">
@@ -1594,9 +1632,6 @@ QPushButton:pressed, QPushButton:checked {
   <zorder>choice_adbpath_Button</zorder>
   <zorder>authername_label</zorder>
   <zorder>logger_Browser</zorder>
-  <zorder>quarry_time_label</zorder>
-  <zorder>quarry_time_lineEdit</zorder>
-  <zorder>minute_unit_label</zorder>
   <zorder>save_config_Button</zorder>
   <zorder>adb_devices_comboBox</zorder>
   <zorder>test_button</zorder>
@@ -1607,6 +1642,8 @@ QPushButton:pressed, QPushButton:checked {
   <zorder>stackedWidget</zorder>
   <zorder>stop_all_task_Button</zorder>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources/icon/icon.qrc"/>
+ </resources>
  <connections/>
 </ui>
