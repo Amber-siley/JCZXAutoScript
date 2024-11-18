@@ -8,6 +8,7 @@
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
+
 class Ui_Form(object):
     def setupUi(self, Form):
         Form.setObjectName("Form")
@@ -396,6 +397,43 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.only_checkSpendThisTradingPost_Button.setObjectName("only_checkSpendThisTradingPost_Button")
+        self.useIllusion2_favor_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.useIllusion2_favor_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
+        self.useIllusion2_favor_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.useIllusion2_favor_Button.setObjectName("useIllusion2_favor_Button")
+        self.useIllusion2_favor_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.useIllusion2_favor_settings_Button.setGeometry(QtCore.QRect(150, 126, 24, 42))
+        self.useIllusion2_favor_settings_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.useIllusion2_favor_settings_Button.setIcon(icon1)
+        self.useIllusion2_favor_settings_Button.setObjectName("useIllusion2_favor_settings_Button")
         self.functionALL_tabWidget.addTab(self.function2_tab, "")
         self.Charts_tab = QtWidgets.QWidget()
         self.Charts_tab.setObjectName("Charts_tab")
@@ -740,6 +778,31 @@ class Ui_Form(object):
         self.IllusionChoiceTeam_comboBox.setGeometry(QtCore.QRect(63, 24, 111, 24))
         self.IllusionChoiceTeam_comboBox.setObjectName("IllusionChoiceTeam_comboBox")
         self.stackedWidget.addWidget(self.IllusionTaskSetting)
+        self.useIllusion2FavorSetting = QtWidgets.QWidget()
+        self.useIllusion2FavorSetting.setObjectName("useIllusion2FavorSetting")
+        self.choiceTeam_label = QtWidgets.QLabel(parent=self.useIllusion2FavorSetting)
+        self.choiceTeam_label.setGeometry(QtCore.QRect(0, 0, 71, 24))
+        self.choiceTeam_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.choiceTeam_label.setIndent(-1)
+        self.choiceTeam_label.setObjectName("choiceTeam_label")
+        self.choiceTeam_comboBox = QtWidgets.QComboBox(parent=self.useIllusion2FavorSetting)
+        self.choiceTeam_comboBox.setGeometry(QtCore.QRect(70, 0, 105, 24))
+        self.choiceTeam_comboBox.setObjectName("choiceTeam_comboBox")
+        self.illusionTime_label = QtWidgets.QLabel(parent=self.useIllusion2FavorSetting)
+        self.illusionTime_label.setGeometry(QtCore.QRect(0, 24, 71, 24))
+        self.illusionTime_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.illusionTime_label.setIndent(-1)
+        self.illusionTime_label.setObjectName("illusionTime_label")
+        self.favor_illusionToFavor_spinBox = QtWidgets.QSpinBox(parent=self.useIllusion2FavorSetting)
+        self.favor_illusionToFavor_spinBox.setGeometry(QtCore.QRect(70, 24, 105, 24))
+        self.favor_illusionToFavor_spinBox.setProperty("value", 60)
+        self.favor_illusionToFavor_spinBox.setObjectName("favor_illusionToFavor_spinBox")
+        self.illusionTime_label_2 = QtWidgets.QLabel(parent=self.useIllusion2FavorSetting)
+        self.illusionTime_label_2.setGeometry(QtCore.QRect(130, 25, 24, 22))
+        self.illusionTime_label_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.illusionTime_label_2.setIndent(-1)
+        self.illusionTime_label_2.setObjectName("illusionTime_label_2")
+        self.stackedWidget.addWidget(self.useIllusion2FavorSetting)
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
         self.adb_devices_label.raise_()
@@ -787,11 +850,13 @@ class Ui_Form(object):
 "<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">ADB路径</span><span style=\" font-size:8pt;\">：模拟器目录下的</span><span style=\" font-size:8pt; color:#ff0000;\">ADB.exe</span><span style=\" font-size:8pt;\">调试程序路径</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">设备列表</span><span style=\" font-size:8pt;\">：模拟器下的设备，默认获取第一个设备</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">矿场结算</span><span style=\" font-size:8pt;\">：矿场每</span><span style=\" font-size:8pt; color:#ff0000;\">30分钟</span><span style=\" font-size:8pt;\">结算一次矿物，值与账号注册时间有关，当没有指定设置或者为-1时，自动挂机30分钟获取时间</span></p>\n"
-"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">启动交付订单</span><span style=\" font-size:8pt;\">：检查订单库并交付符合条件的订单，仅</span><span style=\" font-size:8pt; color:#ff0000;\">执行一次</span><span style=\" font-size:8pt;\">，稳定性较低，在找完符合条件的订单并合成交付后，就结束控制</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">启动交付订单</span><span style=\" font-size:8pt;\">：检查订单库并交付符合条件的订单，仅</span><span style=\" font-size:8pt; color:#ff0000;\">执行一次</span><span style=\" font-size:8pt;\">，在找完符合条件的订单并合成交付后，就结束控制</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">启动换班任务</span><span style=\" font-size:8pt;\">：全天24小时运行收益最大化，给电费大佬准备的，进行矿场换班工作，无限时间运行（除非手动停止），</span><span style=\" font-size:8pt; color:#ff0000;\">高稳定性</span><span style=\" font-size:8pt;\">，在未到达矿场结算时间是脚本不操作游戏，玩家可以自由控制（注意：请先设置【</span><span style=\" font-size:8pt; color:#ff0000;\">驻员状况</span><span style=\" font-size:8pt;\">】中的矿场编队预设，需要预设两个队伍，一个主力队伍，一个替换队伍，首先让自己的</span><span style=\" font-size:8pt; color:#ff0000;\">替换队伍</span><span style=\" font-size:8pt;\">上班，再启动该模式，启动该模式时不要让自己的</span><span style=\" font-size:8pt; color:#ff0000;\">主力挖矿</span><span style=\" font-size:8pt;\">队伍上班，实际上结算时会自动让主力队伍上班，系统还是会以主力队伍进行结算，</span><span style=\" font-size:8pt; color:#ff0000;\">替换队伍</span><span style=\" font-size:8pt;\">相当于</span><span style=\" font-size:8pt; color:#ff0000;\">占位符</span><span style=\" font-size:8pt;\">）</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">虚影微晶任务</span><span style=\" font-size:8pt;\">：当每周</span><span style=\" font-size:8pt; color:#ff0000;\">微晶未满</span><span style=\" font-size:8pt;\">时，通过通关虚影来刷取微晶</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">自动同意好友申请</span><span style=\" font-size:8pt;\">：全自动同意好友申请，用于在订单群当义父时解放双手</span></p>\n"
-"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">为主号刷助战奖励</span><span style=\" font-size:8pt;\">：（助战奖励只有4w，蚊子腿）确保当前使用为</span><span style=\" font-size:8pt; color:#ff0000;\">小号</span><span style=\" font-size:8pt;\">，至少通过了一次</span><span style=\" font-size:8pt; color:#ff0000;\">虚影阿瑞斯</span><span style=\" font-size:8pt;\">，且小号只有主号</span><span style=\" font-size:8pt; color:#ff0000;\">一个好友</span><span style=\" font-size:8pt;\">，同时一号队伍留有</span><span style=\" font-size:8pt; color:#ff0000;\">2x2的位置</span><span style=\" font-size:8pt; color:#000000;\">。</span><span style=\" font-size:8pt;\">关于双倍助战：助战奖励分割时间为</span><span style=\" font-size:8pt; color:#ff0000;\">每天凌晨3点</span><span style=\" font-size:8pt; color:#000000;\">，在3点之前进行20次助战，3点过后进行20次助战，3点后到第二次刷助战期间主号</span><span style=\" font-size:8pt; color:#ff0000;\">不要登录</span><span style=\" font-size:8pt; color:#000000;\">，次日双倍助战奖励</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">为主号刷助战奖励</span><span style=\" font-size:8pt;\">：（助战奖励只有4w，蚊子腿）确保当前使用为</span><span style=\" font-size:8pt; color:#ff0000;\">小号</span><span style=\" font-size:8pt;\">，至少通过了一次</span><span style=\" font-size:8pt; color:#ff0000;\">虚影阿瑞斯</span><span style=\" font-size:8pt;\">，且小号只有主号</span><span style=\" font-size:8pt; color:#ff0000;\">一个好友</span><span style=\" font-size:8pt;\">，同时一号队伍留有</span><span style=\" font-size:8pt; color:#ff0000;\">2x2的位置</span><span style=\" font-size:8pt; color:#000000;\">。</span><span style=\" font-size:8pt;\">关于双倍助战：助战奖励分割时间为</span><span style=\" font-size:8pt; color:#ff0000;\">每天凌晨3点</span><span style=\" font-size:8pt; color:#000000;\">，在3点之前进行20次助战，3点过后进行20次助战，3点后到第二次刷助战期间主号</span><span style=\" font-size:8pt; color:#ff0000;\">不要登录</span><span style=\" font-size:8pt; color:#000000;\">，次日双倍助战奖励，白话==&gt;（主号上线前助战20次，上线后助战20次）</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">检索交付当前订单</span><span style=\" font-size:8pt; color:#000000;\">：</span><span style=\" font-size:8pt;\">仅只检索当前订单并自动交付，若</span><span style=\" font-size:8pt; color:#ff0000;\">没有</span><span style=\" font-size:8pt;\">在订单页则前往</span><span style=\" font-size:8pt; color:#ff0000;\">交易所</span></p>\n"
+"<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">使用虚影刷取好感</span><span style=\" font-size:8pt; color:#000000;\">：通关虚影可以涨</span><span style=\" font-size:8pt; color:#ff0000;\">好感度</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">停止所有任务</span><span style=\" font-size:8pt;\">：无视所有情况，强制停止脚本任务</span></p>\n"
 "<p style=\" margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:8pt; color:#ffaa00;\">保存用户配置</span><span style=\" font-size:8pt;\">：使用手动修改方式并不会触发自动保存（仅ADB路径与矿场结算时间），推荐修改配置项后手动保存配置</span></p>\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;\"><br /></p>\n"
@@ -801,8 +866,8 @@ class Ui_Form(object):
         self.start_spend_order_Button.setText(_translate("Form", "启动交付订单"))
         self.start_switch_work_Button.setToolTip(_translate("Form", "<html><head/><body><p>进行矿场员工换班任务</p><p>【手动停止】</p></body></html>"))
         self.start_switch_work_Button.setText(_translate("Form", "启动换班任务"))
-        self.start_smallCrystal_Button.setToolTip(_translate("Form", "<html><head/><body><p>根据设置通关虚影</p><p>【自动停止】</p></body></html>"))
-        self.start_smallCrystal_Button.setText(_translate("Form", "启动虚影任务"))
+        self.start_smallCrystal_Button.setToolTip(_translate("Form", "<html><head/><body><p>根据设置通关虚影来获得微晶</p><p>【自动停止】</p></body></html>"))
+        self.start_smallCrystal_Button.setText(_translate("Form", "虚影微晶任务"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function1_tab), _translate("Form", "功能1"))
         self.auto_agree_friend_Button.setToolTip(_translate("Form", "<html><head/><body><p>自动同意好友申请</p><p>【手动停止】</p></body></html>"))
         self.auto_agree_friend_Button.setText(_translate("Form", "自动同意好友申请"))
@@ -810,6 +875,8 @@ class Ui_Form(object):
         self.brushing_surportAwards_Button.setText(_translate("Form", "为主号刷助战奖励"))
         self.only_checkSpendThisTradingPost_Button.setToolTip(_translate("Form", "<html><head/><body><p>仅只检索当前订单并自动交付</p><p>【自动停止】</p></body></html>"))
         self.only_checkSpendThisTradingPost_Button.setText(_translate("Form", "检索交付当前订单"))
+        self.useIllusion2_favor_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷取固定次数虚影增长好感度</p><p>【自动停止】</p></body></html>"))
+        self.useIllusion2_favor_Button.setText(_translate("Form", "使用虚影刷取好感"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function2_tab), _translate("Form", "功能2"))
         self.choice_Chips_Button.setToolTip(_translate("Form", "来源：未知"))
         self.choice_Chips_Button.setText(_translate("Form", "自选箱芯片一览"))
@@ -839,3 +906,6 @@ class Ui_Form(object):
         self.minute_unit_label.setText(_translate("Form", "M"))
         self.illusionChoice_Label.setText(_translate("Form", "虚影关卡："))
         self.illusionChoiceTeam_Label.setText(_translate("Form", "选择队伍："))
+        self.choiceTeam_label.setText(_translate("Form", "选择队伍："))
+        self.illusionTime_label.setText(_translate("Form", "通关虚影："))
+        self.illusionTime_label_2.setText(_translate("Form", "次"))

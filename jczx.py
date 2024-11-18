@@ -1,4 +1,4 @@
-from typing import Any,Callable
+from typing import Any,Callable,Literal
 from os.path import exists,join,abspath
 from os import startfile
 from json import load,dumps
@@ -63,7 +63,7 @@ DEFAULT_CONFIGS = {
             "craft": False
         }
     },
-    "illusions":{
+    "illusions": {
         "level": {
             "index": 1,
             "illusionNum": 0,
@@ -71,6 +71,10 @@ DEFAULT_CONFIGS = {
             "SwipeUP": True
         },
         "teamNum": 0
+    },
+    "favor": {
+        "teamNum": 1,
+        "time": 40
     }
 }
 
@@ -99,13 +103,17 @@ ADB_TOOLS_URL = "https://googledownloads.cn/android/repository/platform-tools-la
 
 class LoggerHandler(logging.Handler):
     def __init__(self, edit) -> None:
-        super().__init__(logging.DEBUG)
+        super().__init__(LOG_LEVEL)
         self.edit = edit
         self.formatter = logging.Formatter('%(asctime)s: %(message)s', datefmt = "%H:%M:%S")
+        # self.logFile = lambda: open("JCZXAutoScriptLog.log", "a", encoding = "utf-8")
     
     def emit(self, record):
         msg = self.format(record)
         self.edit.append(msg)
+        # logFile = self.logFile()
+        # logFile.write(msg + "\n")
+        # logFile.close()
         sleep(0.01)
         self.edit.moveCursor(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.MoveAnchor)
     
@@ -126,7 +134,7 @@ class LoggerHandler(logging.Handler):
         new_msg = self.formatter.format(record)
         msg = '<span style="color:{}">{}</span>'.format(color, new_msg)
         return msg
-    
+
 class MainManager(Ui_Form):
     class _Chart:
         GrowthItems = joinPath("resources","toolChart","养成材料一览.png")
@@ -141,8 +149,8 @@ class MainManager(Ui_Form):
         self.app = app
         self.form = QWidget()
         self.fileDialog = QFileDialog()
-        self.config = JsonConfig("autoScriptConfig.json", DEFAULT_CONFIGS)
-        self.log = logging.Logger(__name__, LOG_LEVEL)
+        self.config = JsonConfig("JCZXAutoScriptConfig.json", DEFAULT_CONFIGS)
+        self.log = logging.Logger(__name__, logging.DEBUG)
         self.adb = JCZXGame(self.adb_path, self.log, self.config)
         self.work_thread = WorkThread(self.adb, self.log, self.config)
         
@@ -154,6 +162,7 @@ class MainManager(Ui_Form):
         """初始化"""
         self.__init_title()
         self.__init_illusionSettings()
+        self.__init_favorSettings()
         self.__init_buttom()
         self.__init_menu()
         self.__init_orderlist()
@@ -180,11 +189,15 @@ class MainManager(Ui_Form):
             self.test_button.setHidden(True)
     
     def __init_valueRule(self):
-        self.quarry_time_lineEdit.setValidator(QIntValidator(0, 60))
+        self.quarry_time_lineEdit.setValidator(QIntValidator(-1, 60))
     
     def __init_logger(self):
         handler = LoggerHandler(self.logger_Browser)
+        fileHandler = logging.FileHandler("JCZXAutoScriptLog.log", "w", "utf-8")
+        fileHandler.setFormatter(logging.Formatter('%(asctime)s [%(lineno)d] : %(message)s', datefmt = "%H:%M:%S"))
+        fileHandler.setLevel(logging.DEBUG)
         self.log.addHandler(handler)
+        self.log.addHandler(fileHandler)
         self.log.info("程序初始化完成")
         sys.stdout = handler
     
@@ -201,6 +214,8 @@ class MainManager(Ui_Form):
         self.auto_agree_friend_Button.clicked.connect(lambda: self.createWork(self.work_thread.ACCEPT))
         self.brushing_surportAwards_Button.clicked.connect(lambda: self.createWork(self.work_thread.AWARD))
         self.only_checkSpendThisTradingPost_Button.clicked.connect(lambda: self.createWork(self.work_thread.ONLY_THIS_ORDERS))
+        self.useIllusion2_favor_Button.clicked.connect(lambda: self.createWork(self.work_thread.ILLUSION_TO_FAVOR))
+        
         self.start_smallCrystal_Button.clicked.connect(lambda: self.createWork(self.work_thread.SMALL_CRYSTAL))
         self.refresh_devices_Button.clicked.connect(self.__init_devices)
         self.growthItems_Button.clicked.connect(lambda: startfile(self.Chart.GrowthItems))
@@ -210,6 +225,7 @@ class MainManager(Ui_Form):
         self.role_recommend_Button.clicked.connect(lambda: startfile(self.Chart.roleRecommend))
         self.start_smallCrystal_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(2))
         self.start_switch_work_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
+        self.useIllusion2_favor_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(3))
         self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
         self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
         
@@ -258,6 +274,13 @@ class MainManager(Ui_Form):
         self.IllusionChoice_comboBox.setCurrentIndex(self.config.illusion.level.index)
         self.IllusionChoiceTeam_comboBox.addItems(["1号队伍", "2号队伍"])
         self.IllusionChoiceTeam_comboBox.setCurrentIndex(self.config.illusion.teamNum)
+    
+    def __init_favorSettings(self):
+        self.choiceTeam_comboBox.addItems([f"第{i}队伍" for i in range(1, 9)])
+        self.choiceTeam_comboBox.setCurrentIndex(self.config.favor.teamNum - 1)
+        self.choiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.favor.setTeamNum(self.choiceTeam_comboBox.currentIndex()+1))
+        self.favor_illusionToFavor_spinBox.setValue(self.config.favor.time)
+        self.favor_illusionToFavor_spinBox.valueChanged.connect(lambda: self.config.favor.setTime(self.favor_illusionToFavor_spinBox.value()))
     
     def stopTask(self):
         if self.work_thread.isRunning():
@@ -357,6 +380,21 @@ class JsonConfig:
         def setCraftEnable(self, enable:bool) -> None:
             self.__config.set_config(("orders", self.opt, "craft"), enable)
     
+    class Favor:
+        def __init__(self, config) -> None:
+            self.__config = config
+            
+        @property
+        def teamNum(self):  return self.__config.get_config(("favor", "teamNum"))
+        @property
+        def time(self): return self.__config.get_config(("favor", "time"))
+        
+        def setTeamNum(self, Num: int):
+            self.__config.set_config(("favor", "teamNum"), Num)
+        
+        def setTime(self, time: int):
+            self.__config.set_config(("favor", "time"), time)
+        
     class IllusionSetting:
         class Level:
             def __init__(self, configs) -> None:
@@ -390,6 +428,7 @@ class JsonConfig:
             
         self._configs:dict = load(open(self.path, encoding = "utf-8"))
         self.illusion = self.IllusionSetting(self)
+        self.favor = self.Favor(self)
     
     def set_config(self,sec:str | tuple,value:Any):
         """设置配置项"""
@@ -473,6 +512,7 @@ class JCZXGame:
         back_button = joinPath("resources","buttons","back.png")
         visit_button = joinPath("resources","buttons","visit.png")
         login_button = joinPath("resources","buttons","login.png")
+        choiceTeam_button = joinPath("resources","buttons","choiceTeam.png")
         signIn_button = joinPath("resources","buttons","sign-in.png")
         userLogin_button = joinPath("resources","buttons","userLogin.png")
         choiceFriendTP_button = joinPath("resources","locations","whateverTradingPost.png")
@@ -541,6 +581,14 @@ class JCZXGame:
         a16 = joinPath("resources","numbers","16.png")
         a17 = joinPath("resources","numbers","17.png")
         a18 = joinPath("resources","numbers","18.png")
+        team1 = joinPath("resources","numbers","team1.png")
+        team2 = joinPath("resources","numbers","team2.png")
+        team3 = joinPath("resources","numbers","team3.png")
+        team4 = joinPath("resources","numbers","team4.png")
+        team5 = joinPath("resources","numbers","team5.png")
+        team6 = joinPath("resources","numbers","team6.png")
+        team7 = joinPath("resources","numbers","team7.png")
+        team8 = joinPath("resources","numbers","team8.png")
     
     class _Orders:
         build61 = joinPath("resources","orders","build61.png")
@@ -743,7 +791,7 @@ class JCZXGame:
     def click(self, x:int, y:int, wait:int = 0):
         cmd = [self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)]
         subprocess.run(cmd, startupinfo = self.startupinfo)
-        self.log.debug(f"执行 {' '.join(cmd)}")
+        self.log.debug(f"执行点击 {' '.join(cmd)}")
         sleep(wait)
     
     def waitClick(self, x:int, y:int, newLocation:str | Callable, wait = 0):
@@ -761,8 +809,7 @@ class JCZXGame:
     def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None, per = 0.9) -> tuple[int, int] | None:
         if locations := self.findImageCenterLocations(button_path, cutPoints, per):
             self.click(*locations[index], wait)
-            self.log.debug(f"{locations}")
-            # self.log.info(f"点击按钮{button_path}")
+            self.log.debug(f"点击按钮{button_path} {locations[index]}")
             return locations[index]
         else:
             if log:
@@ -798,11 +845,41 @@ class JCZXGame:
             if self.needSureEnterFight: self.makeSureEnter(2)
         return loc
 
+    def waitClickStartFight(self):
+        if loc := self._waitClickAndMsg(self.Buttons.startFight_button, infoMsg = "准备战斗", wait = 1, cutPoints = self.ScreenCut.cut3x4(2, 3)):
+            if self.needSureEnterFight: self.makeSureEnter(2)
+        return loc
+    
     def clickHelpFight(self, index:int = None):
         return self._clickAndMsg(self.Buttons.helpFight_button, index = index, wait = 0.5, cutPoints = self.ScreenCut.cut2x1(1, 0))
     
-    def clickCloseUseThisTeam(self, index:int = None):
+    def clickCloseUseThisTeam(self, index: Literal[0, 1] = None):
         return self._clickAndMsg(self.Buttons.useTeam_button, index = index, wait = 0.1, cutPoints = self.ScreenCut.cut4x1(3, 0))
+    
+    def choiceFightTeam(self, index: Literal[0, 1] = None, teamNum: Literal[1, 2, 3, 4, 5, 6, 7, 8] = 3):
+        def _(Num):
+            match Num:
+                case 1:
+                    self._clickAndMsg(self.Numbers.team1, wait = 0.3)
+                case 2:
+                    self._clickAndMsg(self.Numbers.team2, wait = 0.3)
+                case 3:
+                    self._clickAndMsg(self.Numbers.team3, wait = 0.3)
+                case 4:
+                    self._clickAndMsg(self.Numbers.team4, wait = 0.3)
+                case 5:
+                    self._clickAndMsg(self.Numbers.team5, wait = 0.3)
+                case 6:
+                    self._clickAndMsg(self.Numbers.team6, wait = 0.3)
+                case 7:
+                    self._clickAndMsg(self.Numbers.team7, wait = 0.3)
+                case 8:
+                    self._clickAndMsg(self.Numbers.team8, wait = 0.3)
+                    
+        loc = self._clickAndMsg(self.Buttons.choiceTeam_button, index = index, wait = 0.3, cutPoints = self.ScreenCut.cut4x1(1, 0))
+        if teamNum > 5:
+            self.swipe(loc[0], loc[1]+100, *loc, wait = 0.3)
+        _(teamNum)
     
     def clickStartToAct(self, wait = 0, log = True):
         if log:
@@ -822,7 +899,7 @@ class JCZXGame:
     def getQuarryTime(self) -> int:
         """获取矿场结算时间"""
         self.takeOre()
-        if self.config.quarry_time:
+        if self.config.quarry_time != -1:
             self.log.info("正在等待【矿场结算时间】")
             return self.config.quarry_time
         self.log.info("未设置【矿场结算】时间正在挂机获取")
@@ -846,7 +923,7 @@ class JCZXGame:
         if self.startJCZX():
             self.log.info("启动交错战线")
             self._waitClickAndMsg(self.Buttons.userLogin_button, self.Buttons.login_button, wait = 0.6)
-            self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.friends_button, wait = 2, waitFunc = lambda: self.click(self.width//2, self.height//2, wait = 0.3))
+            self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.friends_button, wait = 2, waitFunc = lambda: self.click(self.width//2, self.height//2))
             self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.5, maxWaitSecond = 3, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1))
             self._waitClickAndMsg(self.Buttons.signIn_button, wait = 1, maxWaitSecond = 2, func = lambda: (self.clickGetItems(), self.back()))
             self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.3, maxWaitSecond = 2, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
@@ -1089,8 +1166,8 @@ class JCZXGame:
                         self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x1(2, 0))
                         self.addAndCraft(expRawNum)
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
-                    self.back(0.5)
-                    self.back(0.5)
+                    self.back(1)
+                    self.back(1)
                     # self._clickAndMsg(img, wait = 1)
                     self.click(*locality, 1)
                     self.makeSure2(2)
@@ -1167,10 +1244,10 @@ class JCZXGame:
         if self.Pos.craftPos:
             self.click(*self.Pos.craftPos, wait = 1)
         else:
-            loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 2, cutPoints = self.ScreenCut.cut3x3(2, 2))
+            loc = self._clickAndMsg(self.Buttons.craftSure_button, wait = 1, cutPoints = self.ScreenCut.cut3x3(2, 2))
             self.Pos.craftPos = loc
-        # self.click(self.width//2, self.height//1.2, wait = 1)
-        self.clickGetItems(2)
+        self.clickGetItems(1)
+        self.click(self.width//2, self.height//4, wait = 1)
     
     def tellMeSubmitOrders(self):
         """告知我已交付订单"""
@@ -1301,7 +1378,18 @@ class JCZXGame:
     
     def _waitClickAndMsg(self, button_path, newLocation: Callable | str = None, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, maxWaitSecond:int = 0, log:bool = False, cutPoints = None, per = 0.9, waitFunc:Callable = lambda: ..., func: Callable = lambda: ...) -> None:
         """等待并点击按钮
-        - newLocation 点击按钮后前往的界面
+        - button_path   按钮样板路径
+        - newLocation   点击按钮后前往的界面
+        - infoMsg       info等级日志信息
+        - warnMsg       warn等级日志信息
+        - index         若按钮匹配多个，则可指定索引
+        - wait          点击后等待延迟
+        - maxWaitSecond 最大等待时间
+        - log           深度Debug日志信息是否显示
+        - cutPoints     图片截取部分
+        - per           模板匹配程度0~1
+        - waitFunc      等待过程中执行函数
+        - func          点击按钮后等待延迟并执行函数
         """
         startTime = datetime.now()
         while True:
@@ -1325,6 +1413,30 @@ class JCZXGame:
         sleep(wait)
         func()
     
+    def _waitLocations(self, button_path, newLocation: Callable | str = None, wait:int = 0, maxWaitSecond:int = 0, cutPoints = None, per = 0.9, waitFunc:Callable = lambda: ..., func: Callable = lambda: ...):
+        startTime = datetime.now()
+        while True:
+            locs = self.findImageCenterLocations(button_path, cutPoints, per)
+            waitFunc()
+            if newLocation:
+                if isinstance(newLocation, str):
+                    if self.inLocation(newLocation):
+                        break
+                else:
+                    if newLocation():
+                        break
+            elif locs:
+                break
+            sleep(0.3)
+            runningTime = (datetime.now() - startTime).seconds
+            if maxWaitSecond:
+                if runningTime >= maxWaitSecond:
+                    sleep(wait)
+                    return
+        sleep(wait)
+        func()
+        return locs
+        
     def findImageLeftUPLocations(self, button_path:str, cutPoints = None) -> list[tuple[int, int]] | None:
         if cutPoints:
             x0, y0 = cutPoints[0]
@@ -1363,7 +1475,7 @@ class JCZXGame:
             z = list(z)
             z[1] += 60
             return tuple(z)
-        if tmp := self.findImageCenterLocations(self.ScreenLocs.helpFriend, cutPoints = self.ScreenCut.cut2x1(1, 0)):
+        if tmp := self._waitLocations(self.ScreenLocs.helpFriend, maxWaitSecond = 4, cutPoints = self.ScreenCut.cut2x1(1, 0)):
             return list(map(_, tmp))
         else:
             return None
@@ -1378,12 +1490,10 @@ class JCZXGame:
         else:
             screenshot_gray = self.cutScreenshot(grayScreenshot, cutPoints)
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
-        # cv2.imshow("1", screenshot_gray)
         # self.log.debug(f"模板 {button_path}")
         # self.log.debug(f"模板大小 {template_gray.shape}")
         # self.log.debug(f"截图大小 {screenshot_gray.shape}")
         # self.log.debug(f"截取范围 {cutPoints}")
-        # cv2.waitKey()
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > per)
         h, w= template_gray.shape[0:2]
@@ -1412,11 +1522,15 @@ class JCZXGame:
                 self.Pos.acceptPos = loc
     
     def swipe(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)], startupinfo = self.startupinfo)
+        cmd = [self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)]
+        subprocess.run(cmd, startupinfo = self.startupinfo)
+        self.log.debug(f"执行滑动 {' '.join(cmd)}")
         sleep(wait)
     
     def dragAndDrop(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "input", "draganddrop", str(x1), str(y1), str(x2), str(y2), str(duration)], startupinfo = self.startupinfo)
+        cmd = [self.adb_path, "-s", self.device, "shell", "input", "draganddrop", str(x1), str(y1), str(x2), str(y2), str(duration)]
+        subprocess.run(cmd, startupinfo = self.startupinfo)
+        self.log.debug(f"执行拖动 {' '.join(cmd)}")
         sleep(wait)
     
     def swipeUPScreenCenter(self, wait = 1.5):
@@ -1468,6 +1582,7 @@ class WorkThread(QThread):
     ONLY_THIS_ORDERS = "仅当前订单"
     SMALL_CRYSTAL = "虚影微晶任务"
     SET_ADBTOOLS = "下载ADB工具"
+    ILLUSION_TO_FAVOR = "虚影刷好感度"
     
     referADBSignal = pyqtSignal(str)
     
@@ -1511,6 +1626,8 @@ class WorkThread(QThread):
                     self.small_crystal()
                 case self.SET_ADBTOOLS:
                     self.referADB()
+                case self.ILLUSION_TO_FAVOR:
+                    self.favor()
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
         
@@ -1523,7 +1640,8 @@ class WorkThread(QThread):
             _()
 
     def __debug(self):
-        self.adb.loginJCZX()
+        self.adb.clickCloseUseThisTeam(1)
+        self.adb.choiceFightTeam(0, 8)
         ...
         
     def setADB(self, adb):
@@ -1587,8 +1705,8 @@ class WorkThread(QThread):
         self.log.info("开始【刷取助战奖励】任务")
         for i in range(20):
             self.adb.gotoGeLiKeIllusion()
-            if i == 0:  sleep(2)
-            self.adb.clickStartFight()
+            # self.adb.clickStartFight()
+            self.adb.waitClickStartFight()
             # self.adb.clickCloseUseThisTeam(1)
             self.adb.clickHelpFight(0)
             self.adb.clickReadyTeamPlane(1.2)
@@ -1648,7 +1766,30 @@ class WorkThread(QThread):
                     adb.playIllusionZhouSi()
                 adb.gotoHome()
                 self.log.info("微晶已满【虚影微晶】任务结束")
-        
+    
+    @check
+    def favor(self):
+        teamNum = self.config.favor.teamNum
+        self.log.info(f"开始【虚影】任务")
+        self.log.info(f"使用第{teamNum}小队，战斗{self.config.favor.time}次")
+        adb = self.adb
+        for i in range(self.config.favor.time):
+            adb.gotoGeLiKeIllusion()
+            adb.clickStartFight()
+            match teamNum:
+                case 1:
+                    adb.clickCloseUseThisTeam(1)
+                case 2:
+                    adb.clickCloseUseThisTeam(0)
+                case _ as x:
+                    adb.clickCloseUseThisTeam(1)
+                    adb.choiceFightTeam(0, x)
+            adb.clickStartToAct(0, False)
+            self.log.info(f"战斗 x {i+1}")
+            adb.playIllusionARuiSi()
+        adb.gotoHome()
+        self.log.info("【虚影任务结束】")
+    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     manager = MainManager(app)

@@ -378,11 +378,13 @@ li.checked::marker { content: &quot;\2612&quot;; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;ADB路径&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：模拟器目录下的&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;ADB.exe&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;调试程序路径&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;设备列表&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：模拟器下的设备，默认获取第一个设备&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;矿场结算&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：矿场每&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;30分钟&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;结算一次矿物，值与账号注册时间有关，当没有指定设置或者为-1时，自动挂机30分钟获取时间&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;启动交付订单&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：检查订单库并交付符合条件的订单，仅&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;执行一次&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，稳定性较低，在找完符合条件的订单并合成交付后，就结束控制&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;启动交付订单&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：检查订单库并交付符合条件的订单，仅&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;执行一次&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，在找完符合条件的订单并合成交付后，就结束控制&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;启动换班任务&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：全天24小时运行收益最大化，给电费大佬准备的，进行矿场换班工作，无限时间运行（除非手动停止），&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;高稳定性&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，在未到达矿场结算时间是脚本不操作游戏，玩家可以自由控制（注意：请先设置【&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;驻员状况&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;】中的矿场编队预设，需要预设两个队伍，一个主力队伍，一个替换队伍，首先让自己的&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;替换队伍&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;上班，再启动该模式，启动该模式时不要让自己的&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;主力挖矿&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;队伍上班，实际上结算时会自动让主力队伍上班，系统还是会以主力队伍进行结算，&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;替换队伍&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;相当于&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;占位符&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;）&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;虚影微晶任务&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：当每周&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;微晶未满&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;时，通过通关虚影来刷取微晶&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;自动同意好友申请&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：全自动同意好友申请，用于在订单群当义父时解放双手&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;为主号刷助战奖励&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：（助战奖励只有4w，蚊子腿）确保当前使用为&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;小号&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，至少通过了一次&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;虚影阿瑞斯&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，且小号只有主号&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;一个好友&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，同时一号队伍留有&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;2x2的位置&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;。&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;关于双倍助战：助战奖励分割时间为&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;每天凌晨3点&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;，在3点之前进行20次助战，3点过后进行20次助战，3点后到第二次刷助战期间主号&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;不要登录&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;，次日双倍助战奖励&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;为主号刷助战奖励&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：（助战奖励只有4w，蚊子腿）确保当前使用为&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;小号&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，至少通过了一次&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;虚影阿瑞斯&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，且小号只有主号&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;一个好友&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;，同时一号队伍留有&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;2x2的位置&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;。&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;关于双倍助战：助战奖励分割时间为&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;每天凌晨3点&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;，在3点之前进行20次助战，3点过后进行20次助战，3点后到第二次刷助战期间主号&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;不要登录&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;，次日双倍助战奖励，白话==&amp;gt;（主号上线前助战20次，上线后助战20次）&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;检索交付当前订单&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;：&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;仅只检索当前订单并自动交付，若&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;没有&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;在订单页则前往&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;交易所&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;使用虚影刷取好感&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#000000;&quot;&gt;：通关虚影可以涨&lt;/span&gt;&lt;span style=&quot; font-size:8pt; color:#ff0000;&quot;&gt;好感度&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;停止所有任务&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：无视所有情况，强制停止脚本任务&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:8pt; color:#ffaa00;&quot;&gt;保存用户配置&lt;/span&gt;&lt;span style=&quot; font-size:8pt;&quot;&gt;：使用手动修改方式并不会触发自动保存（仅ADB路径与矿场结算时间），推荐修改配置项后手动保存配置&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
@@ -519,7 +521,7 @@ QPushButton:pressed, QPushButton:checked {
        </rect>
       </property>
       <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;根据设置通关虚影&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;根据设置通关虚影来获得微晶&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="styleSheet">
        <string notr="true">QPushButton {
@@ -539,7 +541,7 @@ QPushButton:pressed, QPushButton:checked {
 }</string>
       </property>
       <property name="text">
-       <string>启动虚影任务</string>
+       <string>虚影微晶任务</string>
       </property>
      </widget>
      <widget class="QPushButton" name="start_smallCrystal_settings_Button">
@@ -747,6 +749,70 @@ QPushButton:pressed, QPushButton:checked {
       </property>
       <property name="text">
        <string>检索交付当前订单</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="useIllusion2_favor_Button">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>126</y>
+        <width>175</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;刷取固定次数虚影增长好感度&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+      </property>
+      <property name="text">
+       <string>使用虚影刷取好感</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="useIllusion2_favor_settings_Button">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>126</y>
+        <width>24</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+      </property>
+      <property name="icon">
+       <iconset resource="resources/icon/icon.qrc">
+        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
       </property>
      </widget>
     </widget>
@@ -1623,6 +1689,88 @@ QPushButton:pressed, QPushButton:checked {
        </rect>
       </property>
      </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="useIllusion2FavorSetting">
+    <widget class="QLabel" name="choiceTeam_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>选择队伍：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="choiceTeam_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>0</y>
+       <width>105</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="illusionTime_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>24</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>通关虚影：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QSpinBox" name="favor_illusionToFavor_spinBox">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>24</y>
+       <width>105</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="value">
+      <number>60</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="illusionTime_label_2">
+     <property name="geometry">
+      <rect>
+       <x>130</x>
+       <y>25</y>
+       <width>24</width>
+       <height>22</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>次</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
     </widget>
    </widget>
   </widget>
