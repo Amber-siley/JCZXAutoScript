@@ -163,10 +163,12 @@ cython_debug/
 
 # slexce
 autoScriptConfig.json
+JCZXAutoScriptConfig.json
 quarry.py
 schedule_lite.py
 test_quarry.py
 test.py
+VersionNews.txt
 test
 platform-tools
 tmp.png
