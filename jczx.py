@@ -4,14 +4,16 @@ from os import startfile
 from json import load,dumps
 from time import sleep
 from datetime import datetime
+
+from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog,QHBoxLayout,QLabel,QListWidgetItem
+from PyQt6.QtGui import QIntValidator,QTextCursor,QFont
+from PyQt6.QtCore import QThread,pyqtSignal,QSize
+
 from Ui_jczxUI import Ui_Form
-
-from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog
-from PyQt6.QtGui import QIntValidator,QTextCursor
-from PyQt6.QtCore import QThread,pyqtSignal
-
 from jczxFM import FileManage,UrlManage
 from resources.icon.icon import *
+from Ui_jczxQuarryCalculator import Ui_QuarryCalculator
+from jczxQuarry import Quarry,floor
 
 import subprocess
 import logging
@@ -149,6 +151,7 @@ class MainManager(Ui_Form):
         self.log = logging.Logger(__name__, logging.DEBUG)
         self.adb = JCZXGame(self.adb_path, self.log, self.config)
         self.work_thread = WorkThread(self.adb, self.log, self.config)
+        self.quarryCalculators = []
         
     def setupUi(self):
         super().setupUi(self.form)
@@ -159,6 +162,7 @@ class MainManager(Ui_Form):
         self.__init_title()
         self.__init_illusionSettings()
         self.__init_favorSettings()
+        self.__init_quarryCalculatorCharacters()
         self.__init_buttom()
         self.__init_menu()
         self.__init_orderlist()
@@ -222,8 +226,10 @@ class MainManager(Ui_Form):
         self.start_smallCrystal_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(2))
         self.start_switch_work_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
         self.useIllusion2_favor_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(3))
+        self.quarry_calculator_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(4))
         self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
         self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
+        self.quarry_start_operation_Button.clicked.connect(self.startQuarryOperate)
         
         self.work_thread.referADBSignal.connect(lambda x: (self.setADBPathConfig(x), self.referMenuConfig()))
         
@@ -278,6 +284,17 @@ class MainManager(Ui_Form):
         self.favor_illusionToFavor_spinBox.setValue(self.config.favor.time)
         self.favor_illusionToFavor_spinBox.valueChanged.connect(lambda: self.config.favor.setTime(self.favor_illusionToFavor_spinBox.value()))
     
+    def __init_quarryCalculatorCharacters(self):
+        dirs = Quarry.Skills.dirs()
+        self.quarry_position1_comboBox.addItems(dirs)
+        self.quarry_position2_comboBox.addItems(dirs)
+        self.quarry_position3_comboBox.addItems(dirs)
+        self.quarry_position3_comboBox.setCurrentIndex(1)
+        self.quarry_position4_comboBox.addItems(dirs)
+        self.quarry_position4_comboBox.setCurrentIndex(3)
+        self.quarry_position5_comboBox.addItems(dirs)
+        self.quarry_position5_comboBox.setCurrentIndex(3)
+    
     def stopTask(self):
         if self.work_thread.isRunning():
             self.work_thread.stop()
@@ -293,6 +310,75 @@ class MainManager(Ui_Form):
             self.log.info(f"已停止【{self.work_thread.mode}】")
         self.work_thread.setMode(mode)
         self.work_thread.start()
+    
+    def getQuarrySkills(self) -> list[Quarry.Skills.Skill]:
+        skills = Quarry.Skills.ls()
+        pos1 = self.quarry_position1_comboBox.currentIndex()
+        pos2 = self.quarry_position2_comboBox.currentIndex()
+        pos3 = self.quarry_position3_comboBox.currentIndex()
+        pos4 = self.quarry_position4_comboBox.currentIndex()
+        pos5 = self.quarry_position5_comboBox.currentIndex()
+        return [skills[pos1], skills[pos2], skills[pos3], skills[pos4], skills[pos5]]
+    
+    def startQuarryOperate(self):
+        '''没写垃圾回收'''
+        wt = Ui_QuarryCalculator()
+        form = QWidget()
+        wt.setupUi(form)
+        quarry = Quarry()
+        quarry.setEmplotees(*self.getQuarrySkills())
+        workers = [wt.label_1, wt.label_2, wt.label_3, wt.label_4, wt.label_5]
+        workTimes = [wt.label_1_1, wt.label_2_1, wt.label_3_1, wt.label_4_1, wt.label_5_1]
+        for label,character,timeLabel,time in zip(workers, quarry.workers, workTimes, quarry.workeTime()):
+            label.setText(character.name)
+            timeLabel.setText(time)
+        base, elec, smelt = quarry.details()
+        base_sum, elec_sum, smelt_sum = sum(map(floor, base)), sum(map(floor, elec)), sum((map(floor, smelt)))
+        score = quarry.price(base_sum, elec_sum, smelt_sum)
+        start_base, start_elec, start_smelt = quarry.earnings
+        base_his, elec_his, smelt_his = quarry.totalHistory()
+        
+        wt.score_lineEdit.setText(str(score))
+        wt.money_lineEdit.setText(str(int(((base_sum-((elec_sum+smelt_sum)*3.5)))*0.7)*2.5))
+        wt.base_lineEdit.setText(str(base_sum))
+        wt.base_store_lineEdit.setText(f"{'{:.2f}'.format((base_sum/quarry.base_limit)*100)}% ({quarry.base_limit})")
+        wt.elec_lineEdit.setText(str(elec_sum))
+        wt.elec_store_lineEdit.setText(f"{'{:.2f}'.format((elec_sum/quarry.elec_limit)*100)}% ({quarry.elec_limit})")
+        wt.smelt_lineEdit.setText(str(smelt_sum))
+        wt.smelt_store_lineEdit.setText(f"{'{:.2f}'.format((smelt_sum/quarry.smelt_limit)*100)}% ({quarry.smelt_limit})")
+        
+        def listItemWidget(data: list) -> QWidget:
+            widget = QWidget()
+            layout = QHBoxLayout()
+            for i in data:
+                label = QLabel(str(i))
+                ft = QFont()
+                ft.setPointSize(6)
+                label.setFont(ft)
+                layout.addWidget(label)
+            widget.setLayout(layout)
+            return widget
+        
+        datas = [
+                list(map(str, range(0, len(base)+1))),
+                list(map(lambda x:"{}h{}m".format(x//60, x%60), range(0, (len(base)+1)*30, 30))),
+                [start_base]+list(map(lambda x:"{:.2f}".format(x), base)),
+                [start_elec]+list(map(lambda x:"{:.2f}".format(x), elec)),
+                [start_smelt]+list(map(lambda x:"{:.2f}".format(x), smelt)),
+                [quarry.price(*quarry.earnings)]+list(map(lambda x:"{:.2f}".format(quarry.price(*x)), zip(base, elec, smelt))),
+                list(map(lambda x:"{:.2f}".format(x), base_his)),
+                list(map(lambda x:"{:.2f}".format(x), elec_his)),
+                list(map(lambda x:"{:.2f}".format(x), smelt_his))
+        ]
+        datas = np.array(datas).T
+        for data in datas:
+            listItem = QListWidgetItem()
+            listItem.setSizeHint(QSize(398, 24))
+            wt.listWidget.addItem(listItem)
+            wt.listWidget.setItemWidget(listItem, listItemWidget(data))
+        
+        form.show()
+        self.quarryCalculators.append(form)
     
     def switchHelpTextHidden(self):
         if self.help_textBrowser.isHidden():
@@ -1486,10 +1572,6 @@ class JCZXGame:
         else:
             screenshot_gray = self.cutScreenshot(grayScreenshot, cutPoints)
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
-        # self.log.debug(f"模板 {button_path}")
-        # self.log.debug(f"模板大小 {template_gray.shape}")
-        # self.log.debug(f"截图大小 {screenshot_gray.shape}")
-        # self.log.debug(f"截取范围 {cutPoints}")
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > per)
         h, w= template_gray.shape[0:2]

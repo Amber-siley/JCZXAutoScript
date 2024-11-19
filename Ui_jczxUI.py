@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'e:\IDE\pyththon_project\jczx_auto_script\jczx\UI.ui'
+# Form implementation generated from reading ui file 'e:\IDE\pyththon_project\jczx_auto_script\jczx\jczxUI.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -205,7 +205,7 @@ class Ui_Form(object):
         self.functionALL_tabWidget = QtWidgets.QTabWidget(parent=Form)
         self.functionALL_tabWidget.setGeometry(QtCore.QRect(0, 48, 175, 221))
         self.functionALL_tabWidget.setStyleSheet("QTabBar::tab {\n"
-"    width: 58px;\n"
+"    width: 43px;\n"
 "    height:  24px;\n"
 "    background-color: rgb(234, 234, 234);\n"
 "}\n"
@@ -340,10 +340,10 @@ class Ui_Form(object):
         self.functionALL_tabWidget.addTab(self.function1_tab, "")
         self.function2_tab = QtWidgets.QWidget()
         self.function2_tab.setObjectName("function2_tab")
-        self.function1_widget_2 = QtWidgets.QWidget(parent=self.function2_tab)
-        self.function1_widget_2.setGeometry(QtCore.QRect(0, 0, 175, 201))
-        self.function1_widget_2.setObjectName("function1_widget_2")
-        self.auto_agree_friend_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.function2_widget = QtWidgets.QWidget(parent=self.function2_tab)
+        self.function2_widget.setGeometry(QtCore.QRect(0, 0, 175, 201))
+        self.function2_widget.setObjectName("function2_widget")
+        self.auto_agree_friend_Button = QtWidgets.QPushButton(parent=self.function2_widget)
         self.auto_agree_friend_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
         self.auto_agree_friend_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
@@ -361,7 +361,7 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.auto_agree_friend_Button.setObjectName("auto_agree_friend_Button")
-        self.brushing_surportAwards_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.brushing_surportAwards_Button = QtWidgets.QPushButton(parent=self.function2_widget)
         self.brushing_surportAwards_Button.setGeometry(QtCore.QRect(0, 42, 175, 42))
         self.brushing_surportAwards_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
@@ -379,7 +379,7 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.brushing_surportAwards_Button.setObjectName("brushing_surportAwards_Button")
-        self.only_checkSpendThisTradingPost_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.only_checkSpendThisTradingPost_Button = QtWidgets.QPushButton(parent=self.function2_widget)
         self.only_checkSpendThisTradingPost_Button.setGeometry(QtCore.QRect(0, 84, 175, 42))
         self.only_checkSpendThisTradingPost_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
@@ -397,7 +397,7 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.only_checkSpendThisTradingPost_Button.setObjectName("only_checkSpendThisTradingPost_Button")
-        self.useIllusion2_favor_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.useIllusion2_favor_Button = QtWidgets.QPushButton(parent=self.function2_widget)
         self.useIllusion2_favor_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
         self.useIllusion2_favor_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
@@ -415,7 +415,7 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.useIllusion2_favor_Button.setObjectName("useIllusion2_favor_Button")
-        self.useIllusion2_favor_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget_2)
+        self.useIllusion2_favor_settings_Button = QtWidgets.QPushButton(parent=self.function2_widget)
         self.useIllusion2_favor_settings_Button.setGeometry(QtCore.QRect(150, 126, 24, 42))
         self.useIllusion2_favor_settings_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
@@ -542,6 +542,30 @@ class Ui_Form(object):
         self.role_recommend_Button.setObjectName("role_recommend_Button")
         self.scrollArea.setWidget(self.scrollAreaWidgetContents_2)
         self.functionALL_tabWidget.addTab(self.Charts_tab, "")
+        self.tools_tab = QtWidgets.QWidget()
+        self.tools_tab.setObjectName("tools_tab")
+        self.tools_widget = QtWidgets.QWidget(parent=self.tools_tab)
+        self.tools_widget.setGeometry(QtCore.QRect(0, 0, 175, 191))
+        self.tools_widget.setObjectName("tools_widget")
+        self.quarry_calculator_Button = QtWidgets.QPushButton(parent=self.tools_widget)
+        self.quarry_calculator_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
+        self.quarry_calculator_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.quarry_calculator_Button.setObjectName("quarry_calculator_Button")
+        self.functionALL_tabWidget.addTab(self.tools_tab, "")
         self.refresh_devices_Button = QtWidgets.QPushButton(parent=Form)
         self.refresh_devices_Button.setGeometry(QtCore.QRect(159, 24, 16, 24))
         self.refresh_devices_Button.setStyleSheet("QPushButton {\n"
@@ -803,6 +827,67 @@ class Ui_Form(object):
         self.illusionTime_label_2.setIndent(-1)
         self.illusionTime_label_2.setObjectName("illusionTime_label_2")
         self.stackedWidget.addWidget(self.useIllusion2FavorSetting)
+        self.quarryCalculatorPage = QtWidgets.QWidget()
+        self.quarryCalculatorPage.setObjectName("quarryCalculatorPage")
+        self.quarry_position1_label = QtWidgets.QLabel(parent=self.quarryCalculatorPage)
+        self.quarry_position1_label.setGeometry(QtCore.QRect(0, 0, 31, 24))
+        self.quarry_position1_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.quarry_position1_label.setIndent(-1)
+        self.quarry_position1_label.setObjectName("quarry_position1_label")
+        self.quarry_position1_comboBox = QtWidgets.QComboBox(parent=self.quarryCalculatorPage)
+        self.quarry_position1_comboBox.setGeometry(QtCore.QRect(34, 0, 141, 24))
+        self.quarry_position1_comboBox.setObjectName("quarry_position1_comboBox")
+        self.quarry_position2_comboBox = QtWidgets.QComboBox(parent=self.quarryCalculatorPage)
+        self.quarry_position2_comboBox.setGeometry(QtCore.QRect(34, 24, 141, 24))
+        self.quarry_position2_comboBox.setObjectName("quarry_position2_comboBox")
+        self.quarry_position2_label = QtWidgets.QLabel(parent=self.quarryCalculatorPage)
+        self.quarry_position2_label.setGeometry(QtCore.QRect(0, 24, 31, 24))
+        self.quarry_position2_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.quarry_position2_label.setIndent(-1)
+        self.quarry_position2_label.setObjectName("quarry_position2_label")
+        self.quarry_position3_comboBox = QtWidgets.QComboBox(parent=self.quarryCalculatorPage)
+        self.quarry_position3_comboBox.setGeometry(QtCore.QRect(34, 48, 141, 24))
+        self.quarry_position3_comboBox.setObjectName("quarry_position3_comboBox")
+        self.quarry_position3_label = QtWidgets.QLabel(parent=self.quarryCalculatorPage)
+        self.quarry_position3_label.setGeometry(QtCore.QRect(0, 48, 31, 24))
+        self.quarry_position3_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.quarry_position3_label.setIndent(-1)
+        self.quarry_position3_label.setObjectName("quarry_position3_label")
+        self.quarry_position4_comboBox = QtWidgets.QComboBox(parent=self.quarryCalculatorPage)
+        self.quarry_position4_comboBox.setGeometry(QtCore.QRect(34, 72, 141, 24))
+        self.quarry_position4_comboBox.setObjectName("quarry_position4_comboBox")
+        self.quarry_position4_label = QtWidgets.QLabel(parent=self.quarryCalculatorPage)
+        self.quarry_position4_label.setGeometry(QtCore.QRect(0, 72, 31, 24))
+        self.quarry_position4_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.quarry_position4_label.setIndent(-1)
+        self.quarry_position4_label.setObjectName("quarry_position4_label")
+        self.quarry_position5_comboBox = QtWidgets.QComboBox(parent=self.quarryCalculatorPage)
+        self.quarry_position5_comboBox.setGeometry(QtCore.QRect(34, 96, 141, 24))
+        self.quarry_position5_comboBox.setObjectName("quarry_position5_comboBox")
+        self.quarry_position5_label = QtWidgets.QLabel(parent=self.quarryCalculatorPage)
+        self.quarry_position5_label.setGeometry(QtCore.QRect(0, 96, 31, 24))
+        self.quarry_position5_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.quarry_position5_label.setIndent(-1)
+        self.quarry_position5_label.setObjectName("quarry_position5_label")
+        self.quarry_start_operation_Button = QtWidgets.QPushButton(parent=self.quarryCalculatorPage)
+        self.quarry_start_operation_Button.setGeometry(QtCore.QRect(0, 120, 175, 24))
+        self.quarry_start_operation_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.quarry_start_operation_Button.setObjectName("quarry_start_operation_Button")
+        self.stackedWidget.addWidget(self.quarryCalculatorPage)
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
         self.adb_devices_label.raise_()
@@ -889,6 +974,8 @@ class Ui_Form(object):
         self.role_recommend_Button.setToolTip(_translate("Form", "来源：b站@莉莉维斯的头"))
         self.role_recommend_Button.setText(_translate("Form", "角色养成推荐一览"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.Charts_tab), _translate("Form", "图表"))
+        self.quarry_calculator_Button.setText(_translate("Form", "矿场计算器"))
+        self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.tools_tab), _translate("Form", "工具"))
         self.refresh_devices_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷新</p></body></html>"))
         self.order_exp1012w_checkBox.setText(_translate("Form", "10换12w经验"))
         self.order_coin1012w_checkBox.setText(_translate("Form", "10换12w星币"))
@@ -909,3 +996,9 @@ class Ui_Form(object):
         self.choiceTeam_label.setText(_translate("Form", "选择队伍："))
         self.illusionTime_label.setText(_translate("Form", "通关虚影："))
         self.illusionTime_label_2.setText(_translate("Form", "次"))
+        self.quarry_position1_label.setText(_translate("Form", "1："))
+        self.quarry_position2_label.setText(_translate("Form", "2："))
+        self.quarry_position3_label.setText(_translate("Form", "3："))
+        self.quarry_position4_label.setText(_translate("Form", "4："))
+        self.quarry_position5_label.setText(_translate("Form", "5："))
+        self.quarry_start_operation_Button.setText(_translate("Form", "开始计算"))
