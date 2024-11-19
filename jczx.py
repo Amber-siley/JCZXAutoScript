@@ -4,7 +4,7 @@ from os import startfile
 from json import load,dumps
 from time import sleep
 from datetime import datetime
-from Ui_UI import Ui_Form
+from Ui_jczxUI import Ui_Form
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog
 from PyQt6.QtGui import QIntValidator,QTextCursor
@@ -106,14 +106,10 @@ class LoggerHandler(logging.Handler):
         super().__init__(LOG_LEVEL)
         self.edit = edit
         self.formatter = logging.Formatter('%(asctime)s: %(message)s', datefmt = "%H:%M:%S")
-        # self.logFile = lambda: open("JCZXAutoScriptLog.log", "a", encoding = "utf-8")
     
     def emit(self, record):
         msg = self.format(record)
         self.edit.append(msg)
-        # logFile = self.logFile()
-        # logFile.write(msg + "\n")
-        # logFile.close()
         sleep(0.01)
         self.edit.moveCursor(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.MoveAnchor)
     

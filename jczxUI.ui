@@ -403,7 +403,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
    </property>
    <property name="styleSheet">
     <string notr="true">QTabBar::tab {
-	width: 58px;
+	width: 43px;
 	height:  24px;
 	background-color: rgb(234, 234, 234);
 }
@@ -643,7 +643,7 @@ QPushButton:pressed, QPushButton:checked {
     <attribute name="title">
      <string>功能2</string>
     </attribute>
-    <widget class="QWidget" name="function1_widget_2" native="true">
+    <widget class="QWidget" name="function2_widget" native="true">
      <property name="geometry">
       <rect>
        <x>0</x>
@@ -1032,6 +1032,51 @@ QPushButton:pressed, QPushButton:checked {
         </property>
        </widget>
       </widget>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tools_tab">
+    <attribute name="title">
+     <string>工具</string>
+    </attribute>
+    <widget class="QWidget" name="tools_widget" native="true">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>175</width>
+       <height>191</height>
+      </rect>
+     </property>
+     <widget class="QPushButton" name="quarry_calculator_Button">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>175</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+      </property>
+      <property name="text">
+       <string>矿场计算器</string>
+      </property>
      </widget>
     </widget>
    </widget>
@@ -1770,6 +1815,183 @@ QPushButton:pressed, QPushButton:checked {
      </property>
      <property name="indent">
       <number>-1</number>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="quarryCalculatorPage">
+    <widget class="QLabel" name="quarry_position1_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>31</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>1：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="quarry_position1_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>34</x>
+       <y>0</y>
+       <width>141</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="quarry_position2_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>34</x>
+       <y>24</y>
+       <width>141</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="quarry_position2_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>24</y>
+       <width>31</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>2：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="quarry_position3_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>34</x>
+       <y>48</y>
+       <width>141</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="quarry_position3_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>48</y>
+       <width>31</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>3：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="quarry_position4_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>34</x>
+       <y>72</y>
+       <width>141</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="quarry_position4_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>72</y>
+       <width>31</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>4：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="quarry_position5_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>34</x>
+       <y>96</y>
+       <width>141</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="quarry_position5_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>96</y>
+       <width>31</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>5：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="quarry_start_operation_Button">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>120</y>
+       <width>175</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+     </property>
+     <property name="text">
+      <string>开始计算</string>
      </property>
     </widget>
    </widget>
