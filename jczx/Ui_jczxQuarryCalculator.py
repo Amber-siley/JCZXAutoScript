@@ -8,7 +8,6 @@
 
 from PyQt6 import QtCore, QtGui, QtWidgets
 
-
 class Ui_QuarryCalculator(object):
     def setupUi(self, QuarryCalculator):
         QuarryCalculator.setObjectName("QuarryCalculator")
