@@ -79,6 +79,21 @@ QCheckBox::indicator {
 }
 QCheckBox::indicator:checked {
 	background-color: rgb(85, 170, 255);
+}
+QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
 }</string>
   </property>
   <widget class="QLabel" name="adb_path_label">
@@ -1078,6 +1093,36 @@ QPushButton:pressed, QPushButton:checked {
        <string>矿场计算器</string>
       </property>
      </widget>
+     <widget class="QPushButton" name="tasks_Button">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>42</y>
+        <width>175</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+      </property>
+      <property name="text">
+       <string>任务列表</string>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>
@@ -1130,7 +1175,7 @@ QPushButton:pressed, QPushButton:checked {
      <x>400</x>
      <y>0</y>
      <width>171</width>
-     <height>191</height>
+     <height>181</height>
     </rect>
    </property>
    <property name="currentIndex">
@@ -1994,6 +2039,84 @@ QPushButton:pressed, QPushButton:checked {
       <string>开始计算</string>
      </property>
     </widget>
+   </widget>
+   <widget class="QWidget" name="page">
+    <widget class="QComboBox" name="choiceTask_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>0</y>
+       <width>101</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="choiceTask_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>选择任务：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="renameTask_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>24</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>重命名：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="renameTask_lineEdit">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>24</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="renameTask_Button">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>24</y>
+       <width>30</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>命名</string>
+     </property>
+    </widget>
+    <zorder>choiceTask_label</zorder>
+    <zorder>renameTask_label</zorder>
+    <zorder>renameTask_lineEdit</zorder>
+    <zorder>renameTask_Button</zorder>
+    <zorder>choiceTask_comboBox</zorder>
    </widget>
   </widget>
   <zorder>adb_path_label</zorder>

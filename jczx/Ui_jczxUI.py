@@ -68,6 +68,21 @@ class Ui_Form(object):
 "}\n"
 "QCheckBox::indicator:checked {\n"
 "    background-color: rgb(85, 170, 255);\n"
+"}\n"
+"QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
 "}")
         self.adb_path_label = QtWidgets.QLabel(parent=Form)
         self.adb_path_label.setGeometry(QtCore.QRect(0, 0, 71, 24))
@@ -565,6 +580,24 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.quarry_calculator_Button.setObjectName("quarry_calculator_Button")
+        self.tasks_Button = QtWidgets.QPushButton(parent=self.tools_widget)
+        self.tasks_Button.setGeometry(QtCore.QRect(0, 42, 175, 42))
+        self.tasks_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.tasks_Button.setObjectName("tasks_Button")
         self.functionALL_tabWidget.addTab(self.tools_tab, "")
         self.refresh_devices_Button = QtWidgets.QPushButton(parent=Form)
         self.refresh_devices_Button.setGeometry(QtCore.QRect(159, 24, 16, 24))
@@ -590,7 +623,7 @@ class Ui_Form(object):
         self.refresh_devices_Button.setIconSize(QtCore.QSize(10, 10))
         self.refresh_devices_Button.setObjectName("refresh_devices_Button")
         self.stackedWidget = QtWidgets.QStackedWidget(parent=Form)
-        self.stackedWidget.setGeometry(QtCore.QRect(400, 0, 171, 191))
+        self.stackedWidget.setGeometry(QtCore.QRect(400, 0, 171, 181))
         self.stackedWidget.setObjectName("stackedWidget")
         self.OrderListSetting = QtWidgets.QWidget()
         self.OrderListSetting.setObjectName("OrderListSetting")
@@ -888,6 +921,33 @@ class Ui_Form(object):
 "}")
         self.quarry_start_operation_Button.setObjectName("quarry_start_operation_Button")
         self.stackedWidget.addWidget(self.quarryCalculatorPage)
+        self.page = QtWidgets.QWidget()
+        self.page.setObjectName("page")
+        self.choiceTask_comboBox = QtWidgets.QComboBox(parent=self.page)
+        self.choiceTask_comboBox.setGeometry(QtCore.QRect(70, 0, 101, 24))
+        self.choiceTask_comboBox.setObjectName("choiceTask_comboBox")
+        self.choiceTask_label = QtWidgets.QLabel(parent=self.page)
+        self.choiceTask_label.setGeometry(QtCore.QRect(0, 0, 71, 24))
+        self.choiceTask_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.choiceTask_label.setIndent(-1)
+        self.choiceTask_label.setObjectName("choiceTask_label")
+        self.renameTask_label = QtWidgets.QLabel(parent=self.page)
+        self.renameTask_label.setGeometry(QtCore.QRect(0, 24, 71, 24))
+        self.renameTask_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.renameTask_label.setIndent(-1)
+        self.renameTask_label.setObjectName("renameTask_label")
+        self.renameTask_lineEdit = QtWidgets.QLineEdit(parent=self.page)
+        self.renameTask_lineEdit.setGeometry(QtCore.QRect(70, 24, 71, 24))
+        self.renameTask_lineEdit.setObjectName("renameTask_lineEdit")
+        self.renameTask_Button = QtWidgets.QPushButton(parent=self.page)
+        self.renameTask_Button.setGeometry(QtCore.QRect(140, 24, 30, 24))
+        self.renameTask_Button.setObjectName("renameTask_Button")
+        self.choiceTask_label.raise_()
+        self.renameTask_label.raise_()
+        self.renameTask_lineEdit.raise_()
+        self.renameTask_Button.raise_()
+        self.choiceTask_comboBox.raise_()
+        self.stackedWidget.addWidget(self.page)
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
         self.adb_devices_label.raise_()
@@ -975,6 +1035,7 @@ class Ui_Form(object):
         self.role_recommend_Button.setText(_translate("Form", "角色养成推荐一览"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.Charts_tab), _translate("Form", "图表"))
         self.quarry_calculator_Button.setText(_translate("Form", "矿场计算器"))
+        self.tasks_Button.setText(_translate("Form", "任务列表"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.tools_tab), _translate("Form", "工具"))
         self.refresh_devices_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷新</p></body></html>"))
         self.order_exp1012w_checkBox.setText(_translate("Form", "10换12w经验"))
@@ -1002,3 +1063,6 @@ class Ui_Form(object):
         self.quarry_position4_label.setText(_translate("Form", "4："))
         self.quarry_position5_label.setText(_translate("Form", "5："))
         self.quarry_start_operation_Button.setText(_translate("Form", "开始计算"))
+        self.choiceTask_label.setText(_translate("Form", "选择任务："))
+        self.renameTask_label.setText(_translate("Form", "重命名："))
+        self.renameTask_Button.setText(_translate("Form", "命名"))

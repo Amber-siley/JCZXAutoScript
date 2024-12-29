@@ -26,15 +26,27 @@ def joinPath(*args):
         return join(sys._MEIPASS, *args)
     return join(abspath("."), *args)
 
+class _WorkTags:
+    ORDER = "交付订单"
+    SWITCH = "矿场换班"
+    DEBUG = "Debug"
+    ACCEPT = "自动同意申请"
+    AWARD = "刷助战奖励"
+    ONLY_THIS_ORDERS = "仅当前订单"
+    SMALL_CRYSTAL = "虚影微晶任务"
+    SET_ADBTOOLS = "下载ADB工具"
+    ILLUSION_TO_FAVOR = "虚影刷好感度"
+    TASKS_LIST = "任务列表"
+
 LOG_LEVEL = logging.INFO
 # LOG_LEVEL = logging.DEBUG
 
-VERSION = "0.1.6A"
+VERSION = "0.1.7A"
 
 DEFAULT_CONFIGS = {
     "adb_path": None,
     "adb_device": None,
-    "quarry_time": None,
+    "quarry_time": -1,
     "orders":{
         "build_61": {
             "enable": True,
@@ -77,6 +89,17 @@ DEFAULT_CONFIGS = {
     "favor": {
         "teamNum": 1,
         "time": 40
+    },
+    "tasks": {
+        "choice": "测试",
+        "list": {
+            "测试": [
+                ("emulator-5556", _WorkTags.AWARD),
+                ("emulator-5554", _WorkTags.ORDER),
+                ("emulator-5554", _WorkTags.SMALL_CRYSTAL),
+                ("emulator-5556", _WorkTags.AWARD)
+            ]
+        }
     }
 }
 
@@ -501,6 +524,24 @@ class JsonConfig:
         @property
         def teamNum(self) -> int:
             return self.__config.get_config(("illusions", "teamNum"))
+    
+    class Tasks:
+        def __init__(self, config) -> None:
+            self.__config = config
+            self.tasks: dict = self.__config.get_config(("tasks", "list"))
+
+        def addTask(self, name: str, task: dict):
+            self.tasks[name] = task
+        
+        def removeTask(self, name: str):
+            self.tasks.pop(name)
+        
+        def setChoice(self, name: str):
+            self.__config.set_config(("tasks", "choice"), name)
+        
+        @property
+        def choice(self):
+            return self.__config.get_config(("tasks", "choice"))
         
     def __init__(self, path, default:dict = {}) -> None:
         self.path = path
@@ -511,6 +552,7 @@ class JsonConfig:
         self._configs:dict = load(open(self.path, encoding = "utf-8"))
         self.illusion = self.IllusionSetting(self)
         self.favor = self.Favor(self)
+        self.tasks = self.Tasks(self)
     
     def set_config(self,sec:str | tuple,value:Any):
         """设置配置项"""
@@ -742,7 +784,7 @@ class JCZXGame:
         notEnoughAsk = joinPath("resources","locations","notEnoughAsk.png")
         tabBar = joinPath("resources","locations","tabBar.png")
         getItem= joinPath("resources","buttons","getItem.png")
-        home = joinPath("resources","buttons","friends.png")
+        home = joinPath("resources","buttons","base.png")
         tradingPost = joinPath("resources","locations","tradingPost.png")
         friendTradingPost = joinPath("resources","locations","friendTradingPost.png")
         quarry = joinPath("resources","locations","quarry.png")
@@ -840,7 +882,9 @@ class JCZXGame:
         return wrapper
     
     def inLocation(self, screen_loc, cutPoints:tuple[tuple[int, int]] = None, per = 0.9, grayScreenshot = None) -> bool:
-        return bool(self.findImageCenterLocations(screen_loc, cutPoints, per, grayScreenshot))
+        answer = bool(self.findImageCenterLocations(screen_loc, cutPoints, per, grayScreenshot))
+        self.log.debug(f"检测界面 {screen_loc} {answer}")
+        return answer
     
     def getScreenSize(self) -> tuple[int, int]:
         if self.size:
@@ -899,7 +943,7 @@ class JCZXGame:
             return None
 
     def clickFightButton(self):
-        return self._clickAndMsg(self.Buttons.fight_button, "前往【关卡界面】", "前往【关卡界面】失败", wait = 1, cutPoints = self.ScreenCut.cut4x2(3, 0))
+        return self._clickAndMsg(self.Buttons.fight_button, "前往【关卡界面】", "前往【关卡界面】失败", wait = 1, cutPoints = self.ScreenCut.cut4x3(3, 2), per = 0.8)
 
     def clickActivitiesButton(self):
         return self._clickAndMsg(self.Buttons.activities_button, "前往【活动探索】", "前往【活动探索】失败", wait = 1, cutPoints = self.ScreenCut.cut3x3(1, 0))
@@ -1005,13 +1049,15 @@ class JCZXGame:
         if self.startJCZX():
             self.log.info("启动交错战线")
             self._waitClickAndMsg(self.Buttons.userLogin_button, self.Buttons.login_button, wait = 0.6)
-            self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.friends_button, wait = 2, waitFunc = lambda: self.click(self.width//2, self.height//2))
+            # self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.friends_button, wait = 2, waitFunc = lambda: self.click(self.width//2, self.height//2))
+            self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.base_button, wait = 2)
             self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.5, maxWaitSecond = 3, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1))
             self._waitClickAndMsg(self.Buttons.signIn_button, wait = 1, maxWaitSecond = 2, func = lambda: (self.clickGetItems(), self.back()))
             self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.3, maxWaitSecond = 2, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
+            self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.3, maxWaitSecond = 2, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
     
     def gotoHome(self):
-        if self.inLocation(self.ScreenLocs.home, self.ScreenCut.cut3x7(0,6)):
+        if self.inLocation(self.ScreenLocs.home, cutPoints = self.ScreenCut.cut3x4(1, 3)):
             return
         if self.Pos.homePos:
             self.click(*self.Pos.homePos)
@@ -1156,7 +1202,7 @@ class JCZXGame:
             self.click(*self.Pos.basePos)
             self.log.info("前往【基地】")
         else:
-            if loc := self._clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败", cutPoints = self.ScreenCut.cut3x7(2, 6)):
+            if loc := self._clickAndMsg(self.Buttons.base_button, "前往【基地】", "前往【基地】失败"):
                 self.Pos.basePos = loc
             else:
                 self.gotoBase()
@@ -1624,7 +1670,7 @@ class JCZXGame:
             self.swipe(x, y, x, y-200, wait = 0.5)
         return loc
     
-    def setDevice(self, device):
+    def setDevice(self, device: str):
         self.device = device
         self.initDeviceInfor()
     
@@ -1651,17 +1697,7 @@ class JCZXGame:
             self.log.error("adb端口占用，或者模拟器未打开，请重启\打开模拟器，亦或者电脑")
             return []
             
-class WorkThread(QThread):
-    ORDER = "交付订单"
-    SWITCH = "矿场换班"
-    DEBUG = "Debug"
-    ACCEPT = "自动同意申请"
-    AWARD = "刷助战奖励"
-    ONLY_THIS_ORDERS = "仅当前订单"
-    SMALL_CRYSTAL = "虚影微晶任务"
-    SET_ADBTOOLS = "下载ADB工具"
-    ILLUSION_TO_FAVOR = "虚影刷好感度"
-    
+class WorkThread(QThread, _WorkTags):
     referADBSignal = pyqtSignal(str)
     
     def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
@@ -1706,6 +1742,8 @@ class WorkThread(QThread):
                     self.referADB()
                 case self.ILLUSION_TO_FAVOR:
                     self.favor()
+                case self.TASKS_LIST:
+                    self.tasks()
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
         
@@ -1867,6 +1905,19 @@ class WorkThread(QThread):
             adb.playIllusionARuiSi()
         adb.gotoHome()
         self.log.info("【虚影任务结束】")
+    
+    @check
+    def tasks(self):
+        tasks = self.config.tasks
+        choice = tasks.choice
+        task = tasks[choice]
+        self.log.info(f"开始运行任务【{choice}】")
+        for emulator, operate in task:
+            if self.adb.device != emulator:
+                self.adb.setDevice(emulator)
+            self.setMode(operate)
+            self.run()
+        self.log.info(f"任务【{choice}】")
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
