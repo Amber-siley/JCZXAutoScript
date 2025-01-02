@@ -10,6 +10,7 @@ from os import getcwd,makedirs,unlink,rename,listdir,walk
 from zipfile import ZipFile
 
 import shutil
+
 import requests
 
 HEADER = {
@@ -42,10 +43,15 @@ class FileManage:
     
     @staticmethod
     def mv(old_path, new_path):
+        """
+        >>> mv(file, dir)       #file > ./dir/file
+        >>> mv(fileA, fileB)    #fileA > fileB
+        >>> mv(dirA, dirB)      #dirA > ./dirB/dirA
+        """
         if isdir(old_path):
             dir = split_path(old_path)[-1]
             new_path = join(new_path,dir)
-        FileManage.nr_mv(old_path,new_path)
+        FileManage.nr_mv(old_path, new_path)
         
     @staticmethod
     def cp(main_path, aim_path):

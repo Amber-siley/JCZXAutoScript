@@ -195,7 +195,8 @@ QPushButton:pressed, QPushButton:checked {
    </property>
    <property name="styleSheet">
     <string notr="true">QLabel {
-	color: rgb(200, 200, 200)
+	color: rgb(200, 200, 200);
+	border: 1px solid #dcdfe6;
 }</string>
    </property>
    <property name="text">
@@ -2112,28 +2113,105 @@ QPushButton:pressed, QPushButton:checked {
       <string>命名</string>
      </property>
     </widget>
+    <widget class="QPushButton" name="startTask_Button">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>139</y>
+       <width>175</width>
+       <height>42</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+     </property>
+     <property name="text">
+      <string>启动任务</string>
+     </property>
+    </widget>
+    <widget class="QScrollArea" name="taskInfor_scrollArea">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>48</y>
+       <width>171</width>
+       <height>91</height>
+      </rect>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>71</height>
+      </size>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents_3">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>171</width>
+        <height>91</height>
+       </rect>
+      </property>
+      <widget class="QLabel" name="taskInfor_label">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>171</width>
+         <height>91</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+       </property>
+      </widget>
+     </widget>
+    </widget>
     <zorder>choiceTask_label</zorder>
     <zorder>renameTask_label</zorder>
     <zorder>renameTask_lineEdit</zorder>
     <zorder>renameTask_Button</zorder>
     <zorder>choiceTask_comboBox</zorder>
+    <zorder>startTask_Button</zorder>
+    <zorder>taskInfor_scrollArea</zorder>
    </widget>
   </widget>
   <zorder>adb_path_label</zorder>
   <zorder>adb_path_lineEdit</zorder>
   <zorder>adb_devices_label</zorder>
   <zorder>choice_adbpath_Button</zorder>
-  <zorder>authername_label</zorder>
   <zorder>logger_Browser</zorder>
   <zorder>save_config_Button</zorder>
   <zorder>adb_devices_comboBox</zorder>
-  <zorder>test_button</zorder>
   <zorder>help_button</zorder>
   <zorder>help_textBrowser</zorder>
   <zorder>functionALL_tabWidget</zorder>
   <zorder>refresh_devices_Button</zorder>
   <zorder>stackedWidget</zorder>
   <zorder>stop_all_task_Button</zorder>
+  <zorder>authername_label</zorder>
+  <zorder>test_button</zorder>
  </widget>
  <resources>
   <include location="resources/icon/icon.qrc"/>

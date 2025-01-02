@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'e:\IDE\pyththon_project\jczx_auto_script\jczx\jczxUI.ui'
+# Form implementation generated from reading ui file 'e:\IDE\pyththon_project\jczx_auto_script\jczx\jczx\jczxUI.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -123,7 +123,8 @@ class Ui_Form(object):
         self.authername_label.setEnabled(True)
         self.authername_label.setGeometry(QtCore.QRect(0, 264, 577, 20))
         self.authername_label.setStyleSheet("QLabel {\n"
-"    color: rgb(200, 200, 200)\n"
+"    color: rgb(200, 200, 200);\n"
+"    border: 1px solid #dcdfe6;\n"
 "}")
         self.authername_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight|QtCore.Qt.AlignmentFlag.AlignTrailing|QtCore.Qt.AlignmentFlag.AlignVCenter)
         self.authername_label.setIndent(10)
@@ -942,27 +943,61 @@ class Ui_Form(object):
         self.renameTask_Button = QtWidgets.QPushButton(parent=self.page)
         self.renameTask_Button.setGeometry(QtCore.QRect(140, 24, 30, 24))
         self.renameTask_Button.setObjectName("renameTask_Button")
+        self.startTask_Button = QtWidgets.QPushButton(parent=self.page)
+        self.startTask_Button.setGeometry(QtCore.QRect(0, 139, 175, 42))
+        self.startTask_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.startTask_Button.setObjectName("startTask_Button")
+        self.taskInfor_scrollArea = QtWidgets.QScrollArea(parent=self.page)
+        self.taskInfor_scrollArea.setGeometry(QtCore.QRect(0, 48, 171, 91))
+        self.taskInfor_scrollArea.setMinimumSize(QtCore.QSize(0, 71))
+        self.taskInfor_scrollArea.setWidgetResizable(True)
+        self.taskInfor_scrollArea.setObjectName("taskInfor_scrollArea")
+        self.scrollAreaWidgetContents_3 = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents_3.setGeometry(QtCore.QRect(0, 0, 171, 91))
+        self.scrollAreaWidgetContents_3.setObjectName("scrollAreaWidgetContents_3")
+        self.taskInfor_label = QtWidgets.QLabel(parent=self.scrollAreaWidgetContents_3)
+        self.taskInfor_label.setGeometry(QtCore.QRect(0, 0, 171, 91))
+        self.taskInfor_label.setText("")
+        self.taskInfor_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
+        self.taskInfor_label.setObjectName("taskInfor_label")
+        self.taskInfor_scrollArea.setWidget(self.scrollAreaWidgetContents_3)
         self.choiceTask_label.raise_()
         self.renameTask_label.raise_()
         self.renameTask_lineEdit.raise_()
         self.renameTask_Button.raise_()
         self.choiceTask_comboBox.raise_()
+        self.startTask_Button.raise_()
+        self.taskInfor_scrollArea.raise_()
         self.stackedWidget.addWidget(self.page)
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
         self.adb_devices_label.raise_()
         self.choice_adbpath_Button.raise_()
-        self.authername_label.raise_()
         self.logger_Browser.raise_()
         self.save_config_Button.raise_()
         self.adb_devices_comboBox.raise_()
-        self.test_button.raise_()
         self.help_button.raise_()
         self.help_textBrowser.raise_()
         self.functionALL_tabWidget.raise_()
         self.refresh_devices_Button.raise_()
         self.stackedWidget.raise_()
         self.stop_all_task_Button.raise_()
+        self.authername_label.raise_()
+        self.test_button.raise_()
 
         self.retranslateUi(Form)
         self.functionALL_tabWidget.setCurrentIndex(0)
@@ -1066,3 +1101,4 @@ class Ui_Form(object):
         self.choiceTask_label.setText(_translate("Form", "选择任务："))
         self.renameTask_label.setText(_translate("Form", "重命名："))
         self.renameTask_Button.setText(_translate("Form", "命名"))
+        self.startTask_Button.setText(_translate("Form", "启动任务"))

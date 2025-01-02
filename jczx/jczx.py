@@ -1,8 +1,8 @@
 from typing import Any,Callable,Literal
-from os.path import exists,join,abspath
+from os.path import exists,join
 from os import startfile
 from json import load,dumps
-from time import sleep
+from time import sleep,time
 from datetime import datetime
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog,QHBoxLayout,QLabel,QListWidgetItem
@@ -14,117 +14,22 @@ from jczxFM import FileManage,UrlManage
 from resources.icon.icon import *
 from Ui_jczxQuarryCalculator import Ui_QuarryCalculator
 from jczxQuarry import Quarry,floor
+from jczxMainInfo import *
 
 import subprocess
 import logging
-import cv2
 import sys
+
+import cv2
 import numpy as np
 
 def joinPath(*args):
     if hasattr(sys, '_MEIPASS'):
         return join(sys._MEIPASS, *args)
-    return join(abspath("."), *args)
-
-class _WorkTags:
-    ORDER = "交付订单"
-    SWITCH = "矿场换班"
-    DEBUG = "Debug"
-    ACCEPT = "自动同意申请"
-    AWARD = "刷助战奖励"
-    ONLY_THIS_ORDERS = "仅当前订单"
-    SMALL_CRYSTAL = "虚影微晶任务"
-    SET_ADBTOOLS = "下载ADB工具"
-    ILLUSION_TO_FAVOR = "虚影刷好感度"
-    TASKS_LIST = "任务列表"
+    return join(FileManage(file_path = __file__).save_path, *args)
 
 LOG_LEVEL = logging.INFO
 # LOG_LEVEL = logging.DEBUG
-
-VERSION = "0.1.7A"
-
-DEFAULT_CONFIGS = {
-    "adb_path": None,
-    "adb_device": None,
-    "quarry_time": -1,
-    "orders":{
-        "build_61": {
-            "enable": True,
-            "craft": True
-        },
-        "build_81": {
-            "enable": True,
-            "craft": True
-        },
-        "build_101": {
-            "enable": False,
-            "craft": True
-        },
-        "build_162": {
-            "enable": True,
-            "craft": True
-        },
-        "build_182": {
-            "enable": False,
-            "craft": True
-        },
-        "coin_1012": {
-            "enable": False,
-            "craft": False
-        },
-        "exp_1012": {
-            "enable": False,
-            "craft": False
-        }
-    },
-    "illusions": {
-        "level": {
-            "index": 1,
-            "illusionNum": 0,
-            "title": "戈里刻-宙斯",
-            "SwipeUP": True
-        },
-        "teamNum": 0
-    },
-    "favor": {
-        "teamNum": 1,
-        "time": 40
-    },
-    "tasks": {
-        "choice": "测试",
-        "list": {
-            "测试": [
-                ("emulator-5556", _WorkTags.AWARD),
-                ("emulator-5554", _WorkTags.ORDER),
-                ("emulator-5554", _WorkTags.SMALL_CRYSTAL),
-                ("emulator-5556", _WorkTags.AWARD)
-            ]
-        }
-    }
-}
-
-ILLUSION_LEVELS_SETTINGS = [
-    {
-        "index": 0,
-        "illusionNum": 0,
-        "title": "戈里刻-阿瑞斯",
-        "SwipeUP": False
-    },
-    {
-        "index": 1,
-        "illusionNum": 0,
-        "title": "戈里刻-宙斯",
-        "SwipeUP": True
-    },
-    # {
-    #     "index": 2,
-    #     "illusionNum": 2,
-    #     "title": "尼克罗-弗利亚多",
-    #     "SwipeUP": True
-    # }
-]
-
-ADB_TOOLS_URL = "https://googledownloads.cn/android/repository/platform-tools-latest-windows.zip"
 
 class LoggerHandler(logging.Handler):
     def __init__(self, edit) -> None:
@@ -186,7 +91,8 @@ class MainManager(Ui_Form):
         self.__init_illusionSettings()
         self.__init_favorSettings()
         self.__init_quarryCalculatorCharacters()
-        self.__init_buttom()
+        self.__init_taskList()
+        self.__init_button()
         self.__init_menu()
         self.__init_orderlist()
         self.__init_valueRule()
@@ -221,10 +127,10 @@ class MainManager(Ui_Form):
         fileHandler.setLevel(logging.DEBUG)
         self.log.addHandler(handler)
         self.log.addHandler(fileHandler)
-        self.log.info("程序初始化完成")
         sys.stdout = handler
+        self.log.info("程序初始化完成")
     
-    def __init_buttom(self):
+    def __init_button(self):
         """初始化按钮"""
         self.choice_adbpath_Button.clicked.connect(self.choiceADBPath)
         self.save_config_Button.clicked.connect(self.saveConfig)
@@ -238,6 +144,7 @@ class MainManager(Ui_Form):
         self.brushing_surportAwards_Button.clicked.connect(lambda: self.createWork(self.work_thread.AWARD))
         self.only_checkSpendThisTradingPost_Button.clicked.connect(lambda: self.createWork(self.work_thread.ONLY_THIS_ORDERS))
         self.useIllusion2_favor_Button.clicked.connect(lambda: self.createWork(self.work_thread.ILLUSION_TO_FAVOR))
+        self.startTask_Button.clicked.connect(lambda: self.createWork(self.work_thread.TASKS_LIST))
         
         self.start_smallCrystal_Button.clicked.connect(lambda: self.createWork(self.work_thread.SMALL_CRYSTAL))
         self.refresh_devices_Button.clicked.connect(self.__init_devices)
@@ -250,6 +157,8 @@ class MainManager(Ui_Form):
         self.start_switch_work_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(1))
         self.useIllusion2_favor_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(3))
         self.quarry_calculator_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(4))
+        self.tasks_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(5))
+        self.renameTask_Button.clicked.connect(self.renameTask)
         self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
         self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
         self.quarry_start_operation_Button.clicked.connect(self.startQuarryOperate)
@@ -318,6 +227,18 @@ class MainManager(Ui_Form):
         self.quarry_position5_comboBox.addItems(dirs)
         self.quarry_position5_comboBox.setCurrentIndex(3)
     
+    def __init_taskList(self):
+        self.choiceTask_comboBox.currentTextChanged.connect(lambda: None)
+        self.choiceTask_comboBox.currentTextChanged.disconnect()
+        self.choiceTask_comboBox.clear()
+        self.choiceTask_comboBox.addItems(self.config.tasks.tasks.keys())
+        self.choiceTask_comboBox.setCurrentText(self.config.tasks.choice)
+        self.choiceTask_comboBox.currentTextChanged.connect(lambda: (self.config.tasks.setChoice(self.choiceTask_comboBox.currentText()), \
+            self.taskInfor_label.clear(),\
+            self.taskInfor_label.setText(str(self.config.tasks))))
+        self.taskInfor_label.clear()
+        self.taskInfor_label.setText(str(self.config.tasks))
+        
     def stopTask(self):
         if self.work_thread.isRunning():
             self.work_thread.stop()
@@ -409,6 +330,14 @@ class MainManager(Ui_Form):
         else:
             self.help_textBrowser.setHidden(True)
     
+    def renameTask(self):
+        if new_name := self.renameTask_lineEdit.text():
+            self.config.tasks.renameTask(self.config.tasks.choice, new_name)
+            self.__init_taskList()
+        else:
+            self.log.warning("请勿输入空字符")
+        self.renameTask_lineEdit.clear()
+    
     def __debug(self):
         if self.work_thread.mode == self.work_thread.DEBUG and self.work_thread.isRunning():
             return
@@ -419,6 +348,9 @@ class MainManager(Ui_Form):
     
     def __init_devices(self):
         if not self.adb.adb_path:
+            self.work_thread.setMode(WorkThread.SET_ADBTOOLS)
+            self.work_thread.start()
+        elif not exists(self.adb.adb_path):
             self.work_thread.setMode(WorkThread.SET_ADBTOOLS)
             self.work_thread.start()
         if devices := self.adb.devices():
@@ -530,17 +462,32 @@ class JsonConfig:
             self.__config = config
             self.tasks: dict = self.__config.get_config(("tasks", "list"))
 
+        def __getitem__(self, name: str) -> list:
+            return self.tasks[name]
+        
         def addTask(self, name: str, task: dict):
             self.tasks[name] = task
+            self.__config.save()
         
         def removeTask(self, name: str):
             self.tasks.pop(name)
+            self.__config.save()
         
         def setChoice(self, name: str):
             self.__config.set_config(("tasks", "choice"), name)
+
+        def __str__(self):
+            return "\n".join(list(map(lambda x: f"{x[0]}=>{x[1]}", self.tasks[self.choice])))
+        
+        def renameTask(self, name: str, newName: str):
+            taskInfor = self.tasks[name]
+            self.removeTask(name)
+            self.addTask(newName, taskInfor)
+            if name == self.choice:
+                self.setChoice(newName)
         
         @property
-        def choice(self):
+        def choice(self) -> str:
             return self.__config.get_config(("tasks", "choice"))
         
     def __init__(self, path, default:dict = {}) -> None:
@@ -674,6 +621,7 @@ class JCZXGame:
         cancel_button = joinPath("resources","buttons","cancel.png")
         craftSure_button = joinPath("resources","buttons","craftSure.png")
         friends_button = joinPath("resources","buttons","friends.png")
+        menu_button = joinPath("resources","buttons","menu.png")
         home_button = joinPath("resources","buttons","home.png")
         base_button = joinPath("resources","buttons","base.png")
         quarry_button = joinPath("resources","buttons","quarry.png")
@@ -753,6 +701,7 @@ class JCZXGame:
     
     class _ScreenLocs:
         friend = joinPath("resources","locations","friend.png")
+        menu = joinPath("resources","buttons", "friends.png")
         levels = joinPath("resources","locations","levels.png")
         visiting = joinPath("resources","locations","visiting.png")
         choiceFriendTP = joinPath("resources","locations","choiceFriendTP.png")
@@ -804,6 +753,7 @@ class JCZXGame:
         surePos = None
         craftPos = None
         friendPos = None
+        menuPos = None
         basePos = None
         tradingPos = None
         buildingOccupancyPos = None
@@ -897,8 +847,11 @@ class JCZXGame:
     
     @check
     def screenshot(self) -> bytes:
+        startTime = time()
         data = subprocess.check_output([self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"], startupinfo = self.startupinfo)
         # self.log.debug(f"data size {len(data)}, {img.shape}")
+        runningTime = (time() - startTime)
+        self.log.debug("截图耗时 {:.2f} s".format(runningTime))
         return data
     
     def grayScreenshot(self, cutPoints = None):
@@ -1178,16 +1131,31 @@ class JCZXGame:
         if not self.clickIllusionsButton():
             self.gotoIllusions()
     
+    def gotoMenu(self):
+        if self.inLocation(self.ScreenLocs.menu, self.ScreenCut.cut2x1(1, 0)):
+            return
+        else:
+            self.gotoHome()
+        if self.Pos.menuPos:
+            self.click(*self.Pos.menuPos)
+            self.log.info("点击【菜单】")
+        else:
+            if loc := self._clickAndMsg(self.Buttons.menu_button, "点击【菜单】", "点击【菜单】失败", cutPoints = self.ScreenCut.cut9x9(8, 0)):
+                self.Pos.menuPos = loc
+            else:
+                self.gotoMenu()
+        sleep(1)
+    
     def gotoFriend(self):
         if self.inLocation(self.ScreenLocs.friend, self.ScreenCut.cut9x9(0, 8)):
             return
         else:
-            self.gotoHome()
+            self.gotoMenu()
         if self.Pos.friendPos:
             self.click(*self.Pos.friendPos)
             self.log.info("前往【好友界面】")
         else:
-            if loc := self._clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败", cutPoints = self.ScreenCut.cut3x7(0,6)):
+            if loc := self._clickAndMsg(self.Buttons.friends_button, "前往【好友界面】", "前往【好友界面】失败", cutPoints = self.ScreenCut.cut2x1(1, 0)):
                 self.Pos.friendPos = loc
             else:
                 self.gotoFriend()
@@ -1617,6 +1585,7 @@ class JCZXGame:
             screenshot_gray = self.grayScreenshot(cutPoints)
         else:
             screenshot_gray = self.cutScreenshot(grayScreenshot, cutPoints)
+        assert exists(button_path), f"未找到 {button_path}"
         template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
         matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
         locations = np.where(matcher > per)
@@ -1697,7 +1666,7 @@ class JCZXGame:
             self.log.error("adb端口占用，或者模拟器未打开，请重启\打开模拟器，亦或者电脑")
             return []
             
-class WorkThread(QThread, _WorkTags):
+class WorkThread(QThread, WorkTags):
     referADBSignal = pyqtSignal(str)
     
     def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
@@ -1721,7 +1690,7 @@ class WorkThread(QThread, _WorkTags):
     
     def run(self) -> None:
         def _():
-            if self.adb.device:
+            if self.adb.device and self.mode != self.TASKS_LIST:
                 self.adb.loginJCZX()
             match self.mode:
                 case self.ORDER:
@@ -1769,6 +1738,11 @@ class WorkThread(QThread, _WorkTags):
     @staticmethod
     def check(func):
         def _(self, *args, **kwargs):
+            if not exists(self.config.adb_path):
+                self.log.warning(f"{self.config.adb_path}不可用")
+                self.setMode(self.SET_ADBTOOLS)
+                self.run()
+                return
             if self.config.adb_path:
                 if self.config.adb_device:
                     func(self, *args, **kwargs)
@@ -1915,9 +1889,11 @@ class WorkThread(QThread, _WorkTags):
         for emulator, operate in task:
             if self.adb.device != emulator:
                 self.adb.setDevice(emulator)
+                self.log.info(f"设置设备【{emulator}】")
+                self.adb.loginJCZX()
             self.setMode(operate)
             self.run()
-        self.log.info(f"任务【{choice}】")
+        self.log.info(f"任务【{choice}】结束")
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
