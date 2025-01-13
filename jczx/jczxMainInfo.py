@@ -10,7 +10,7 @@ class WorkTags:
     ILLUSION_TO_FAVOR = "虚影刷好感度"
     TASKS_LIST = "任务列表"
 
-VERSION = "0.1.7A"
+VERSION = "0.1.8A"
 
 DEFAULT_CONFIGS = {
     "adb_path": None,

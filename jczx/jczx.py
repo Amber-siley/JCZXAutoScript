@@ -40,7 +40,6 @@ class LoggerHandler(logging.Handler):
     def emit(self, record):
         msg = self.format(record)
         self.edit.append(msg)
-        sleep(0.01)
         self.edit.moveCursor(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.MoveAnchor)
     
     def write(self,text):
@@ -587,6 +586,8 @@ class JCZXGame:
         signIn_button = joinPath("resources","buttons","sign-in.png")
         userLogin_button = joinPath("resources","buttons","userLogin.png")
         choiceFriendTP_button = joinPath("resources","locations","whateverTradingPost.png")
+        rightSwitchTradingPost_buttion = joinPath("resources","buttons","rightSwitchTradingPost.png")
+        leftSwitchTradingPost_buttion = joinPath("resources","buttons","leftSwitchTradingPost.png")
         skipAnimation_button = joinPath("resources","buttons","skipAnimation.png")
         fightAuto_button = joinPath("resources","buttons","fightAuto.png")
         plane_button = joinPath("resources","buttons","plane.png")
@@ -610,6 +611,7 @@ class JCZXGame:
         getItem_button = joinPath("resources","buttons","getItem.png")
         closeNotice_button = joinPath("resources","buttons","closeNotice.png")
         noReminders_button = joinPath("resources","buttons","noReminders.png")
+        noRemindersBase_button = joinPath("resources","buttons","noRemindersBase.png")
         add_button = joinPath("resources","buttons","add.png")
         coinRaw_button = joinPath("resources","buttons","coinRaw.png")
         craftCoinRaw_button = joinPath("resources","buttons","craftCoinRaw.png")
@@ -1002,12 +1004,11 @@ class JCZXGame:
         if self.startJCZX():
             self.log.info("启动交错战线")
             self._waitClickAndMsg(self.Buttons.userLogin_button, self.Buttons.login_button, wait = 0.6)
-            # self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.friends_button, wait = 2, waitFunc = lambda: self.click(self.width//2, self.height//2))
             self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.base_button, wait = 2)
             self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.5, maxWaitSecond = 3, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1))
-            self._waitClickAndMsg(self.Buttons.signIn_button, wait = 1, maxWaitSecond = 2, func = lambda: (self.clickGetItems(), self.back()))
-            self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.3, maxWaitSecond = 2, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
-            self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.3, maxWaitSecond = 2, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
+            self._waitClickAndMsg(self.Buttons.signIn_button, wait = 1, maxWaitSecond = 2, func = lambda: (self.clickGetItems(wait = 1), self.back()))
+            self._waitClickAndMsg(self.Buttons.noRemindersBase_button, wait = 0.3, maxWaitSecond = 2, per = 0.7, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
+            self._waitClickAndMsg(self.Buttons.noRemindersBase_button, wait = 0.3, maxWaitSecond = 2, per = 0.5, func = lambda: self.click(self.width//2, self.height//5, 1))
     
     def gotoHome(self):
         if self.inLocation(self.ScreenLocs.home, cutPoints = self.ScreenCut.cut3x4(1, 3)):
@@ -1019,7 +1020,7 @@ class JCZXGame:
             if loc := self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0)):
                 self.Pos.homePos = loc
             else:
-                self.click(self.width//2, self.height//2, 1)
+                self.click(self.width//2, self.height//5, 1)
                 self.back(1)
                 self.makeSure(5)
                 self.gotoHome()
@@ -1207,6 +1208,12 @@ class JCZXGame:
             loc = self._clickAndMsg(self.Buttons.choiceFriendTP_button, wait = 0.3, cutPoints = self.ScreenCut.cut7x2(0, 1))
         return loc
     
+    def clickRightSwitchFriendTradingPost(self):
+        return self._clickAndMsg(self.Buttons.rightSwitchTradingPost_buttion, wait = 0.5, log = False, cutPoints = self.ScreenCut.cut7x2(0, 1))
+    
+    def clickLeftSwitchFriendTradingPost(self):
+        return self._clickAndMsg(self.Buttons.leftSwitchTradingPost_buttion, wait = 0.5, log = False, cutPoints = self.ScreenCut.cut7x2(0, 1))
+    
     def addAndCraft(self, num:int):
         loc = self.findImageCenterLocation(self.Buttons.add_button, cutPoints = self.ScreenCut.cut3x3(2, 1))
         for _ in range(num - 1):
@@ -1245,21 +1252,21 @@ class JCZXGame:
                         ticketRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.ticketRaw_button)
                         self.makeSure(2)
                         #合成黑盒
-                        self._clickAndMsg(self.Buttons.craftTicketRaw_button, "点击【稀有黑匣】", "点击【稀有黑匣】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x2(1, 1))
+                        self._clickAndMsg(self.Buttons.craftTicketRaw_button, "点击【稀有黑匣】", "点击【稀有黑匣】失败", wait = 0.3, per = 0.8)
                         self.addAndCraft(ticketRawNum)
                         self.log.info(f"合成【稀有黑匣】x{ticketRawNum}")
                     elif img in self.Orders.CoinOrders:
                         coinRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.coinRaw_button)
                         self.makeSure(2)
                         #合成星币原料
-                        self._clickAndMsg(self.Buttons.craftCoinRaw_button, "点击【星币碎片】", "点击【星币碎片】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x1(1, 0))
+                        self._clickAndMsg(self.Buttons.craftCoinRaw_button, "点击【星币碎片】", "点击【星币碎片】失败", wait = 0.3, per = 0.8)
                         self.addAndCraft(coinRawNum)
                         self.log.info(f"合成【星币碎片】x{coinRawNum}")
                     elif img in self.Orders.ExpOrders:
                         expRawNum = self.Orders.amount(img) - self.findRawNumbers(self.Buttons.expRaw_button)
                         self.makeSure(2)
                         #合成数据硬盘
-                        self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3, cutPoints = self.ScreenCut.cut4x1(2, 0))
+                        self._clickAndMsg(self.Buttons.craftExpRaw_button, "点击【数据硬盘】", "点击【数据硬盘】失败", wait = 0.3, per = 0.8)
                         self.addAndCraft(expRawNum)
                         self.log.info(f"合成【数据硬盘】x{expRawNum}")
                     self.back(1)
@@ -1355,7 +1362,8 @@ class JCZXGame:
     
     def gotoFriendOrdersAndSpend(self):
         # self.useFriendListCheckOrderAndSpend()
-        self.useChoiceFriendCheckOrderAndSpend()
+        # self.useChoiceFriendCheckOrderAndSpend()
+        self.useSwitchButtonFriendCheckOrderAndSpend()
         self.tellMeSubmitOrders()
 
     def useChoiceFriendCheckOrderAndSpend(self):
@@ -1383,6 +1391,27 @@ class JCZXGame:
                     self.clickChoiceFriendTradingPost()
                 self.swipeLeftScreenCenter()
         self.click(self.width//2, self.height//1.2, 0.3)
+    
+    def useSwitchButtonFriendCheckOrderAndSpend(self):
+        """使用订单库切换好友进入订单库进行检测交付"""
+        self.gotoChoiceFriendTradingPost()
+        grayScreenshot = self.grayScreenshot()
+        visits = self.findImageCenterLocations(self.Buttons.visit_button, cutPoints = self.ScreenCut.cut1x2(0, 1), grayScreenshot = grayScreenshot)
+        visiting = self.findImageCenterLocation(self.ScreenLocs.visiting, cutPoints = self.ScreenCut.cut1x2(0, 1), grayScreenshot = grayScreenshot)
+        if not visits:
+            return
+        if visiting:
+            visits = [(x, y) for x, y in visits if x > visiting[0]]
+        if not visits:
+            return
+        else:
+            loc = visits[0]
+            self.click(*loc, wait = 1.5)
+        for index in range(40):
+            self.log.info(f"进入【好友交易所】{index + 1}")
+            self.checkAndSpendOrders()
+            if not self.clickRightSwitchFriendTradingPost():
+                return
     
     def useFriendListCheckOrderAndSpend(self):
         """使用好友列表进入订单库进行检测交付，稳定性较差，只是固定次数进入好友订单库进行检测，不建议使用"""
@@ -1681,8 +1710,8 @@ class WorkThread(QThread, WorkTags):
         match self.mode:
             case self.ORDER:
                 self.adb.tellMeSubmitOrders()
-            case self.SWITCH:
-                ...
+            case self.TASKS_LIST:
+                self.adb.setDevice(self.config.adb_device)
         self.terminate()
     
     def setMode(self, mode:str):
@@ -1893,6 +1922,7 @@ class WorkThread(QThread, WorkTags):
                 self.adb.loginJCZX()
             self.setMode(operate)
             self.run()
+        self.adb.setDevice(self.config.adb_device)
         self.log.info(f"任务【{choice}】结束")
     
 if __name__ == "__main__":
