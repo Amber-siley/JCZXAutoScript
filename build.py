@@ -8,7 +8,7 @@ from pick import pick
 from jczx.jczxMainInfo import VERSION
 
 version = VERSION if VERSION[-1].isdigit() else VERSION[:-1]
-(_, index), startTime = pick(["pyinstaller", "nuitka"], "Please select a packaging metho:", "->", 0, clear_screen = False), time()
+(_, index), startTime = pick(["pyinstaller", "nuitka"], "Please select a packaging method:", "->", 0, clear_screen = False), time()
 match index:
     case 0:
         try:
