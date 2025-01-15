@@ -1004,7 +1004,7 @@ class JCZXGame:
         if self.startJCZX():
             self.log.info("启动交错战线")
             self._waitClickAndMsg(self.Buttons.userLogin_button, self.Buttons.login_button, wait = 0.6)
-            self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.base_button, wait = 2)
+            self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.base_button, wait = 2, maxWaitSecond = 20)
             self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.5, maxWaitSecond = 3, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1))
             self._waitClickAndMsg(self.Buttons.signIn_button, wait = 1, maxWaitSecond = 2, func = lambda: (self.clickGetItems(wait = 1), self.back()))
             self._waitClickAndMsg(self.Buttons.noRemindersBase_button, wait = 0.3, maxWaitSecond = 2, per = 0.7, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
@@ -1209,7 +1209,7 @@ class JCZXGame:
         return loc
     
     def clickRightSwitchFriendTradingPost(self):
-        return self._clickAndMsg(self.Buttons.rightSwitchTradingPost_buttion, wait = 0.5, log = False, cutPoints = self.ScreenCut.cut7x2(0, 1))
+        return self._clickAndMsg(self.Buttons.rightSwitchTradingPost_buttion, wait = 0.5, log = False, cutPoints = self.ScreenCut.cut4x2(0, 1))
     
     def clickLeftSwitchFriendTradingPost(self):
         return self._clickAndMsg(self.Buttons.leftSwitchTradingPost_buttion, wait = 0.5, log = False, cutPoints = self.ScreenCut.cut7x2(0, 1))
@@ -1277,8 +1277,8 @@ class JCZXGame:
                     self.submitOrders.append(des)
                 else:
                     self.click(*locality, 0.3)
-                    self.makeSure2()
-                    self.submitOrders.append(des)
+                    if self.makeSure2():
+                        self.submitOrders.append(des)
                     
     def findRawNumbers(self, Raw_path:str) -> int | None:
         templete = cv2.imread(Raw_path, cv2.IMREAD_GRAYSCALE)
@@ -1341,7 +1341,7 @@ class JCZXGame:
     def makeSure2(self, wait = 1):
         self.makeSure(wait)
         # self.click(self.width//2, self.height//2, wait = 0.3)
-        self.clickGetItems()
+        return self.clickGetItems()
     
     def craftSure(self):
         if self.Pos.craftPos:
@@ -1584,6 +1584,41 @@ class JCZXGame:
                     tmp_y.append(y)
                     continue
             result = [(x+x0, y+y0) for x,y in zip(tmp_x, tmp_y)]
+            return result
+        else:
+            return None
+    
+    def fingImageDetailLocations(self, button_path:str,  cutPoints = None, per:float = 0.9, grayScreenshot = None) -> list[tuple[tuple[int, int], ...]] | None:
+        """返回详细的匹配图像信息
+        
+        return： [(point, point,
+                    point, point)]"""
+        if cutPoints:
+            x0, y0 = cutPoints[0]
+        else:
+            x0, y0 = 0, 0
+        if grayScreenshot is None:
+            screenshot_gray = self.grayScreenshot(cutPoints)
+        else:
+            screenshot_gray = self.cutScreenshot(grayScreenshot, cutPoints)
+        assert exists(button_path), f"未找到 {button_path}"
+        template_gray = cv2.imread(button_path, cv2.IMREAD_GRAYSCALE)
+        matcher = cv2.matchTemplate(screenshot_gray, template_gray, cv2.TM_CCOEFF_NORMED)
+        locations = np.where(matcher > per)
+        h, w= template_gray.shape[0:2]
+        if any(locations[0]):
+            tmp_y = [locations[0][0]]
+            tmp_x = [locations[1][0]]
+            for y,x in zip(*locations):
+                if x-10 >= tmp_x[-1]:
+                    tmp_x.append(x)
+                    tmp_y.append(y)
+                    continue
+                if y-10 >= tmp_y[-1]:
+                    tmp_x.append(x)
+                    tmp_y.append(y)
+                    continue
+            result = [((x+x0, y+y0), (x+x0+w, y+y0), (x+x0, y+y0+h), (x+x0+w, y+y0+h)) for x,y in zip(tmp_x,tmp_y)]
             return result
         else:
             return None
