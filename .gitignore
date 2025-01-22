@@ -172,7 +172,8 @@ VersionNews.md
 test
 platform-tools
 tmp.png
-resources/screenshot.py
+jczx/resources/screenshot.py
+jczx/resources/tmp*.png
 resources-2.2.1-backup
 jczx.build
 jczx.dist
