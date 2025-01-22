@@ -353,6 +353,51 @@ class Ui_Form(object):
 "}")
         self.start_switch_work_settings_Button.setIcon(icon1)
         self.start_switch_work_settings_Button.setObjectName("start_switch_work_settings_Button")
+        self.start_JJCTask_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
+        self.start_JJCTask_settings_Button.setGeometry(QtCore.QRect(150, 126, 24, 42))
+        self.start_JJCTask_settings_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_JJCTask_settings_Button.setIcon(icon1)
+        self.start_JJCTask_settings_Button.setObjectName("start_JJCTask_settings_Button")
+        self.start_JJCTask_Button = QtWidgets.QPushButton(parent=self.function1_widget)
+        self.start_JJCTask_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
+        self.start_JJCTask_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_JJCTask_Button.setObjectName("start_JJCTask_Button")
+        self.start_spend_order_Button.raise_()
+        self.start_switch_work_Button.raise_()
+        self.start_smallCrystal_Button.raise_()
+        self.start_smallCrystal_settings_Button.raise_()
+        self.start_spend_order_settings_Button.raise_()
+        self.start_switch_work_settings_Button.raise_()
+        self.start_JJCTask_Button.raise_()
+        self.start_JJCTask_settings_Button.raise_()
         self.functionALL_tabWidget.addTab(self.function1_tab, "")
         self.function2_tab = QtWidgets.QWidget()
         self.function2_tab.setObjectName("function2_tab")
@@ -922,28 +967,28 @@ class Ui_Form(object):
 "}")
         self.quarry_start_operation_Button.setObjectName("quarry_start_operation_Button")
         self.stackedWidget.addWidget(self.quarryCalculatorPage)
-        self.page = QtWidgets.QWidget()
-        self.page.setObjectName("page")
-        self.choiceTask_comboBox = QtWidgets.QComboBox(parent=self.page)
+        self.TaskSettingPage = QtWidgets.QWidget()
+        self.TaskSettingPage.setObjectName("TaskSettingPage")
+        self.choiceTask_comboBox = QtWidgets.QComboBox(parent=self.TaskSettingPage)
         self.choiceTask_comboBox.setGeometry(QtCore.QRect(70, 0, 101, 24))
         self.choiceTask_comboBox.setObjectName("choiceTask_comboBox")
-        self.choiceTask_label = QtWidgets.QLabel(parent=self.page)
+        self.choiceTask_label = QtWidgets.QLabel(parent=self.TaskSettingPage)
         self.choiceTask_label.setGeometry(QtCore.QRect(0, 0, 71, 24))
         self.choiceTask_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.choiceTask_label.setIndent(-1)
         self.choiceTask_label.setObjectName("choiceTask_label")
-        self.renameTask_label = QtWidgets.QLabel(parent=self.page)
+        self.renameTask_label = QtWidgets.QLabel(parent=self.TaskSettingPage)
         self.renameTask_label.setGeometry(QtCore.QRect(0, 24, 71, 24))
         self.renameTask_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.renameTask_label.setIndent(-1)
         self.renameTask_label.setObjectName("renameTask_label")
-        self.renameTask_lineEdit = QtWidgets.QLineEdit(parent=self.page)
+        self.renameTask_lineEdit = QtWidgets.QLineEdit(parent=self.TaskSettingPage)
         self.renameTask_lineEdit.setGeometry(QtCore.QRect(70, 24, 71, 24))
         self.renameTask_lineEdit.setObjectName("renameTask_lineEdit")
-        self.renameTask_Button = QtWidgets.QPushButton(parent=self.page)
+        self.renameTask_Button = QtWidgets.QPushButton(parent=self.TaskSettingPage)
         self.renameTask_Button.setGeometry(QtCore.QRect(140, 24, 30, 24))
         self.renameTask_Button.setObjectName("renameTask_Button")
-        self.startTask_Button = QtWidgets.QPushButton(parent=self.page)
+        self.startTask_Button = QtWidgets.QPushButton(parent=self.TaskSettingPage)
         self.startTask_Button.setGeometry(QtCore.QRect(0, 139, 175, 42))
         self.startTask_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
@@ -961,7 +1006,7 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.startTask_Button.setObjectName("startTask_Button")
-        self.taskInfor_scrollArea = QtWidgets.QScrollArea(parent=self.page)
+        self.taskInfor_scrollArea = QtWidgets.QScrollArea(parent=self.TaskSettingPage)
         self.taskInfor_scrollArea.setGeometry(QtCore.QRect(0, 48, 171, 91))
         self.taskInfor_scrollArea.setMinimumSize(QtCore.QSize(0, 71))
         self.taskInfor_scrollArea.setWidgetResizable(True)
@@ -982,7 +1027,27 @@ class Ui_Form(object):
         self.choiceTask_comboBox.raise_()
         self.startTask_Button.raise_()
         self.taskInfor_scrollArea.raise_()
-        self.stackedWidget.addWidget(self.page)
+        self.stackedWidget.addWidget(self.TaskSettingPage)
+        self.JJCSettingPage = QtWidgets.QWidget()
+        self.JJCSettingPage.setObjectName("JJCSettingPage")
+        self.ThresholdValue_Label = QtWidgets.QLabel(parent=self.JJCSettingPage)
+        self.ThresholdValue_Label.setGeometry(QtCore.QRect(0, 24, 71, 24))
+        self.ThresholdValue_Label.setToolTip("")
+        self.ThresholdValue_Label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.ThresholdValue_Label.setIndent(-1)
+        self.ThresholdValue_Label.setObjectName("ThresholdValue_Label")
+        self.JJCSettingTips_Label = QtWidgets.QLabel(parent=self.JJCSettingPage)
+        self.JJCSettingTips_Label.setGeometry(QtCore.QRect(0, 0, 181, 24))
+        self.JJCSettingTips_Label.setToolTip("")
+        self.JJCSettingTips_Label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.JJCSettingTips_Label.setIndent(-1)
+        self.JJCSettingTips_Label.setObjectName("JJCSettingTips_Label")
+        self.ThresholdValue_lineEdit = QtWidgets.QLineEdit(parent=self.JJCSettingPage)
+        self.ThresholdValue_lineEdit.setGeometry(QtCore.QRect(70, 24, 101, 24))
+        self.ThresholdValue_lineEdit.setText("")
+        self.ThresholdValue_lineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        self.ThresholdValue_lineEdit.setObjectName("ThresholdValue_lineEdit")
+        self.stackedWidget.addWidget(self.JJCSettingPage)
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
         self.adb_devices_label.raise_()
@@ -1048,6 +1113,8 @@ class Ui_Form(object):
         self.start_switch_work_Button.setText(_translate("Form", "启动换班任务"))
         self.start_smallCrystal_Button.setToolTip(_translate("Form", "<html><head/><body><p>根据设置通关虚影来获得微晶</p><p>【自动停止】</p></body></html>"))
         self.start_smallCrystal_Button.setText(_translate("Form", "虚影微晶任务"))
+        self.start_JJCTask_Button.setToolTip(_translate("Form", "<html><head/><body><p>根据设置挑战竞技场</p><p>【自动停止】</p></body></html>"))
+        self.start_JJCTask_Button.setText(_translate("Form", "镜像竞技场任务"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function1_tab), _translate("Form", "功能1"))
         self.auto_agree_friend_Button.setToolTip(_translate("Form", "<html><head/><body><p>自动同意好友申请</p><p>【手动停止】</p></body></html>"))
         self.auto_agree_friend_Button.setText(_translate("Form", "自动同意好友申请"))
@@ -1102,3 +1169,6 @@ class Ui_Form(object):
         self.renameTask_label.setText(_translate("Form", "重命名："))
         self.renameTask_Button.setText(_translate("Form", "命名"))
         self.startTask_Button.setText(_translate("Form", "启动任务"))
+        self.ThresholdValue_Label.setText(_translate("Form", "挑战阈值："))
+        self.JJCSettingTips_Label.setText(_translate("Form", "仅针对+28或者+26的竞技"))
+        self.ThresholdValue_lineEdit.setToolTip(_translate("Form", "高于该阈值的镜像挑战将会跳过"))

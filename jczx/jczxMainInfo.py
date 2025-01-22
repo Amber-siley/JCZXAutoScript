@@ -9,6 +9,8 @@ class WorkTags:
     SET_ADBTOOLS = "下载ADB工具"
     ILLUSION_TO_FAVOR = "虚影刷好感度"
     TASKS_LIST = "任务列表"
+    JJC_TASK = "竞技场"
+    INIT_OCR = "初始化OCR"
 
 VERSION = "0.1.8A"
 
@@ -69,6 +71,9 @@ DEFAULT_CONFIGS = {
                 ("emulator-5556", WorkTags.AWARD)
             ]
         }
+    },
+    "JJCTask": {
+        "ThresholdValue": 25000
     }
 }
 

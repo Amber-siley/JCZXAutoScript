@@ -653,6 +653,78 @@ QPushButton:pressed, QPushButton:checked {
         <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
       </property>
      </widget>
+     <widget class="QPushButton" name="start_JJCTask_settings_Button">
+      <property name="geometry">
+       <rect>
+        <x>150</x>
+        <y>126</y>
+        <width>24</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+      </property>
+      <property name="icon">
+       <iconset resource="resources/icon/icon.qrc">
+        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="start_JJCTask_Button">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>126</y>
+        <width>175</width>
+        <height>42</height>
+       </rect>
+      </property>
+      <property name="toolTip">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;根据设置挑战竞技场&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+      </property>
+      <property name="text">
+       <string>镜像竞技场任务</string>
+      </property>
+     </widget>
+     <zorder>start_spend_order_Button</zorder>
+     <zorder>start_switch_work_Button</zorder>
+     <zorder>start_smallCrystal_Button</zorder>
+     <zorder>start_smallCrystal_settings_Button</zorder>
+     <zorder>start_spend_order_settings_Button</zorder>
+     <zorder>start_switch_work_settings_Button</zorder>
+     <zorder>start_JJCTask_Button</zorder>
+     <zorder>start_JJCTask_settings_Button</zorder>
     </widget>
    </widget>
    <widget class="QWidget" name="function2_tab">
@@ -2041,7 +2113,7 @@ QPushButton:pressed, QPushButton:checked {
      </property>
     </widget>
    </widget>
-   <widget class="QWidget" name="page">
+   <widget class="QWidget" name="TaskSettingPage">
     <widget class="QComboBox" name="choiceTask_comboBox">
      <property name="geometry">
       <rect>
@@ -2195,6 +2267,71 @@ QPushButton:pressed, QPushButton:checked {
     <zorder>choiceTask_comboBox</zorder>
     <zorder>startTask_Button</zorder>
     <zorder>taskInfor_scrollArea</zorder>
+   </widget>
+   <widget class="QWidget" name="JJCSettingPage">
+    <widget class="QLabel" name="ThresholdValue_Label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>24</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>挑战阈值：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="JJCSettingTips_Label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>181</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string/>
+     </property>
+     <property name="text">
+      <string>仅针对+28或者+26的竞技</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="ThresholdValue_lineEdit">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>24</y>
+       <width>101</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="toolTip">
+      <string>高于该阈值的镜像挑战将会跳过</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
    </widget>
   </widget>
   <zorder>adb_path_label</zorder>
