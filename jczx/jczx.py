@@ -5,8 +5,9 @@ from json import load,dumps
 from time import sleep,time
 from copy import copy
 from datetime import datetime
+from threading import Lock
 
-from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog,QHBoxLayout,QLabel,QListWidgetItem
+from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog,QHBoxLayout,QLabel,QListWidgetItem,QPushButton,QDialog,QSpacerItem,QSizePolicy
 from PyQt6.QtGui import QIntValidator,QTextCursor,QFont
 from PyQt6.QtCore import QThread,pyqtSignal,QSize
 from cv2.typing import MatLike
@@ -17,6 +18,7 @@ from resources.icon.icon import *
 from Ui_jczxQuarryCalculator import Ui_QuarryCalculator
 from jczxQuarry import Quarry,floor
 from jczxMainInfo import *
+from Ui_jczxTaskCreater import Ui_jczxTaskCreater
 
 import subprocess
 import logging
@@ -31,7 +33,7 @@ def joinPath(*args):
     return join(FileManage(file_path = __file__).save_path, *args)
 
 LOG_LEVEL = logging.INFO
-LOG_LEVEL = logging.DEBUG
+# LOG_LEVEL = logging.DEBUG
 
 class LoggerHandler(logging.Handler):
     def __init__(self, edit) -> None:
@@ -81,6 +83,7 @@ class MainManager(Ui_Form):
         self.adb = JCZXGame(self.adb_path, self.log, self.config)
         self.work_thread = WorkThread(self.adb, self.log, self.config)
         self.quarryCalculators = []
+        self.createrTaskUI = None
         
     def setupUi(self):
         super().setupUi(self.form)
@@ -98,9 +101,9 @@ class MainManager(Ui_Form):
         self.__init_orderlist()
         self.__init_valueRule()
         self.__init_JJCTask()
+        self.__init_logger()
         self.__init_devices()
         self.referMenuConfig()
-        self.__init_logger()
         self.__start_app()
     
     @property
@@ -134,7 +137,7 @@ class MainManager(Ui_Form):
         self.log.info("程序初始化")
     
     def __init_ocr(self):
-        self.createWork(self.work_thread.INIT_OCR)
+        self.createWork(self.work_thread.INIT_OCR, True)
     
     def __init_button(self):
         """初始化按钮"""
@@ -166,10 +169,10 @@ class MainManager(Ui_Form):
         self.quarry_calculator_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(4))
         self.tasks_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(5))
         self.start_JJCTask_settings_Button.clicked.connect(lambda: self.stackedWidget.setCurrentIndex(6))
-        self.renameTask_Button.clicked.connect(self.renameTask)
         self.IllusionChoice_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setLevel(self.IllusionChoice_comboBox.currentIndex()))
         self.IllusionChoiceTeam_comboBox.currentIndexChanged.connect(lambda: self.config.illusion.setTeamNum(self.IllusionChoiceTeam_comboBox.currentIndex()))
         self.quarry_start_operation_Button.clicked.connect(self.startQuarryOperate)
+        self.TaskCreater_Button.clicked.connect(self.showTaskCreater)
         
         self.work_thread.referADBSignal.connect(lambda x: (self.setADBPathConfig(x), self.referMenuConfig()))
         
@@ -260,16 +263,16 @@ class MainManager(Ui_Form):
         else:
             self.log.info("当前无任务运行")
         
-    def createWork(self, mode):
+    def createWork(self, mode, addQueue:bool = False):
         if self.work_thread.mode == mode and self.work_thread.isRunning():
             return
-        if self.work_thread.isRunning():
+        if self.work_thread.isRunning() and addQueue == False:
             if self.work_thread.stop():
                 self.log.info(f"已停止【{self.work_thread.mode}】")
             else:
                 self.log.info(f"当前不能停止【{self.work_thread.mode}】")
                 return
-        self.work_thread.setMode(mode)
+        self.work_thread.setMode(mode, addQueue)
         self.work_thread.start()
     
     def getQuarrySkills(self) -> list[Quarry.Skills.Skill]:
@@ -347,13 +350,10 @@ class MainManager(Ui_Form):
         else:
             self.help_textBrowser.setHidden(True)
     
-    def renameTask(self):
-        if new_name := self.renameTask_lineEdit.text():
-            self.config.tasks.renameTask(self.config.tasks.choice, new_name)
-            self.__init_taskList()
-        else:
-            self.log.warning("请勿输入空字符")
-        self.renameTask_lineEdit.clear()
+    def showTaskCreater(self):
+        self.createrTaskUI = QDialog()
+        jczxTaskCreater(self.createrTaskUI, self.config, self.adb)
+        self.__init_taskList()
     
     def __debug(self):
         if self.work_thread.mode == self.work_thread.DEBUG and self.work_thread.isRunning():
@@ -483,7 +483,7 @@ class JsonConfig:
         def __getitem__(self, name: str) -> list:
             return self.tasks[name]
         
-        def addTask(self, name: str, task: dict):
+        def setTask(self, name: str, task: list):
             self.tasks[name] = task
             self.__config.save()
         
@@ -493,9 +493,12 @@ class JsonConfig:
         
         def setChoice(self, name: str):
             self.__config.set_config(("tasks", "choice"), name)
+        
+        def addTask(self, name:str, task:list):
+            self.setTask(name, task)
 
         def __str__(self):
-            return "\n".join(list(map(lambda x: f"{x[0]}=>{x[1]}", self.tasks[self.choice])))
+            return "\n".join(list(map(lambda x: f"{x[0]}=>{x[1]}", self.tasks[self.choice] if self.choice else [(None, None)])))
         
         def renameTask(self, name: str, newName: str):
             taskInfor = self.tasks[name]
@@ -506,6 +509,9 @@ class JsonConfig:
         
         @property
         def choice(self) -> str:
+            if not self.__config.get_config(("tasks", "choice")):
+                if self.tasks:
+                    self.setChoice(list(self.tasks.keys())[0])
             return self.__config.get_config(("tasks", "choice"))
         
     def __init__(self, path, default:dict = {}) -> None:
@@ -581,6 +587,149 @@ class JsonConfig:
         with open(self.path,"w",encoding="utf-8") as fp:
             fp.write(dumps(self.default, indent = 4, ensure_ascii = False))
 
+class TaskListItem(QWidget):
+    delSignal = pyqtSignal(int) # 删除编号为int的任务
+    moveItemSignal = pyqtSignal(int, int) # 将编号为int的任务移动, -1向下, 1向上
+    
+    def __init__(self, emulator:str, taskName:str, num:int):
+        super().__init__()
+        self.emulator = emulator
+        self.taskName = taskName
+        self.num = num
+        #显示内容
+        title = f"{emulator}=>{taskName}"
+        self.titleLabel = QLabel(title)
+        self.upButton = QPushButton("↑")
+        self.upButton.setMinimumWidth(20)
+        self.downButton = QPushButton("↓")
+        self.downButton.setMinimumWidth(20)
+        self.deleteButton = QPushButton("×")
+        self.deleteButton.setMinimumWidth(20)
+        
+        #布局
+        layout = QHBoxLayout()
+        layout.addWidget(self.titleLabel)
+        layout.addStretch() # 自动调整空白区
+        layout.addWidget(self.upButton)
+        layout.addWidget(self.downButton)
+        layout.addWidget(self.deleteButton)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
+        
+        # signal
+        self.initSignal()
+    
+    def initSignal(self):
+        self.upButton.clicked.connect(lambda: self.moveItemSignal.emit(self.num, 1))
+        self.downButton.clicked.connect(lambda: self.moveItemSignal.emit(self.num, -1))
+        self.deleteButton.clicked.connect(lambda: self.delSignal.emit(self.num))
+    
+class jczxTaskCreater(Ui_jczxTaskCreater):
+    def __init__(self, Twidget:QDialog, config:JsonConfig, adb): # type: ignore
+        super().__init__()
+        self.config = config
+        self.adb = adb
+        self.taskList = []
+        self.Twidget = Twidget
+        self.setupUi(Twidget)
+        self.emulator_comboBox.addItems(self.adb.devices())
+        self.initTaskCreater()
+        self.initButton()
+        self.Twidget.exec()
+    
+    def initButton(self):
+        self.renameTask_Button.clicked.connect(self.renameTask)
+        self.newNameTask_Button.clicked.connect(self.newNameTask)
+        self.delTask_Button.clicked.connect(self.delTask)
+        self.newTaskItem_Button.clicked.connect(lambda: self.addTaskListItem(self.emulator_comboBox.currentText(), self.newTaskItem_comboBox.currentText()) if self.emulator_comboBox.currentText() and self.newTaskItem_comboBox.currentText() else ...)
+        self.saveTaskList_Button.clicked.connect(self.save)
+        self.saveAndQuit_Button.clicked.connect(lambda: (self.save(), self.Twidget.close()))
+        
+    def initTaskCreater(self):
+        # init comboBox
+        self.TaskList_comboBox.clear()
+        self.newTaskItem_comboBox.clear()
+        self.TaskList_comboBox.addItems(self.config.tasks.tasks.keys())
+        self.TaskList_comboBox.currentTextChanged.connect(self.initViewTaskList)
+        self.newTaskItem_comboBox.addItems(CreaterWorkTags.ls())
+        
+        # init viewTaskList
+        self.initViewTaskList()
+    
+    def initViewTaskList(self):
+        title = self.TaskList_comboBox.currentText()
+        self.taskList = []
+        if title:
+            self.nowViewTaskList_lineEdit.setText(title)
+            self.listWidget.clear()
+            self.addTaskListItems(self.config.tasks.tasks[title])
+    
+    def renameTask(self):
+        if new_name := self.renameTask_lineEdit.text():
+            choice = self.TaskList_comboBox.currentText()
+            self.config.tasks.renameTask(choice, new_name)
+            self.initTaskCreater()
+            self.TaskList_comboBox.setCurrentText(new_name)
+            self.initViewTaskList()
+        else:
+            ...
+        self.renameTask_lineEdit.clear()
+    
+    def newNameTask(self):
+        newName = self.newNameTask_lineEdit.text()
+        if newName and newName not in self.config.tasks.tasks.keys():
+            self.config.tasks.addTask(newName, [])
+            self.newNameTask_lineEdit.clear()
+            self.initTaskCreater()
+            self.TaskList_comboBox.setCurrentText(newName)
+    
+    def delTask(self):
+        self.config.tasks.removeTask(self.TaskList_comboBox.currentText())
+        self.initTaskCreater()
+    
+    def moveTaskItem(self, num:int, face:int):
+        # 数据
+        item = self.taskList[num]
+        l = len(self.taskList)
+        self.taskList.pop(num)
+        match face:
+            case 1:
+                self.taskList.insert(num - 1 if num > 0 else l - 1, item)
+            case -1:
+                self.taskList.insert(num + 1 if num < l - 1 else 0, item)
+        
+        # ui
+        self.referViewTaskList()
+
+    def referViewTaskList(self):
+        self.listWidget.clear()
+        newlist = copy(self.taskList)
+        self.taskList = []
+        self.addTaskListItems(newlist)
+    
+    def delTaskItem(self, num:int):
+        self.taskList.pop(num)
+        self.referViewTaskList()
+    
+    def save(self):
+        self.config.tasks.setTask(self.nowViewTaskList_lineEdit.text(), self.taskList)
+    
+    def addTaskListItem(self, emulator:str, task:str):
+        listItem = QListWidgetItem()
+        listItem.setSizeHint(QSize(230, 24))
+        num = len(self.taskList)
+        self.listWidget.addItem(listItem)
+        widget = TaskListItem(emulator, task, num)
+        widget.moveItemSignal.connect(self.moveTaskItem)
+        widget.delSignal.connect(self.delTaskItem)
+        self.listWidget.setItemWidget(listItem, widget)
+        self.taskList.append((emulator, task))
+    
+    def addTaskListItems(self, taskList:list[tuple[str, str]]):
+        for emulator,task in taskList:
+            self.addTaskListItem(emulator, task)
+    
 class JCZXGame:
     class _ScreenCut:
         class Point: ...
@@ -1172,7 +1321,7 @@ class JCZXGame:
         if self.findImageCenterLocation(self.Numbers.JJC9, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 9
         if self.findImageCenterLocation(self.Numbers.JJC8, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 8
         if self.findImageCenterLocation(self.Numbers.JJC7, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 7
-        if self.findImageCenterLocation(self.Numbers.JJC6, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 6
+        if self.findImageCenterLocation(self.Numbers.JJC6, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 6
         if self.findImageCenterLocation(self.Numbers.JJC5, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 5
         if self.findImageCenterLocation(self.Numbers.JJC4, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 4
         if self.findImageCenterLocation(self.Numbers.JJC3, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 3
@@ -1196,7 +1345,7 @@ class JCZXGame:
         if self.findImageCenterLocation(self.Numbers.cancel6, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 6
         if self.findImageCenterLocation(self.Numbers.cancel5, cutPoints = cutPoints, per = 0.9, grayScreenshot = grayScreenshot): return 5
         if self.findImageCenterLocation(self.Numbers.cancel4, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 4
-        if self.findImageCenterLocation(self.Numbers.cancel3, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 3
+        if self.findImageCenterLocation(self.Numbers.cancel3, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 3
         if self.findImageCenterLocation(self.Numbers.cancel2, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 2
         if self.findImageCenterLocation(self.Numbers.cancel1, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 1
         if self.findImageCenterLocation(self.Numbers.cancel0, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 0
@@ -1207,12 +1356,12 @@ class JCZXGame:
         maxClickCancelTImes = 4
         allTimes, allCancels = self.getCompetitionAndCancelTimes()
         competitionHistory = {"+28": 0, "+26": 0, "loss": 0}
-        for i in range(allCancels):
+        for _ in range(allCancels*allTimes):
             # 简单的逻辑：
             # 刷新次数//挑战次数 = 最小当前可刷新次数(最大值为4)
             # 最小当前可刷新次数用于寻找符合阈值的+28挑战
             # 若刷新次数用完也没有找到符合阈值的挑战对象则 =》 挑战当前符合阈值的对象（无论+26 or +28）
-            # 结束条件： 模拟次数用完
+            # 结束条件： 模拟次数或者挑战次数用完
             info = self.findImageDetailLocations(self.ScreenLocs.firstScoreLoc, cutPoints = self.ScreenCut.cut3x1(0, 0))
             times, cancels = self.getCompetitionAndCancelTimes(info.baseGrayScreenshot)
             self.log.info(f"挑战次数{times},刷新次数{cancels}")
@@ -1253,7 +1402,7 @@ class JCZXGame:
                 self.click(self.width//2, self.height//5, wait = 0.6)
                 self.click(self.width//2, self.height//5, wait = 0.6)
             else:
-                if cancels == 0: #刷新次数为0时结束
+                if cancels == 0 or times == 0: #刷新次数为0 或战斗次数为0 时结束
                     break
                 self._clickAndMsg(self.Buttons.competitionCancel_button, "点击刷新", wait = 1, cutPoints = self.ScreenCut.cut2x3(1, 0), grayScreenshot = info.baseGrayScreenshot)
                 clickCancelTimes -= 1
@@ -2046,8 +2195,10 @@ class WorkThread(QThread, WorkTags):
         super().__init__()
         self.adb = adb
         self.log = log
-        self.mode = self.DEBUG
+        self.mode = None
         self.config = config
+        self.workQueue = []
+        self.__workQueueLock = Lock()
     
     def stop(self):
         if not self.isRunning(): return
@@ -2056,20 +2207,25 @@ class WorkThread(QThread, WorkTags):
                 self.adb.tellMeSubmitOrders()
             case self.TASKS_LIST:
                 self.adb.setDevice(self.config.adb_device)
-        if self.mode not in (self.INIT_OCR):
+        if self.mode not in (self.INIT_OCR, self.SET_ADBTOOLS):
             self.terminate()
             return True
         else:
             return False
     
-    def setMode(self, mode:str):
-        self.mode = mode
+    def setMode(self, mode:str, addQueue:bool = False):
+        if addQueue:
+            self.workQueue.append(mode)
+        else:
+            self.mode = mode
     
     def run(self) -> None:
         def _():
-            if self.adb.device and self.mode not in (self.TASKS_LIST, self.INIT_OCR):
+            if self.adb.device and self.mode not in (self.TASKS_LIST, self.INIT_OCR, self.SET_ADBTOOLS) and self.mode:
                 self.adb.loginJCZX()
             match self.mode:
+                case None:
+                    ...
                 case self.ORDER:
                     self.spendOrder()
                 case self.SWITCH:
@@ -2097,13 +2253,22 @@ class WorkThread(QThread, WorkTags):
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
         
+        def work():
+            _()
+            while True:
+                if self.workQueue:
+                    self.setMode(self.workQueue.pop(0))
+                    _()
+                else:
+                    break
+        
         if LOG_LEVEL == logging.INFO:
             try:
-                _()
+                work()
             except Exception as e:
                 self.log.error(f"捕获到错误抛出 {e}")
         else:
-            _()
+            work()
 
     def __debug(self):
         adb = self.adb
@@ -2145,7 +2310,7 @@ class WorkThread(QThread, WorkTags):
     def initOCR(self):
         self.log.info("开始载入OCR模块")
         from easyocr import Reader
-        self.adb.ocr = Reader(["ch_sim", "en"])
+        self.adb.ocr = Reader(["ch_sim", "en"], model_storage_directory = joinPath("EasyOCR", "model"), download_enabled = False)
         self.log.info("OCR载入完成")
     
     @check
@@ -2295,6 +2460,7 @@ class WorkThread(QThread, WorkTags):
         self.log.info(f"开始【竞技场】任务")
         adb.gotoCompetition()
         adb.challengeCompetition()
+        adb.gotoHome()
         self.log.info(f"任务【竞技场】结束")
     
 if __name__ == "__main__":

@@ -3,16 +3,29 @@ class WorkTags:
     SWITCH = "矿场换班"
     DEBUG = "Debug"
     ACCEPT = "自动同意申请"
-    AWARD = "刷助战奖励"
+    AWARD = "刷取助战奖励"
     ONLY_THIS_ORDERS = "仅当前订单"
-    SMALL_CRYSTAL = "虚影微晶任务"
+    SMALL_CRYSTAL = "周本虚影微晶"
     SET_ADBTOOLS = "下载ADB工具"
     ILLUSION_TO_FAVOR = "虚影刷好感度"
     TASKS_LIST = "任务列表"
-    JJC_TASK = "竞技场"
+    JJC_TASK = "竞技场挑战"
     INIT_OCR = "初始化OCR"
 
-VERSION = "0.1.8A"
+class CreaterWorkTags:
+    ORDER = WorkTags.ORDER
+    AWARD = WorkTags.AWARD
+    ONLY_THIS_ORDERS = WorkTags.ONLY_THIS_ORDERS
+    SMALL_CRYSTAL = WorkTags.SMALL_CRYSTAL
+    ILLUSION_TO_FAVOR = WorkTags.ILLUSION_TO_FAVOR
+    JJC_TASK = WorkTags.JJC_TASK
+    
+    @staticmethod
+    def ls():
+        tmp = CreaterWorkTags()
+        return [tmp.__getattribute__(i) for i in CreaterWorkTags().__dir__() if not i.startswith("__") and i != 'ls']
+
+VERSION = "0.1.9A"
 
 DEFAULT_CONFIGS = {
     "adb_path": None,

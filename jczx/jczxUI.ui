@@ -2086,9 +2086,9 @@ QPushButton:pressed, QPushButton:checked {
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>120</y>
+       <y>139</y>
        <width>175</width>
-       <height>24</height>
+       <height>42</height>
       </rect>
      </property>
      <property name="styleSheet">
@@ -2143,54 +2143,12 @@ QPushButton:pressed, QPushButton:checked {
       <number>-1</number>
      </property>
     </widget>
-    <widget class="QLabel" name="renameTask_label">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>24</y>
-       <width>71</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>重命名：</string>
-     </property>
-     <property name="alignment">
-      <set>Qt::AlignCenter</set>
-     </property>
-     <property name="indent">
-      <number>-1</number>
-     </property>
-    </widget>
-    <widget class="QLineEdit" name="renameTask_lineEdit">
-     <property name="geometry">
-      <rect>
-       <x>70</x>
-       <y>24</y>
-       <width>71</width>
-       <height>24</height>
-      </rect>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="renameTask_Button">
-     <property name="geometry">
-      <rect>
-       <x>140</x>
-       <y>24</y>
-       <width>30</width>
-       <height>24</height>
-      </rect>
-     </property>
-     <property name="text">
-      <string>命名</string>
-     </property>
-    </widget>
     <widget class="QPushButton" name="startTask_Button">
      <property name="geometry">
       <rect>
        <x>0</x>
        <y>139</y>
-       <width>175</width>
+       <width>87</width>
        <height>42</height>
       </rect>
      </property>
@@ -2219,9 +2177,9 @@ QPushButton:pressed, QPushButton:checked {
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>48</y>
+       <y>28</y>
        <width>171</width>
-       <height>91</height>
+       <height>111</height>
       </rect>
      </property>
      <property name="minimumSize">
@@ -2239,7 +2197,7 @@ QPushButton:pressed, QPushButton:checked {
         <x>0</x>
         <y>0</y>
         <width>171</width>
-        <height>91</height>
+        <height>111</height>
        </rect>
       </property>
       <widget class="QLabel" name="taskInfor_label">
@@ -2248,7 +2206,7 @@ QPushButton:pressed, QPushButton:checked {
          <x>0</x>
          <y>0</y>
          <width>171</width>
-         <height>91</height>
+         <height>111</height>
         </rect>
        </property>
        <property name="text">
@@ -2260,13 +2218,41 @@ QPushButton:pressed, QPushButton:checked {
       </widget>
      </widget>
     </widget>
+    <widget class="QPushButton" name="TaskCreater_Button">
+     <property name="geometry">
+      <rect>
+       <x>87</x>
+       <y>139</y>
+       <width>87</width>
+       <height>42</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+     </property>
+     <property name="text">
+      <string>任务编辑器</string>
+     </property>
+    </widget>
     <zorder>choiceTask_label</zorder>
-    <zorder>renameTask_label</zorder>
-    <zorder>renameTask_lineEdit</zorder>
-    <zorder>renameTask_Button</zorder>
     <zorder>choiceTask_comboBox</zorder>
     <zorder>startTask_Button</zorder>
     <zorder>taskInfor_scrollArea</zorder>
+    <zorder>TaskCreater_Button</zorder>
    </widget>
    <widget class="QWidget" name="JJCSettingPage">
     <widget class="QLabel" name="ThresholdValue_Label">

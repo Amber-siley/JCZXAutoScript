@@ -949,7 +949,7 @@ class Ui_Form(object):
         self.quarry_position5_label.setIndent(-1)
         self.quarry_position5_label.setObjectName("quarry_position5_label")
         self.quarry_start_operation_Button = QtWidgets.QPushButton(parent=self.quarryCalculatorPage)
-        self.quarry_start_operation_Button.setGeometry(QtCore.QRect(0, 120, 175, 24))
+        self.quarry_start_operation_Button.setGeometry(QtCore.QRect(0, 139, 175, 42))
         self.quarry_start_operation_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -977,19 +977,8 @@ class Ui_Form(object):
         self.choiceTask_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.choiceTask_label.setIndent(-1)
         self.choiceTask_label.setObjectName("choiceTask_label")
-        self.renameTask_label = QtWidgets.QLabel(parent=self.TaskSettingPage)
-        self.renameTask_label.setGeometry(QtCore.QRect(0, 24, 71, 24))
-        self.renameTask_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self.renameTask_label.setIndent(-1)
-        self.renameTask_label.setObjectName("renameTask_label")
-        self.renameTask_lineEdit = QtWidgets.QLineEdit(parent=self.TaskSettingPage)
-        self.renameTask_lineEdit.setGeometry(QtCore.QRect(70, 24, 71, 24))
-        self.renameTask_lineEdit.setObjectName("renameTask_lineEdit")
-        self.renameTask_Button = QtWidgets.QPushButton(parent=self.TaskSettingPage)
-        self.renameTask_Button.setGeometry(QtCore.QRect(140, 24, 30, 24))
-        self.renameTask_Button.setObjectName("renameTask_Button")
         self.startTask_Button = QtWidgets.QPushButton(parent=self.TaskSettingPage)
-        self.startTask_Button.setGeometry(QtCore.QRect(0, 139, 175, 42))
+        self.startTask_Button.setGeometry(QtCore.QRect(0, 139, 87, 42))
         self.startTask_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -1007,26 +996,42 @@ class Ui_Form(object):
 "}")
         self.startTask_Button.setObjectName("startTask_Button")
         self.taskInfor_scrollArea = QtWidgets.QScrollArea(parent=self.TaskSettingPage)
-        self.taskInfor_scrollArea.setGeometry(QtCore.QRect(0, 48, 171, 91))
+        self.taskInfor_scrollArea.setGeometry(QtCore.QRect(0, 28, 171, 111))
         self.taskInfor_scrollArea.setMinimumSize(QtCore.QSize(0, 71))
         self.taskInfor_scrollArea.setWidgetResizable(True)
         self.taskInfor_scrollArea.setObjectName("taskInfor_scrollArea")
         self.scrollAreaWidgetContents_3 = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents_3.setGeometry(QtCore.QRect(0, 0, 171, 91))
+        self.scrollAreaWidgetContents_3.setGeometry(QtCore.QRect(0, 0, 171, 111))
         self.scrollAreaWidgetContents_3.setObjectName("scrollAreaWidgetContents_3")
         self.taskInfor_label = QtWidgets.QLabel(parent=self.scrollAreaWidgetContents_3)
-        self.taskInfor_label.setGeometry(QtCore.QRect(0, 0, 171, 91))
+        self.taskInfor_label.setGeometry(QtCore.QRect(0, 0, 171, 111))
         self.taskInfor_label.setText("")
         self.taskInfor_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeading|QtCore.Qt.AlignmentFlag.AlignLeft|QtCore.Qt.AlignmentFlag.AlignTop)
         self.taskInfor_label.setObjectName("taskInfor_label")
         self.taskInfor_scrollArea.setWidget(self.scrollAreaWidgetContents_3)
+        self.TaskCreater_Button = QtWidgets.QPushButton(parent=self.TaskSettingPage)
+        self.TaskCreater_Button.setGeometry(QtCore.QRect(87, 139, 87, 42))
+        self.TaskCreater_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.TaskCreater_Button.setObjectName("TaskCreater_Button")
         self.choiceTask_label.raise_()
-        self.renameTask_label.raise_()
-        self.renameTask_lineEdit.raise_()
-        self.renameTask_Button.raise_()
         self.choiceTask_comboBox.raise_()
         self.startTask_Button.raise_()
         self.taskInfor_scrollArea.raise_()
+        self.TaskCreater_Button.raise_()
         self.stackedWidget.addWidget(self.TaskSettingPage)
         self.JJCSettingPage = QtWidgets.QWidget()
         self.JJCSettingPage.setObjectName("JJCSettingPage")
@@ -1166,9 +1171,8 @@ class Ui_Form(object):
         self.quarry_position5_label.setText(_translate("Form", "5："))
         self.quarry_start_operation_Button.setText(_translate("Form", "开始计算"))
         self.choiceTask_label.setText(_translate("Form", "选择任务："))
-        self.renameTask_label.setText(_translate("Form", "重命名："))
-        self.renameTask_Button.setText(_translate("Form", "命名"))
         self.startTask_Button.setText(_translate("Form", "启动任务"))
+        self.TaskCreater_Button.setText(_translate("Form", "任务编辑器"))
         self.ThresholdValue_Label.setText(_translate("Form", "挑战阈值："))
         self.JJCSettingTips_Label.setText(_translate("Form", "仅针对+28或者+26的竞技"))
         self.ThresholdValue_lineEdit.setToolTip(_translate("Form", "高于该阈值的镜像挑战将会跳过"))

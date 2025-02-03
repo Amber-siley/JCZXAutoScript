@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>jczxTaskCreater</class>
+ <widget class="QWidget" name="jczxTaskCreater">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>200</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>400</width>
+    <height>200</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>400</width>
+    <height>200</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>TaskCreater</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+	color: black;
+	border: 1px;
+	background-color: white;
+}
+QLineEdit {
+	border: 1px solid #dcdfe6;
+	border-radius: 2px;
+	padding-left: 3px;
+}
+QListWidget {
+	border: 1px solid #dcdfe6;
+}
+QScrollBar::vertical {
+background:transparent;
+width:2px;
+border:0px;
+}
+
+QScrollBar::handle:vertical {
+background:rgb(190, 190, 190);
+width:2px;
+}
+
+QScrollBar::add-line:vertical {
+background:none;
+border:none;
+}
+
+QScrollBar::sub-line:vertical {
+background:none;
+border:none;
+}
+
+QScrollBar::add-page:vertical {
+background:transparent;
+border:none;
+}
+
+QScrollBar::sub-page:vertical {
+background:transparent;
+border:none;
+}
+
+QComboBox {
+	border: 1px solid #dcdfe6;
+	padding: 0px;
+	padding-left: 3px;
+}
+QComboBox::drop-down {
+	border: 0px;
+	width: 0px;
+}
+QComboBox::down-arrow {
+	background-color: transparent;
+}
+QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}
+</string>
+  </property>
+  <widget class="QWidget" name="widget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>401</width>
+     <height>201</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
+   <widget class="QWidget" name="Options_widget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>171</width>
+      <height>201</height>
+     </rect>
+    </property>
+    <widget class="QLabel" name="TaskList_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>任务列表：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="TaskList_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>0</y>
+       <width>101</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="renameTask_lineEdit">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>24</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="renameTask_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>24</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>重命名：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="renameTask_Button">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>24</y>
+       <width>30</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>命名</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="delTask_Button">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>48</y>
+       <width>171</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton:hover {
+    background-color: rgb(255, 239, 239);
+    color: rgb(255, 32, 36);
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+     </property>
+     <property name="text">
+      <string>删除任务</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="decollator_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>80</y>
+       <width>171</width>
+       <height>16</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QLabel {
+	border-bottom: 1px solid rgb(220, 223, 230)
+}</string>
+     </property>
+     <property name="text">
+      <string>===================</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QLabel" name="newNameTask_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>95</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>新建任务：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="newNameTask_lineEdit">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>95</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="newNameTask_Button">
+     <property name="geometry">
+      <rect>
+       <x>140</x>
+       <y>95</y>
+       <width>30</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>新建</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="saveTaskList_Button">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>116</y>
+       <width>171</width>
+       <height>42</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton:hover {
+    background-color: rgb(226, 255, 233);
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+     </property>
+     <property name="text">
+      <string>保存</string>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="saveAndQuit_Button">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>158</y>
+       <width>171</width>
+       <height>42</height>
+      </rect>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">QPushButton:hover {
+    background-color: rgb(255, 239, 239);
+    color: rgb(255, 32, 36);
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+     </property>
+     <property name="text">
+      <string>保存并退出</string>
+     </property>
+    </widget>
+    <zorder>TaskList_label</zorder>
+    <zorder>renameTask_label</zorder>
+    <zorder>renameTask_Button</zorder>
+    <zorder>renameTask_lineEdit</zorder>
+    <zorder>delTask_Button</zorder>
+    <zorder>newNameTask_label</zorder>
+    <zorder>newNameTask_lineEdit</zorder>
+    <zorder>newNameTask_Button</zorder>
+    <zorder>TaskList_comboBox</zorder>
+    <zorder>saveTaskList_Button</zorder>
+    <zorder>saveAndQuit_Button</zorder>
+    <zorder>decollator_label</zorder>
+   </widget>
+   <widget class="QListWidget" name="listWidget">
+    <property name="geometry">
+     <rect>
+      <x>169</x>
+      <y>72</y>
+      <width>231</width>
+      <height>129</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QWidget" name="widget_2" native="true">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>0</y>
+      <width>231</width>
+      <height>48</height>
+     </rect>
+    </property>
+    <widget class="QPushButton" name="newTaskItem_Button">
+     <property name="geometry">
+      <rect>
+       <x>180</x>
+       <y>0</y>
+       <width>51</width>
+       <height>48</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>添加</string>
+     </property>
+    </widget>
+    <widget class="QLabel" name="newTaskItem_label">
+     <property name="geometry">
+      <rect>
+       <x>1</x>
+       <y>24</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>添加项：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="newTaskItem_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>24</y>
+       <width>111</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="emulator_label">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>71</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>模拟器：</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="indent">
+      <number>-1</number>
+     </property>
+    </widget>
+    <widget class="QComboBox" name="emulator_comboBox">
+     <property name="geometry">
+      <rect>
+       <x>70</x>
+       <y>0</y>
+       <width>111</width>
+       <height>24</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QLineEdit" name="nowViewTaskList_lineEdit">
+    <property name="geometry">
+     <rect>
+      <x>240</x>
+      <y>48</y>
+      <width>161</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="nowViemTaskList_label">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>48</y>
+      <width>71</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>当前预览：</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+    <property name="indent">
+     <number>-1</number>
+    </property>
+   </widget>
+   <zorder>widget_2</zorder>
+   <zorder>Options_widget</zorder>
+   <zorder>listWidget</zorder>
+   <zorder>nowViemTaskList_label</zorder>
+   <zorder>nowViewTaskList_lineEdit</zorder>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
