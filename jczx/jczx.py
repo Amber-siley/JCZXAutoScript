@@ -7,7 +7,7 @@ from copy import copy
 from datetime import datetime
 from threading import Lock
 
-from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog,QHBoxLayout,QLabel,QListWidgetItem,QPushButton,QDialog,QSpacerItem,QSizePolicy
+from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog,QHBoxLayout,QLabel,QListWidgetItem,QPushButton,QDialog
 from PyQt6.QtGui import QIntValidator,QTextCursor,QFont
 from PyQt6.QtCore import QThread,pyqtSignal,QSize
 from cv2.typing import MatLike
@@ -267,11 +267,8 @@ class MainManager(Ui_Form):
         if self.work_thread.mode == mode and self.work_thread.isRunning():
             return
         if self.work_thread.isRunning() and addQueue == False:
-            if self.work_thread.stop():
-                self.log.info(f"已停止【{self.work_thread.mode}】")
-            else:
-                self.log.info(f"当前不能停止【{self.work_thread.mode}】")
-                return
+            self.log.info(f"当前在运行【{self.work_thread.mode}】,若想切换任务请强制停止当前任务")
+            return
         self.work_thread.setMode(mode, addQueue)
         self.work_thread.start()
     
@@ -1066,7 +1063,7 @@ class JCZXGame:
         self.device = None
         self.log = logger
         self.config = config
-        self.ocr:Reader = None # type: ignore
+        self.ocr:PaddleOCR = None # type: ignore
         self.startupinfo = subprocess.STARTUPINFO()
         self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
@@ -1370,7 +1367,7 @@ class JCZXGame:
                 clickCancelTimes = maxClickCancelTImes if clickCancelTimes > maxClickCancelTImes else clickCancelTimes
                 clicked = False
             loc = info.transRange(info.transMatchTempletePointFromSize(info.transMoveFromTemleteSize(rightMoveTimes = 1), rightHeightTimes = 1))
-            number = int(self.ocr.readtext(self.cutScreenshot(info.baseGrayScreenshot, loc), detail = 0)[0])
+            number = int(self.ocr.readtext(self.cutScreenshot(info.baseGrayScreenshot, loc))[0])
             if number <= thresholdValue and self.inLocation(self.Numbers.score28, cutPoints = self.ScreenCut.cut2x2(0, 0), per = 0.95, grayScreenshot = info.baseGrayScreenshot) and times != 0:
                 # 条件1： 符合阈值的+28挑战
                 self.log.info("已找到+28挑战")
@@ -2309,8 +2306,31 @@ class WorkThread(QThread, WorkTags):
     
     def initOCR(self):
         self.log.info("开始载入OCR模块")
-        from easyocr import Reader
-        self.adb.ocr = Reader(["ch_sim", "en"], model_storage_directory = joinPath("EasyOCR", "model"), download_enabled = False)
+        # from easyocr import Reader
+        # self.adb.ocr = Reader(["ch_sim", "en"], model_storage_directory = joinPath("EasyOCR", "model"), download_enabled = False)
+        from paddleocr import PaddleOCR
+        class OCR(PaddleOCR):
+            def __init__(self, **kwargs):
+                super().__init__(**kwargs)
+
+            def readtext(self, img:MatLike):
+                data = self.ocr(img, cls = False)
+                result = []
+                for line in data[0]:
+                    text = line[1][0]
+                    result.append(text)
+                return result
+            
+        self.adb.ocr = OCR(
+            use_angle_cls = False,
+            lang = 'ch',
+            use_gpu = False,
+            enable_mkldnn = True,
+            show_log = False,
+            det_model_dir = joinPath('OCR', 'ch_PP-OCRv4_det_infer'),
+            rec_model_dir = joinPath('OCR', 'ch_PP-OCRv4_rec_infer')
+            # cls_model_dir = joinPath('OCR', 'ch_ppocr_mobile_v2.0_cls_infer')
+        )
         self.log.info("OCR载入完成")
     
     @check
