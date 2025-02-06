@@ -23,6 +23,7 @@ from Ui_jczxTaskCreater import Ui_jczxTaskCreater
 import subprocess
 import logging
 import sys
+import ctypes
 
 import cv2
 import numpy as np
@@ -31,6 +32,9 @@ def joinPath(*args):
     if hasattr(sys, '_MEIPASS'):
         return join(sys._MEIPASS, *args)
     return join(FileManage(file_path = __file__).save_path, *args)
+
+def isadmin():
+    return ctypes.windll.shell32.IsUserAnAdmin()
 
 LOG_LEVEL = logging.INFO
 # LOG_LEVEL = logging.DEBUG
@@ -370,6 +374,7 @@ class MainManager(Ui_Form):
         if devices := self.adb.devices():
             self.adb_devices_comboBox.clear()
             self.adb_devices_comboBox.addItems(devices)
+        self.adb.setDNconsoleDevices()
 
     def __start_app(self):
         """初始化app"""
@@ -510,7 +515,16 @@ class JsonConfig:
                 if self.tasks:
                     self.setChoice(list(self.tasks.keys())[0])
             return self.__config.get_config(("tasks", "choice"))
+    
+    class DNconsoleDevices:
+        def __init__(self, config) -> None:
+            self.__config = config
+            self.Devices:dict = self.__config.get_config("DNconsoleDevices")
         
+        def setDevice(self, emulator, index):
+            self.Devices[emulator] = index
+            self.__config.save()
+    
     def __init__(self, path, default:dict = {}) -> None:
         self.path = path
         self.default = default
@@ -521,6 +535,7 @@ class JsonConfig:
         self.illusion = self.IllusionSetting(self)
         self.favor = self.Favor(self)
         self.tasks = self.Tasks(self)
+        self.dnconsoleDevices = self.DNconsoleDevices(self)
     
     def set_config(self,sec:str | tuple,value:Any):
         """设置配置项"""
@@ -630,7 +645,7 @@ class jczxTaskCreater(Ui_jczxTaskCreater):
         self.taskList = []
         self.Twidget = Twidget
         self.setupUi(Twidget)
-        self.emulator_comboBox.addItems(self.adb.devices())
+        self.emulator_comboBox.addItems(list(set(list(self.config.dnconsoleDevices.Devices.keys()) + self.adb.devices())))
         self.initTaskCreater()
         self.initButton()
         self.Twidget.exec()
@@ -979,7 +994,61 @@ class JCZXGame:
         def transCenterPoint(self, points:tuple[int, ...]) -> tuple[int, int]:
             p1, p2 = self.transRange(points)
             return ((p1[0]+p2[0])//2, (p1[1]+p2[1])//2)
+    
+    class DNConsoleExe:
+        def __init__(self, dnconsolePath:str):
+            self.dnconsolePath = dnconsolePath
+            self.startupinfo = subprocess.STARTUPINFO()
+            self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+            self.startupinfo.wShowWindow = subprocess.SW_HIDE
+            self.CAN_RUN = isadmin() & self.isexists()
         
+        @staticmethod
+        def check(func):
+            def _(self, *args, **kwargs):
+                if self.CAN_RUN:
+                    return func(self, *args, **kwargs)
+            return _
+        
+        def isexists(self) -> bool:
+            return exists(self.dnconsolePath)
+        
+        @check
+        def isrunning(self, index) -> bool:
+            match subprocess.check_output([self.dnconsolePath, "isrunning", "--index", index], shell = True, startupinfo = self.startupinfo).decode("gbk"):
+                case 'running':
+                    return True
+                case "stop":
+                    return False
+        
+        @check
+        def getEmulatorName(self, index) -> str | None:
+            emulator = subprocess.check_output([self.dnconsolePath, "adb", "--index", index, "--command", "get-serialno"], shell = True, startupinfo = self.startupinfo).decode("gbk")[:-3]
+            if not emulator.endswith("not found"):
+                return emulator
+            else:
+                return None
+        
+        @check
+        def getEmulatorIndexs(self) -> list:
+            dataText = subprocess.check_output([self.dnconsolePath, "list2"], shell = True, startupinfo = self.startupinfo).decode("gbk")
+            data = dataText.split("\r\n")
+            if data:
+                emulatorIndexs = [i.split(',')[0] for i in dataText.split("\r\n")[:-1]]
+                return emulatorIndexs
+            else:
+                return []
+        
+        @check
+        def launchDevice(self, index):
+            if not self.isrunning(index):
+                subprocess.run([self.dnconsolePath, "launch", "--index", index], shell = True, startupinfo = self.startupinfo)
+        
+        @check
+        def quitDevice(self, index):
+            if self.isrunning(index):
+                subprocess.run([self.dnconsolePath, "quit", "--index", index], shell = True, startupinfo = self.startupinfo)
+    
     def getUserOrderPaths(self) -> list[tuple[str, _Orders.Description, _Orders.CraftEnable]]:
         """返回用户设置的订单路径及其介绍"""
         result = []
@@ -1067,6 +1136,7 @@ class JCZXGame:
         self.startupinfo = subprocess.STARTUPINFO()
         self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
+        self.DNConsole = None
         self.submitOrders = []
         self.size = None
     
@@ -1418,6 +1488,12 @@ class JCZXGame:
             self._waitClickAndMsg(self.Buttons.noRemindersBase_button, wait = 0.3, maxWaitSecond = 2, per = 0.7, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
             self._waitClickAndMsg(self.Buttons.noRemindersBase_button, wait = 0.3, maxWaitSecond = 2, per = 0.5, func = lambda: self.click(self.width//2, self.height//5, 1))
     
+    def lauchDevice(self, emulator):
+        if self.DNConsole.CAN_RUN:
+            if emulator in self.config.dnconsoleDevices.Devices.keys():
+                self.DNConsole.launchDevice(self.config.dnconsoleDevices.Devices[emulator])
+                sleep(30)
+    
     def gotoHome(self):
         if self.inLocation(self.ScreenLocs.home, cutPoints = self.ScreenCut.cut3x4(1, 3)):
             return
@@ -1667,7 +1743,7 @@ class JCZXGame:
         """检查并交付订单"""
         grayScreenshot = self.grayScreenshot()
         self.__checkOrders(grayScreenshot = grayScreenshot)
-        if self.inLocation(self.ScreenLocs.tabBar, self.ScreenCut.cut7x1(6, 0), grayScreenshot = grayScreenshot):
+        if self.inLocation(self.ScreenLocs.tabBar, self.ScreenCut.cut7x1(6, 0), per = 0.8, grayScreenshot = grayScreenshot):
             self.swipeUPScreenCenter()
             self.__checkOrders(self.ScreenCut.cut1x2(0, 1))
     
@@ -2180,11 +2256,23 @@ class JCZXGame:
     def devices(self) -> list[str]:
         try:
             info = subprocess.check_output([self.adb_path, "devices"], startupinfo = self.startupinfo)
-            return list(map(lambda x:x[:x.find("\t")], info.decode().split("\r\n")))[1:-2]
+            devices = list(map(lambda x:x[:x.find("\t")], info.decode().split("\r\n")))[1:-2]
+            return devices
         except:
             self.log.error("adb端口占用，或者模拟器未打开，请重启\打开模拟器，亦或者电脑")
             return []
-            
+    
+    @check
+    def setDNconsoleDevices(self):
+        dnconsolePath = join(FileManage(file_path = self.adb_path).save_path, 'dnconsole.exe')
+        if not self.DNConsole:
+            self.DNConsole = self.DNConsoleExe(dnconsolePath)
+        if self.DNConsole.CAN_RUN:
+            for index in self.DNConsole.getEmulatorIndexs():
+                emulator = self.DNConsole.getEmulatorName(index)
+                if emulator:
+                    self.config.dnconsoleDevices.setDevice(emulator, index)
+    
 class WorkThread(QThread, WorkTags):
     referADBSignal = pyqtSignal(str)
     
@@ -2195,7 +2283,6 @@ class WorkThread(QThread, WorkTags):
         self.mode = None
         self.config = config
         self.workQueue = []
-        self.__workQueueLock = Lock()
     
     def stop(self):
         if not self.isRunning(): return
@@ -2465,6 +2552,7 @@ class WorkThread(QThread, WorkTags):
         task = tasks[choice]
         self.log.info(f"开始运行任务【{choice}】")
         for emulator, operate in task:
+            self.adb.lauchDevice(emulator)
             if self.adb.device != emulator:
                 self.adb.setDevice(emulator)
                 self.log.info(f"设置设备【{emulator}】")

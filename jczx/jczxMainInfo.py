@@ -25,7 +25,7 @@ class CreaterWorkTags:
         tmp = CreaterWorkTags()
         return [tmp.__getattribute__(i) for i in CreaterWorkTags().__dir__() if not i.startswith("__") and i != 'ls']
 
-VERSION = "0.1.9A"
+VERSION = "0.1.10A"
 
 DEFAULT_CONFIGS = {
     "adb_path": None,
@@ -87,6 +87,9 @@ DEFAULT_CONFIGS = {
     },
     "JJCTask": {
         "ThresholdValue": 25000
+    },
+    "DNconsoleDevices":{
+        
     }
 }
 
