@@ -34,6 +34,9 @@
 - OCR图像文字识别（PaddleOCR）
 
 ### 如何使用
+尽量使用雷电模拟器，打开adb本地调试
+MuMu模拟器需要在设置-网络-打开桥接模式，打开adb调试模式
+**注意**：脚本与远程软件并不兼容，会导致脚本崩溃，雷电模拟器需关闭无界趣连。MuMu需卸载GameView，并重启电脑
 请在[https://github.com/Amber-siley/JCZXAutoScript/releases](https://github.com/Amber-siley/JCZXAutoScript/releases)下载最新版本
 1. 已测试分辨率，如遇“未找到按钮……”同时游戏不能正常被脚本操作，请尝试修改分辨率
    - 1920×1080(dpi 280)
