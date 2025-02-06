@@ -64,5 +64,6 @@ match index:
                 --follow-imports \
                 --include-data-dir=jczx/resources=resources \
                 --include-data-dir=jczx/OCR=OCR \
+                --include-data-dir=sde/Lib/site-packages/paddleocr=paddleocr \
                 --remove-output jczx/jczx.py")
 print("running time {}m {}s".format(*divmod(int(time() - startTime), 60)))
