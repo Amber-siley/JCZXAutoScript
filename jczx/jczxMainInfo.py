@@ -11,6 +11,8 @@ class WorkTags:
     TASKS_LIST = "任务列表"
     JJC_TASK = "竞技场挑战"
     INIT_OCR = "初始化OCR"
+    QUIT_JCZX = "关闭游戏"
+    QUIT_DEVICE = "关闭模拟器"
 
 class CreaterWorkTags:
     ORDER = WorkTags.ORDER
@@ -19,6 +21,7 @@ class CreaterWorkTags:
     SMALL_CRYSTAL = WorkTags.SMALL_CRYSTAL
     ILLUSION_TO_FAVOR = WorkTags.ILLUSION_TO_FAVOR
     JJC_TASK = WorkTags.JJC_TASK
+    QUIT_JCZX = WorkTags.QUIT_JCZX
     
     @staticmethod
     def ls():

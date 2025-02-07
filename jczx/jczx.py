@@ -511,7 +511,7 @@ class JsonConfig:
         
         @property
         def choice(self) -> str:
-            if not self.__config.get_config(("tasks", "choice")):
+            if not self.__config.get_config(("tasks", "choice")) or self.__config.get_config(("tasks", "choice")) not in self.tasks.keys():
                 if self.tasks:
                     self.setChoice(list(self.tasks.keys())[0])
             return self.__config.get_config(("tasks", "choice"))
@@ -665,6 +665,8 @@ class jczxTaskCreater(Ui_jczxTaskCreater):
         self.TaskList_comboBox.addItems(self.config.tasks.tasks.keys())
         self.TaskList_comboBox.currentTextChanged.connect(self.initViewTaskList)
         self.newTaskItem_comboBox.addItems(CreaterWorkTags.ls())
+        if self.adb.DNConsole.CAN_RUN:
+            self.newTaskItem_comboBox.addItem(WorkTags.QUIT_DEVICE)
         
         # init viewTaskList
         self.initViewTaskList()
@@ -1024,10 +1026,10 @@ class JCZXGame:
         @check
         def getEmulatorName(self, index) -> str | None:
             emulator = subprocess.check_output([self.dnconsolePath, "adb", "--index", index, "--command", "get-serialno"], shell = True, startupinfo = self.startupinfo).decode("gbk")[:-3]
-            if not emulator.endswith("not found"):
-                return emulator
-            else:
+            if emulator.endswith("not found") or emulator.startswith("error"):
                 return None
+            else:
+                return emulator
         
         @check
         def getEmulatorIndexs(self) -> list:
@@ -1491,6 +1493,8 @@ class JCZXGame:
     def lauchDevice(self, emulator):
         if self.DNConsole.CAN_RUN:
             if emulator in self.config.dnconsoleDevices.Devices.keys():
+                if self.DNConsole.isrunning(self.config.dnconsoleDevices.Devices[emulator]):
+                    return
                 self.DNConsole.launchDevice(self.config.dnconsoleDevices.Devices[emulator])
                 sleep(30)
     
@@ -2252,6 +2256,9 @@ class JCZXGame:
             self.startAPP("com.megagame.crosscore/com.mjsdk.app.MJUnityActivity")
             return True
     
+    def stopJCZX(self):
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "am", "force-stop", "com.megagame.crosscore"], startupinfo = self.startupinfo)
+    
     @check
     def devices(self) -> list[str]:
         try:
@@ -2305,8 +2312,7 @@ class WorkThread(QThread, WorkTags):
     
     def run(self) -> None:
         def _():
-            if self.adb.device and self.mode not in (self.TASKS_LIST, self.INIT_OCR, self.SET_ADBTOOLS) and self.mode:
-                self.adb.loginJCZX()
+            self.loginJCZX()
             match self.mode:
                 case None:
                     ...
@@ -2334,6 +2340,11 @@ class WorkThread(QThread, WorkTags):
                     self.JJCTask()
                 case self.INIT_OCR:
                     self.initOCR()
+                case self.QUIT_JCZX:
+                    (self.adb.stopJCZX(), self.log.info("退出游戏"))
+                case self.QUIT_DEVICE:
+                    self.adb.DNConsole.quitDevice(self.config.dnconsoleDevices.Devices[self.adb.device])
+                    self.log.info(f"关闭模拟器【{self.adb.device}】")
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
         
@@ -2354,6 +2365,12 @@ class WorkThread(QThread, WorkTags):
         else:
             work()
 
+    def loginJCZX(self):
+        if self.adb.device and self.mode not in (self.TASKS_LIST, self.INIT_OCR, self.SET_ADBTOOLS, self.QUIT_DEVICE, self.QUIT_JCZX) and self.mode:
+            self.adb.loginJCZX()
+            return True
+        return False
+                
     def __debug(self):
         adb = self.adb
         adb.gotoCompetition()
@@ -2361,9 +2378,6 @@ class WorkThread(QThread, WorkTags):
         # cv2.namedWindow('test', cv2.WINDOW_NORMAL)
         # cv2.imshow("test", cv2.rectangle(info.baseGrayScreenshot, *info.transRange(info.transMatchTempletePointFromSize(info.transMoveFromTemleteSize(rightMoveTimes = 1), rightHeightTimes = 1)), (255, 0, 0), 5))
         # cv2.waitKey()
-        loc = info.transRange(info.transMatchTempletePointFromSize(info.transMoveFromTemleteSize(rightMoveTimes = 1), rightHeightTimes = 1))
-        number = int(adb.ocr.readtext(adb.cutScreenshot(info.baseGrayScreenshot, loc), detail = 0)[0])
-        ...
         
     def setADB(self, adb):
         self.adb = adb
@@ -2556,10 +2570,11 @@ class WorkThread(QThread, WorkTags):
             if self.adb.device != emulator:
                 self.adb.setDevice(emulator)
                 self.log.info(f"设置设备【{emulator}】")
-                self.adb.loginJCZX()
+                self.loginJCZX()
             self.setMode(operate)
             self.run()
-        self.adb.setDevice(self.config.adb_device)
+        if self.config.adb_device in self.adb.devices():
+            self.adb.setDevice(self.config.adb_device)
         self.log.info(f"任务【{choice}】结束")
     
     @check
