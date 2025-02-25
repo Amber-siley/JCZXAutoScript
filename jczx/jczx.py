@@ -107,6 +107,7 @@ class MainManager(Ui_Form):
         self.__init_JJCTask()
         self.__init_logger()
         self.__init_devices()
+        self.__init_adb_path()
         self.referMenuConfig()
         self.__start_app()
     
@@ -126,6 +127,18 @@ class MainManager(Ui_Form):
         if LOG_LEVEL != logging.DEBUG:
             self.test_button.setHidden(True)
     
+    def __init_adb_path(self):
+        def _(adb_path):
+            if not adb_path:
+                return
+            fm = FileManage(file_path = adb_path)
+            dnconsole = JCZXGame.DNConsoleExe(join(fm.save_path, "dnconsole.exe"))
+            if exists(fm.file_path):
+                self.setADBPathConfig(adb_path)
+                if dnconsole.CAN_RUN:
+                    self.adb.DNConsole = dnconsole
+        self.adb_path_lineEdit.textChanged.connect(lambda: _(self.adb_path_lineEdit.text()))
+
     def __init_valueRule(self):
         self.quarry_time_lineEdit.setValidator(QIntValidator(-1, 60))
         self.ThresholdValue_lineEdit.setValidator(QIntValidator(1000, 50000))
@@ -1141,6 +1154,11 @@ class JCZXGame:
         self.DNConsole = None
         self.submitOrders = []
         self.size = None
+        self.Buttons = self._Buttons()
+        self.Numbers = self._Numbers()
+        self.Orders = self._Orders()
+        self.ScreenLocs = self._ScreenLocs()
+        self.Pos = self._Pos()
     
     def dowloadADBTools(self) -> str:
         self.log.info("未指定adb路径，已添加下载任务")
@@ -1153,6 +1171,7 @@ class JCZXGame:
         """更新设备信息"""
         self.size = None
         self.getScreenSize()
+        self.log.debug(f"{self.device} 设备大小 {self.size}")
         self.Pos = self._Pos()
         self.ScreenCut= self._ScreenCut(self.width, self.height)
     
@@ -1196,12 +1215,6 @@ class JCZXGame:
     def inLocationWhateverIllusionLevelsFget(self): return self.inLocation(self.ScreenLocs.inIllusions, self.ScreenCut.cut4x3(0, 2))
     @property
     def inLocationWhateverIllusionLevels(self):  return self.inLocationWhateverIllusionLevelsFget()
-
-    Buttons = _Buttons()
-    Numbers = _Numbers()
-    Orders = _Orders()
-    ScreenLocs = _ScreenLocs()
-    Pos = _Pos()
     
     @staticmethod
     def check(func):
@@ -2465,7 +2478,7 @@ class WorkThread(QThread, WorkTags):
     def autoAccept(self):
         self.log.info("开始【自动同意申请】任务")
         self.adb.gotoFriend()
-        self.adb._clickAndMsg(self.adb.Buttons.apply_button, "前往【申请】界面", wait = 0.3, log = False, cutPoints = self.adb.ScreenCut.cut4x1(0, 0))
+        self.adb._clickAndMsg(self.adb.Buttons.apply_button, "前往【申请】界面", wait = 0.3, deepLog = False, cutPoints = self.adb.ScreenCut.cut4x1(0, 0))
         while True:
             self.adb.accept()
     
