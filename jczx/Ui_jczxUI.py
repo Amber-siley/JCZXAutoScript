@@ -1,4 +1,4 @@
-# Form implementation generated from reading ui file 'e:\IDE\pyththon_project\jczx_auto_script\jczx\jczx\jczxUI.ui'
+# Form implementation generated from reading ui file 'e:\IDE\pyththon_project\jczx_auto_script\jczx\jczx\resources\jczxUI.ui'
 #
 # Created by: PyQt6 UI code generator 6.4.2
 #
@@ -28,6 +28,18 @@ class Ui_Form(object):
 "QSpinBox {\n"
 "    border: 1px solid #dcdfe6;\n"
 "    background-color: white;\n"
+"}\n"
+"QSpinBox::up-buttom {\n"
+"    border: 1px;\n"
+"    subcontrol-origin: border; \n"
+"    subcontrol-position: top right; \n"
+"    margin-bottom: 0px;\n"
+"}\n"
+"QSpinBox::down-buttom {\n"
+"    subcontrol-origin: border; \n"
+"    subcontrol-position: top right; \n"
+"    border: 1px;\n"
+"    margin-bottom: 0px;\n"
 "}\n"
 "QComboBox {\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -237,8 +249,16 @@ class Ui_Form(object):
         self.functionALL_tabWidget.setObjectName("functionALL_tabWidget")
         self.function1_tab = QtWidgets.QWidget()
         self.function1_tab.setObjectName("function1_tab")
-        self.function1_widget = QtWidgets.QWidget(parent=self.function1_tab)
-        self.function1_widget.setGeometry(QtCore.QRect(0, 0, 175, 191))
+        self.scrollArea_2 = QtWidgets.QScrollArea(parent=self.function1_tab)
+        self.scrollArea_2.setGeometry(QtCore.QRect(0, 0, 171, 191))
+        self.scrollArea_2.setWidgetResizable(True)
+        self.scrollArea_2.setObjectName("scrollArea_2")
+        self.scrollAreaWidgetContents_4 = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents_4.setGeometry(QtCore.QRect(0, 0, 166, 311))
+        self.scrollAreaWidgetContents_4.setMinimumSize(QtCore.QSize(0, 311))
+        self.scrollAreaWidgetContents_4.setObjectName("scrollAreaWidgetContents_4")
+        self.function1_widget = QtWidgets.QWidget(parent=self.scrollAreaWidgetContents_4)
+        self.function1_widget.setGeometry(QtCore.QRect(0, 0, 175, 211))
         self.function1_widget.setObjectName("function1_widget")
         self.start_spend_order_Button = QtWidgets.QPushButton(parent=self.function1_widget)
         self.start_spend_order_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
@@ -258,26 +278,8 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.start_spend_order_Button.setObjectName("start_spend_order_Button")
-        self.start_switch_work_Button = QtWidgets.QPushButton(parent=self.function1_widget)
-        self.start_switch_work_Button.setGeometry(QtCore.QRect(0, 42, 175, 42))
-        self.start_switch_work_Button.setStyleSheet("QPushButton {\n"
-"    background-color: #ffffff;\n"
-"    border: 1px solid #dcdfe6;\n"
-"    border-radius: 1px;\n"
-"}\n"
-"\n"
-"QPushButton:hover {\n"
-"    background-color: #ecf5ff;\n"
-"    color: #409eff;\n"
-"}\n"
-"\n"
-"QPushButton:pressed, QPushButton:checked {\n"
-"    border: 1px solid #3a8ee6;\n"
-"    color: #409eff;\n"
-"}")
-        self.start_switch_work_Button.setObjectName("start_switch_work_Button")
         self.start_smallCrystal_Button = QtWidgets.QPushButton(parent=self.function1_widget)
-        self.start_smallCrystal_Button.setGeometry(QtCore.QRect(0, 84, 175, 42))
+        self.start_smallCrystal_Button.setGeometry(QtCore.QRect(0, 42, 175, 42))
         self.start_smallCrystal_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -295,7 +297,7 @@ class Ui_Form(object):
 "}")
         self.start_smallCrystal_Button.setObjectName("start_smallCrystal_Button")
         self.start_smallCrystal_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
-        self.start_smallCrystal_settings_Button.setGeometry(QtCore.QRect(150, 84, 24, 42))
+        self.start_smallCrystal_settings_Button.setGeometry(QtCore.QRect(145, 42, 24, 42))
         self.start_smallCrystal_settings_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -316,7 +318,7 @@ class Ui_Form(object):
         self.start_smallCrystal_settings_Button.setIcon(icon1)
         self.start_smallCrystal_settings_Button.setObjectName("start_smallCrystal_settings_Button")
         self.start_spend_order_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
-        self.start_spend_order_settings_Button.setGeometry(QtCore.QRect(150, 0, 24, 42))
+        self.start_spend_order_settings_Button.setGeometry(QtCore.QRect(145, 0, 24, 42))
         self.start_spend_order_settings_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -334,27 +336,8 @@ class Ui_Form(object):
 "}")
         self.start_spend_order_settings_Button.setIcon(icon1)
         self.start_spend_order_settings_Button.setObjectName("start_spend_order_settings_Button")
-        self.start_switch_work_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
-        self.start_switch_work_settings_Button.setGeometry(QtCore.QRect(150, 42, 24, 42))
-        self.start_switch_work_settings_Button.setStyleSheet("QPushButton {\n"
-"    background-color: #ffffff;\n"
-"    border: 1px solid #dcdfe6;\n"
-"    border-radius: 1px;\n"
-"}\n"
-"\n"
-"QPushButton:hover {\n"
-"    background-color: #ecf5ff;\n"
-"    color: #409eff;\n"
-"}\n"
-"\n"
-"QPushButton:pressed, QPushButton:checked {\n"
-"    border: 1px solid #3a8ee6;\n"
-"    color: #409eff;\n"
-"}")
-        self.start_switch_work_settings_Button.setIcon(icon1)
-        self.start_switch_work_settings_Button.setObjectName("start_switch_work_settings_Button")
         self.start_JJCTask_settings_Button = QtWidgets.QPushButton(parent=self.function1_widget)
-        self.start_JJCTask_settings_Button.setGeometry(QtCore.QRect(150, 126, 24, 42))
+        self.start_JJCTask_settings_Button.setGeometry(QtCore.QRect(145, 84, 24, 42))
         self.start_JJCTask_settings_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -373,7 +356,7 @@ class Ui_Form(object):
         self.start_JJCTask_settings_Button.setIcon(icon1)
         self.start_JJCTask_settings_Button.setObjectName("start_JJCTask_settings_Button")
         self.start_JJCTask_Button = QtWidgets.QPushButton(parent=self.function1_widget)
-        self.start_JJCTask_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
+        self.start_JJCTask_Button.setGeometry(QtCore.QRect(0, 84, 175, 42))
         self.start_JJCTask_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -390,19 +373,46 @@ class Ui_Form(object):
 "    color: #409eff;\n"
 "}")
         self.start_JJCTask_Button.setObjectName("start_JJCTask_Button")
+        self.start_JDCTask_Button = QtWidgets.QPushButton(parent=self.function1_widget)
+        self.start_JDCTask_Button.setGeometry(QtCore.QRect(0, 126, 175, 42))
+        self.start_JDCTask_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_JDCTask_Button.setObjectName("start_JDCTask_Button")
         self.start_spend_order_Button.raise_()
-        self.start_switch_work_Button.raise_()
         self.start_smallCrystal_Button.raise_()
         self.start_smallCrystal_settings_Button.raise_()
         self.start_spend_order_settings_Button.raise_()
-        self.start_switch_work_settings_Button.raise_()
         self.start_JJCTask_Button.raise_()
         self.start_JJCTask_settings_Button.raise_()
+        self.start_JDCTask_Button.raise_()
+        self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_4)
         self.functionALL_tabWidget.addTab(self.function1_tab, "")
         self.function2_tab = QtWidgets.QWidget()
         self.function2_tab.setObjectName("function2_tab")
-        self.function2_widget = QtWidgets.QWidget(parent=self.function2_tab)
-        self.function2_widget.setGeometry(QtCore.QRect(0, 0, 175, 201))
+        self.scrollArea_3 = QtWidgets.QScrollArea(parent=self.function2_tab)
+        self.scrollArea_3.setGeometry(QtCore.QRect(0, 0, 171, 211))
+        self.scrollArea_3.setMinimumSize(QtCore.QSize(0, 211))
+        self.scrollArea_3.setWidgetResizable(True)
+        self.scrollArea_3.setObjectName("scrollArea_3")
+        self.scrollAreaWidgetContents_5 = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents_5.setGeometry(QtCore.QRect(0, 0, 166, 312))
+        self.scrollAreaWidgetContents_5.setMinimumSize(QtCore.QSize(0, 312))
+        self.scrollAreaWidgetContents_5.setObjectName("scrollAreaWidgetContents_5")
+        self.function2_widget = QtWidgets.QWidget(parent=self.scrollAreaWidgetContents_5)
+        self.function2_widget.setGeometry(QtCore.QRect(0, 0, 175, 211))
         self.function2_widget.setObjectName("function2_widget")
         self.auto_agree_friend_Button = QtWidgets.QPushButton(parent=self.function2_widget)
         self.auto_agree_friend_Button.setGeometry(QtCore.QRect(0, 0, 175, 42))
@@ -477,7 +487,7 @@ class Ui_Form(object):
 "}")
         self.useIllusion2_favor_Button.setObjectName("useIllusion2_favor_Button")
         self.useIllusion2_favor_settings_Button = QtWidgets.QPushButton(parent=self.function2_widget)
-        self.useIllusion2_favor_settings_Button.setGeometry(QtCore.QRect(150, 126, 24, 42))
+        self.useIllusion2_favor_settings_Button.setGeometry(QtCore.QRect(145, 126, 24, 42))
         self.useIllusion2_favor_settings_Button.setStyleSheet("QPushButton {\n"
 "    background-color: #ffffff;\n"
 "    border: 1px solid #dcdfe6;\n"
@@ -495,6 +505,44 @@ class Ui_Form(object):
 "}")
         self.useIllusion2_favor_settings_Button.setIcon(icon1)
         self.useIllusion2_favor_settings_Button.setObjectName("useIllusion2_favor_settings_Button")
+        self.start_switch_work_Button = QtWidgets.QPushButton(parent=self.function2_widget)
+        self.start_switch_work_Button.setGeometry(QtCore.QRect(0, 168, 175, 42))
+        self.start_switch_work_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_switch_work_Button.setObjectName("start_switch_work_Button")
+        self.start_switch_work_settings_Button = QtWidgets.QPushButton(parent=self.function2_widget)
+        self.start_switch_work_settings_Button.setGeometry(QtCore.QRect(145, 168, 24, 42))
+        self.start_switch_work_settings_Button.setStyleSheet("QPushButton {\n"
+"    background-color: #ffffff;\n"
+"    border: 1px solid #dcdfe6;\n"
+"    border-radius: 1px;\n"
+"}\n"
+"\n"
+"QPushButton:hover {\n"
+"    background-color: #ecf5ff;\n"
+"    color: #409eff;\n"
+"}\n"
+"\n"
+"QPushButton:pressed, QPushButton:checked {\n"
+"    border: 1px solid #3a8ee6;\n"
+"    color: #409eff;\n"
+"}")
+        self.start_switch_work_settings_Button.setIcon(icon1)
+        self.start_switch_work_settings_Button.setObjectName("start_switch_work_settings_Button")
+        self.scrollArea_3.setWidget(self.scrollAreaWidgetContents_5)
         self.functionALL_tabWidget.addTab(self.function2_tab, "")
         self.Charts_tab = QtWidgets.QWidget()
         self.Charts_tab.setObjectName("Charts_tab")
@@ -901,7 +949,7 @@ class Ui_Form(object):
         self.favor_illusionToFavor_spinBox.setProperty("value", 60)
         self.favor_illusionToFavor_spinBox.setObjectName("favor_illusionToFavor_spinBox")
         self.illusionTime_label_2 = QtWidgets.QLabel(parent=self.useIllusion2FavorSetting)
-        self.illusionTime_label_2.setGeometry(QtCore.QRect(130, 25, 24, 22))
+        self.illusionTime_label_2.setGeometry(QtCore.QRect(120, 25, 24, 22))
         self.illusionTime_label_2.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.illusionTime_label_2.setIndent(-1)
         self.illusionTime_label_2.setObjectName("illusionTime_label_2")
@@ -1053,6 +1101,9 @@ class Ui_Form(object):
         self.ThresholdValue_lineEdit.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         self.ThresholdValue_lineEdit.setObjectName("ThresholdValue_lineEdit")
         self.stackedWidget.addWidget(self.JJCSettingPage)
+        self.page = QtWidgets.QWidget()
+        self.page.setObjectName("page")
+        self.stackedWidget.addWidget(self.page)
         self.adb_path_label.raise_()
         self.adb_path_lineEdit.raise_()
         self.adb_devices_label.raise_()
@@ -1114,12 +1165,12 @@ class Ui_Form(object):
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
         self.start_spend_order_Button.setToolTip(_translate("Form", "<html><head/><body><p>寻找订单并交付</p><p>【自动停止】</p></body></html>"))
         self.start_spend_order_Button.setText(_translate("Form", "启动交付订单"))
-        self.start_switch_work_Button.setToolTip(_translate("Form", "<html><head/><body><p>进行矿场员工换班任务</p><p>【手动停止】</p></body></html>"))
-        self.start_switch_work_Button.setText(_translate("Form", "启动换班任务"))
         self.start_smallCrystal_Button.setToolTip(_translate("Form", "<html><head/><body><p>根据设置通关虚影来获得微晶</p><p>【自动停止】</p></body></html>"))
         self.start_smallCrystal_Button.setText(_translate("Form", "虚影微晶任务"))
         self.start_JJCTask_Button.setToolTip(_translate("Form", "<html><head/><body><p>根据设置挑战竞技场</p><p>【自动停止】</p></body></html>"))
         self.start_JJCTask_Button.setText(_translate("Form", "镜像竞技场任务"))
+        self.start_JDCTask_Button.setToolTip(_translate("Form", "<html><head/><body><p>自动化挑战角斗场随机模式</p><p>【自动停止，不保证通关】</p></body></html>"))
+        self.start_JDCTask_Button.setText(_translate("Form", "角斗场任务"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function1_tab), _translate("Form", "功能1"))
         self.auto_agree_friend_Button.setToolTip(_translate("Form", "<html><head/><body><p>自动同意好友申请</p><p>【手动停止】</p></body></html>"))
         self.auto_agree_friend_Button.setText(_translate("Form", "自动同意好友申请"))
@@ -1129,6 +1180,8 @@ class Ui_Form(object):
         self.only_checkSpendThisTradingPost_Button.setText(_translate("Form", "检索交付当前订单"))
         self.useIllusion2_favor_Button.setToolTip(_translate("Form", "<html><head/><body><p>刷取固定次数虚影增长好感度</p><p>【自动停止】</p></body></html>"))
         self.useIllusion2_favor_Button.setText(_translate("Form", "使用虚影刷取好感"))
+        self.start_switch_work_Button.setToolTip(_translate("Form", "<html><head/><body><p>进行矿场员工换班任务</p><p>【手动停止】</p></body></html>"))
+        self.start_switch_work_Button.setText(_translate("Form", "启动换班任务"))
         self.functionALL_tabWidget.setTabText(self.functionALL_tabWidget.indexOf(self.function2_tab), _translate("Form", "功能2"))
         self.choice_Chips_Button.setToolTip(_translate("Form", "来源：未知"))
         self.choice_Chips_Button.setText(_translate("Form", "自选箱芯片一览"))

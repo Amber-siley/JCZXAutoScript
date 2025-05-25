@@ -40,6 +40,18 @@ QSpinBox {
 	border: 1px solid #dcdfe6;
 	background-color: white;
 }
+QSpinBox::up-buttom {
+	border: 1px;
+	subcontrol-origin: border; 
+	subcontrol-position: top right; 
+	margin-bottom: 0px;
+}
+QSpinBox::down-buttom {
+	subcontrol-origin: border; 
+	subcontrol-position: top right; 
+	border: 1px;
+	margin-bottom: 0px;
+}
 QComboBox {
 	border: 1px solid #dcdfe6;
 	padding: 0px;
@@ -177,7 +189,7 @@ QPushButton:pressed, QPushButton:checked {
     <string/>
    </property>
    <property name="icon">
-    <iconset resource="resources/icon/icon.qrc">
+    <iconset resource="icon/icon.qrc">
      <normaloff>:/icon/files.png</normaloff>:/icon/files.png</iconset>
    </property>
   </widget>
@@ -452,29 +464,56 @@ QTabBar::tab:selected {
     <attribute name="title">
      <string>功能1</string>
     </attribute>
-    <widget class="QWidget" name="function1_widget" native="true">
+    <widget class="QScrollArea" name="scrollArea_2">
      <property name="geometry">
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>175</width>
+       <width>171</width>
        <height>191</height>
       </rect>
      </property>
-     <widget class="QPushButton" name="start_spend_order_Button">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents_4">
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>175</width>
-        <height>42</height>
+        <width>166</width>
+        <height>311</height>
        </rect>
       </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;寻找订单并交付&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>311</height>
+       </size>
       </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+      <widget class="QWidget" name="function1_widget" native="true">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>175</width>
+         <height>211</height>
+        </rect>
+       </property>
+       <widget class="QPushButton" name="start_spend_order_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;寻找订单并交付&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -489,25 +528,25 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="text">
-       <string>启动交付订单</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="start_switch_work_Button">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>42</y>
-        <width>175</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;进行矿场员工换班任务&lt;/p&gt;&lt;p&gt;【手动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>启动交付订单</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_smallCrystal_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>42</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;根据设置通关虚影来获得微晶&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -522,25 +561,22 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="text">
-       <string>启动换班任务</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="start_smallCrystal_Button">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>84</y>
-        <width>175</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;根据设置通关虚影来获得微晶&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>虚影微晶任务</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_smallCrystal_settings_Button">
+        <property name="geometry">
+         <rect>
+          <x>145</x>
+          <y>42</y>
+          <width>24</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -555,22 +591,23 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="text">
-       <string>虚影微晶任务</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="start_smallCrystal_settings_Button">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>84</y>
-        <width>24</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="icon">
+         <iconset resource="icon/icon.qrc">
+          <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_spend_order_settings_Button">
+        <property name="geometry">
+         <rect>
+          <x>145</x>
+          <y>0</y>
+          <width>24</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -585,23 +622,23 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="icon">
-       <iconset resource="resources/icon/icon.qrc">
-        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="start_spend_order_settings_Button">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>0</y>
-        <width>24</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="icon">
+         <iconset resource="icon/icon.qrc">
+          <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_JJCTask_settings_Button">
+        <property name="geometry">
+         <rect>
+          <x>145</x>
+          <y>84</y>
+          <width>24</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -616,23 +653,26 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="icon">
-       <iconset resource="resources/icon/icon.qrc">
-        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="start_switch_work_settings_Button">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>42</y>
-        <width>24</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="icon">
+         <iconset resource="icon/icon.qrc">
+          <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_JJCTask_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>84</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;根据设置挑战竞技场&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -647,23 +687,25 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="icon">
-       <iconset resource="resources/icon/icon.qrc">
-        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="start_JJCTask_settings_Button">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>126</y>
-        <width>24</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>镜像竞技场任务</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_JDCTask_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>126</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;自动化挑战角斗场随机模式&lt;/p&gt;&lt;p&gt;【自动停止，不保证通关】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -678,82 +720,82 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="icon">
-       <iconset resource="resources/icon/icon.qrc">
-        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
-      </property>
+        </property>
+        <property name="text">
+         <string>角斗场任务</string>
+        </property>
+       </widget>
+       <zorder>start_spend_order_Button</zorder>
+       <zorder>start_smallCrystal_Button</zorder>
+       <zorder>start_smallCrystal_settings_Button</zorder>
+       <zorder>start_spend_order_settings_Button</zorder>
+       <zorder>start_JJCTask_Button</zorder>
+       <zorder>start_JJCTask_settings_Button</zorder>
+       <zorder>start_JDCTask_Button</zorder>
+      </widget>
      </widget>
-     <widget class="QPushButton" name="start_JJCTask_Button">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>126</y>
-        <width>175</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;根据设置挑战竞技场&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
-    background-color: #ffffff;
-    border: 1px solid #dcdfe6;
-    border-radius: 1px;
-}
-
-QPushButton:hover {
-    background-color: #ecf5ff;
-    color: #409eff;
-}
-
-QPushButton:pressed, QPushButton:checked {
-    border: 1px solid #3a8ee6;
-    color: #409eff;
-}</string>
-      </property>
-      <property name="text">
-       <string>镜像竞技场任务</string>
-      </property>
-     </widget>
-     <zorder>start_spend_order_Button</zorder>
-     <zorder>start_switch_work_Button</zorder>
-     <zorder>start_smallCrystal_Button</zorder>
-     <zorder>start_smallCrystal_settings_Button</zorder>
-     <zorder>start_spend_order_settings_Button</zorder>
-     <zorder>start_switch_work_settings_Button</zorder>
-     <zorder>start_JJCTask_Button</zorder>
-     <zorder>start_JJCTask_settings_Button</zorder>
     </widget>
    </widget>
    <widget class="QWidget" name="function2_tab">
     <attribute name="title">
      <string>功能2</string>
     </attribute>
-    <widget class="QWidget" name="function2_widget" native="true">
+    <widget class="QScrollArea" name="scrollArea_3">
      <property name="geometry">
       <rect>
        <x>0</x>
        <y>0</y>
-       <width>175</width>
-       <height>201</height>
+       <width>171</width>
+       <height>211</height>
       </rect>
      </property>
-     <widget class="QPushButton" name="auto_agree_friend_Button">
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>211</height>
+      </size>
+     </property>
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents_5">
       <property name="geometry">
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>175</width>
-        <height>42</height>
+        <width>166</width>
+        <height>312</height>
        </rect>
       </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;自动同意好友申请&lt;/p&gt;&lt;p&gt;【手动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>312</height>
+       </size>
       </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+      <widget class="QWidget" name="function2_widget" native="true">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>175</width>
+         <height>211</height>
+        </rect>
+       </property>
+       <widget class="QPushButton" name="auto_agree_friend_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;自动同意好友申请&lt;/p&gt;&lt;p&gt;【手动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -768,25 +810,25 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="text">
-       <string>自动同意好友申请</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="brushing_surportAwards_Button">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>42</y>
-        <width>175</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;为指定的主账号刷取助战奖励&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>自动同意好友申请</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="brushing_surportAwards_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>42</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;为指定的主账号刷取助战奖励&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -801,25 +843,25 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="text">
-       <string>为主号刷助战奖励</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="only_checkSpendThisTradingPost_Button">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>84</y>
-        <width>175</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;仅只检索当前订单并自动交付&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>为主号刷助战奖励</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="only_checkSpendThisTradingPost_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>84</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;仅只检索当前订单并自动交付&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -834,25 +876,25 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="text">
-       <string>检索交付当前订单</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="useIllusion2_favor_Button">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>126</y>
-        <width>175</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="toolTip">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;刷取固定次数虚影增长好感度&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>检索交付当前订单</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="useIllusion2_favor_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>126</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;刷取固定次数虚影增长好感度&lt;/p&gt;&lt;p&gt;【自动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -867,22 +909,22 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="text">
-       <string>使用虚影刷取好感</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="useIllusion2_favor_settings_Button">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>126</y>
-        <width>24</width>
-        <height>42</height>
-       </rect>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">QPushButton {
+        </property>
+        <property name="text">
+         <string>使用虚影刷取好感</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="useIllusion2_favor_settings_Button">
+        <property name="geometry">
+         <rect>
+          <x>145</x>
+          <y>126</y>
+          <width>24</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
     background-color: #ffffff;
     border: 1px solid #dcdfe6;
     border-radius: 1px;
@@ -897,11 +939,77 @@ QPushButton:pressed, QPushButton:checked {
     border: 1px solid #3a8ee6;
     color: #409eff;
 }</string>
-      </property>
-      <property name="icon">
-       <iconset resource="resources/icon/icon.qrc">
-        <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
-      </property>
+        </property>
+        <property name="icon">
+         <iconset resource="icon/icon.qrc">
+          <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_switch_work_Button">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>168</y>
+          <width>175</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;进行矿场员工换班任务&lt;/p&gt;&lt;p&gt;【手动停止】&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+        </property>
+        <property name="text">
+         <string>启动换班任务</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="start_switch_work_settings_Button">
+        <property name="geometry">
+         <rect>
+          <x>145</x>
+          <y>168</y>
+          <width>24</width>
+          <height>42</height>
+         </rect>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    border-radius: 1px;
+}
+
+QPushButton:hover {
+    background-color: #ecf5ff;
+    color: #409eff;
+}
+
+QPushButton:pressed, QPushButton:checked {
+    border: 1px solid #3a8ee6;
+    color: #409eff;
+}</string>
+        </property>
+        <property name="icon">
+         <iconset resource="icon/icon.qrc">
+          <normaloff>:/icon/settings.png</normaloff>:/icon/settings.png</iconset>
+        </property>
+       </widget>
+      </widget>
      </widget>
     </widget>
    </widget>
@@ -1232,7 +1340,7 @@ QPushButton:pressed, QPushButton:checked {
     <string/>
    </property>
    <property name="icon">
-    <iconset resource="resources/icon/icon.qrc">
+    <iconset resource="icon/icon.qrc">
      <normaloff>:/icon/refresh.png</normaloff>:/icon/refresh.png</iconset>
    </property>
    <property name="iconSize">
@@ -1919,7 +2027,7 @@ QPushButton:pressed, QPushButton:checked {
     <widget class="QLabel" name="illusionTime_label_2">
      <property name="geometry">
       <rect>
-       <x>130</x>
+       <x>120</x>
        <y>25</y>
        <width>24</width>
        <height>22</height>
@@ -2319,6 +2427,7 @@ QPushButton:pressed, QPushButton:checked {
      </property>
     </widget>
    </widget>
+   <widget class="QWidget" name="page"/>
   </widget>
   <zorder>adb_path_label</zorder>
   <zorder>adb_path_lineEdit</zorder>
@@ -2337,7 +2446,7 @@ QPushButton:pressed, QPushButton:checked {
   <zorder>test_button</zorder>
  </widget>
  <resources>
-  <include location="resources/icon/icon.qrc"/>
+  <include location="icon/icon.qrc"/>
  </resources>
  <connections/>
 </ui>

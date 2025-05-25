@@ -10,6 +10,7 @@ class WorkTags:
     ILLUSION_TO_FAVOR = "虚影刷好感度"
     TASKS_LIST = "任务列表"
     JJC_TASK = "竞技场挑战"
+    JDC_TASK = "角斗场挑战"
     INIT_OCR = "初始化OCR"
     QUIT_JCZX = "关闭游戏"
     QUIT_DEVICE = "关闭模拟器"
@@ -28,7 +29,7 @@ class CreaterWorkTags:
         tmp = CreaterWorkTags()
         return [tmp.__getattribute__(i) for i in CreaterWorkTags().__dir__() if not i.startswith("__") and i != 'ls']
 
-VERSION = "0.1.10A"
+VERSION = "0.1.11A"
 
 DEFAULT_CONFIGS = {
     "adb_path": None,

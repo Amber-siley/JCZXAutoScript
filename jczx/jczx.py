@@ -1,4 +1,4 @@
-from typing import Any,Callable,Literal
+from typing import Any, Callable, Literal, Optional
 from os.path import exists,join
 from os import startfile
 from json import load,dumps
@@ -6,6 +6,7 @@ from time import sleep,time
 from copy import copy
 from datetime import datetime
 from threading import Lock
+from dataclasses import dataclass
 
 from PyQt6.QtWidgets import QApplication,QWidget,QFileDialog,QHBoxLayout,QLabel,QListWidgetItem,QPushButton,QDialog
 from PyQt6.QtGui import QIntValidator,QTextCursor,QFont
@@ -19,6 +20,7 @@ from Ui_jczxQuarryCalculator import Ui_QuarryCalculator
 from jczxQuarry import Quarry,floor
 from jczxMainInfo import *
 from Ui_jczxTaskCreater import Ui_jczxTaskCreater
+from jczxTyping import _OCR
 
 import subprocess
 import logging
@@ -172,6 +174,7 @@ class MainManager(Ui_Form):
         self.useIllusion2_favor_Button.clicked.connect(lambda: self.createWork(self.work_thread.ILLUSION_TO_FAVOR))
         self.startTask_Button.clicked.connect(lambda: self.createWork(self.work_thread.TASKS_LIST))
         self.start_JJCTask_Button.clicked.connect(lambda: self.createWork(self.work_thread.JJC_TASK))
+        self.start_JDCTask_Button.clicked.connect(lambda: self.createWork(self.work_thread.JDC_TASK))
         
         self.start_smallCrystal_Button.clicked.connect(lambda: self.createWork(self.work_thread.SMALL_CRYSTAL))
         self.refresh_devices_Button.clicked.connect(self.__init_devices)
@@ -824,6 +827,14 @@ class JCZXGame:
         getItem_button = joinPath("resources","buttons","getItem.png")
         simulatedMilitaryExercises_button = joinPath("resources","buttons","simulatedMilitaryExercises.png")
         competition_button = joinPath("resources","buttons","competition.png")
+        gladiatorialArena_button = joinPath("resources","buttons","gladiatorialArena.png")
+        ArenaPower_button = joinPath("resources","buttons","ArenaPower.png")
+        gladiatorialArenaOwn_button = joinPath("resources","buttons","gladiatorialArenaOwn.png")
+        gladiatorialArenaRandom_button = joinPath("resources","buttons","gladiatorialArenaRandom.png")
+        ArenaRoleSure_button = joinPath("resources","buttons","ArenaRoleSure.png")
+        ArenaRoundSure_button = joinPath("resources","buttons","ArenaRoundSure.png")
+        ArenaClaimAll_button = joinPath("resources","buttons","ArenaClaimAll.png")
+        clearTeam_button = joinPath("resources","buttons","clearTeam.png")
         challenge_button = joinPath("resources","buttons","challenge.png")
         fightLossBack_button = joinPath("resources","buttons","fightLossBack.png")
         competitionCancel_button = joinPath("resources","buttons","competitionCancel.png")
@@ -910,6 +921,20 @@ class JCZXGame:
         cancel15 = joinPath("resources","numbers","cancel15.png")
         score26 = joinPath("resources","numbers","score26.png")
         score28 = joinPath("resources","numbers","score28.png")
+        freetimes0 = joinPath("resources","numbers","freetimes0.png")
+        freetimes1 = joinPath("resources","numbers","freetimes1.png")
+        freetimes2 = joinPath("resources","numbers","freetimes2.png")
+        freetimes3 = joinPath("resources","numbers","freetimes3.png")
+        round1 = joinPath("resources","numbers","round1.png")
+        round2 = joinPath("resources","numbers","round2.png")
+        round3 = joinPath("resources","numbers","round3.png")
+        round4 = joinPath("resources","numbers","round4.png")
+        round5 = joinPath("resources","numbers","round5.png")
+        round6 = joinPath("resources","numbers","round6.png")
+        round7 = joinPath("resources","numbers","round7.png")
+        round8 = joinPath("resources","numbers","round8.png")
+        round9 = joinPath("resources","numbers","round9.png")
+        roundUnknown = joinPath("resources","numbers","roundUnknown.png")
     
     class _Orders:
         build61 = joinPath("resources","orders","build61.png")
@@ -957,6 +982,7 @@ class JCZXGame:
             self.matchTempletePoint = matchTempletePoints[0] if matchTempletePoints else None
             self.matchTempleteCenterPoints = matchTempleteCenterPoints
             self.matchTempleteCenterPoint = matchTempleteCenterPoints[0] if matchTempleteCenterPoints else None
+            self.matched = True if self.matchTempletePoint else False
 
         def _transformMatchTempletePointBase(self, matchTempletePoint:tuple[int, ...] | None = None, upMove:int = 0, downMove:int = 0, leftMove:int = 0, rightMove:int = 0) -> tuple[int, ...]:
             if not matchTempletePoint:
@@ -966,6 +992,7 @@ class JCZXGame:
             return tuple(map(lambda point : (point[0] + rightMove, point[1] - upMove), matchTempletePoint))
         
         def transMoveFromTemleteSize(self, matchTempletePoint:tuple[int, ...] | None = None, upMoveTimes:int = 0, downMoveTimes:int = 0, leftMoveTImes:int = 0, rightMoveTimes:int = 0):
+            """根据matchTempletePoint进行区块移动"""
             if not matchTempletePoint:
                 matchTempletePoint = copy(self.matchTempletePoint)
                 height = self.templeteHeight
@@ -976,6 +1003,7 @@ class JCZXGame:
             return self._transformMatchTempletePointBase(matchTempletePoint, upMove = height*(upMoveTimes - downMoveTimes), rightMove = width*(rightMoveTimes - leftMoveTImes))
         
         def transMatchTempletePointFromSize(self, matchTempletePoint = None, upAddWidthTimes:int = 0, downWidthTimes:int = 0, leftHeightTimes:int = 0, rightHeightTimes:int = 0):
+            """根据matchTempletePoint进行区块缩放"""
             if not matchTempletePoint:
                 matchTempletePoint = copy(self.matchTempletePoint)
                 height = self.templeteHeight
@@ -1022,7 +1050,10 @@ class JCZXGame:
         def check(func):
             def _(self, *args, **kwargs):
                 if self.CAN_RUN:
-                    return func(self, *args, **kwargs)
+                    try:
+                        return func(self, *args, **kwargs)
+                    except Exception as e:
+                        print(e)
             return _
         
         def isexists(self) -> bool:
@@ -1035,6 +1066,8 @@ class JCZXGame:
                     return True
                 case "stop":
                     return False
+                case _:
+                    return None
         
         @check
         def getEmulatorName(self, index) -> str | None:
@@ -1057,12 +1090,12 @@ class JCZXGame:
         @check
         def launchDevice(self, index):
             if not self.isrunning(index):
-                subprocess.run([self.dnconsolePath, "launch", "--index", index], shell = True, startupinfo = self.startupinfo)
+                subprocess.run([self.dnconsolePath, "launch", "--index", index], shell = True, startupinfo = self.startupinfo, check = True)
         
         @check
         def quitDevice(self, index):
             if self.isrunning(index):
-                subprocess.run([self.dnconsolePath, "quit", "--index", index], shell = True, startupinfo = self.startupinfo)
+                subprocess.run([self.dnconsolePath, "quit", "--index", index], shell = True, startupinfo = self.startupinfo, check = True)
     
     def getUserOrderPaths(self) -> list[tuple[str, _Orders.Description, _Orders.CraftEnable]]:
         """返回用户设置的订单路径及其介绍"""
@@ -1106,8 +1139,21 @@ class JCZXGame:
         illusionAward = joinPath("resources","locations","illusionAward.png")
         emptyPlace2x2 = joinPath("resources","locations","emptyPlace2x2.png")
         helpFriend = joinPath("resources","locations","helpFriend.png")
-        competition = joinPath("resources","buttons","competitionCancel.png")
+        competition = joinPath("resources","locations","assaultPlan.png")
+        gladiatorialArena = joinPath("resources","locations","gladiatorialArena.png")
+        ArenaRandomOnGoing = joinPath("resources","locations","ArenaRandomOnGoing.png")
+        ArenaRoleSelected = joinPath("resources","locations","ArenaRoleSelected.png")
+        ArenaRoleNone = joinPath("resources","locations","ArenaRoleNone.png")
+        ArenaRoleBest = joinPath("resources","locations","ArenaRoleBest.png")
+        Level80 = joinPath("resources","locations","Level80.png")
+        ArenaSlow = joinPath("resources","locations","ArenaSlow.png")
+        ArenaNormal = joinPath("resources","locations","ArenaNormal.png")
+        ArenaQuick = joinPath("resources","locations","ArenaQuick.png")
+        emptyPlace = joinPath("resources","locations","emptyPlace.png")
+        fiveRoleTeam = joinPath("resources","locations","fiveRoleTeam.png")
+        ArenafreetimesLoc = joinPath("resources","locations","ArenafreetimesLoc.png")
         firstScoreLoc = joinPath("resources","locations","firstScoreLoc.png")
+        competitionTimesLoc = joinPath("resources","locations","competitionTimesLoc.png")
         newRanking = joinPath("resources","locations","newRanking.png")
         JJC10Loc = joinPath("resources","locations","JJC10Loc.png")
         cancel15Loc = joinPath("resources","locations","cancel15Loc.png")
@@ -1142,12 +1188,26 @@ class JCZXGame:
         tradingPos = None
         buildingOccupancyPos = None
     
+    class _Roles:
+        @dataclass
+        class Role:
+            name: str
+            face: str
+            place: list[list[int]]
+        
+        role_XY = Role("枭韵", joinPath("resources","roles","XY.png"), [[1, 0, -1], [1, 0, 0], [0, 0, -1]])
+        role_WL = Role("乌琳", joinPath("resources","roles","WL.png"), [[-1, 0, 1], [0, 0, 0], [-1, 0, 0]])
+        role_RC = Role("刃齿", joinPath("resources","roles","RC.png"), [[-1, 0, 0], [0, 1, 0], [-1, 0, 0]])
+        
+        Auxiliary = [role_XY, role_WL]
+        Strengths = []
+    
     def __init__(self, adb_path: str, logger:logging.Logger, config:JsonConfig) -> None:
         self.adb_path = adb_path
         self.device = None
         self.log = logger
         self.config = config
-        self.ocr:PaddleOCR = None # type: ignore
+        self.ocr: _OCR = None
         self.startupinfo = subprocess.STARTUPINFO()
         self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
@@ -1159,6 +1219,7 @@ class JCZXGame:
         self.Orders = self._Orders()
         self.ScreenLocs = self._ScreenLocs()
         self.Pos = self._Pos()
+        self.roles = self._Roles()
     
     def dowloadADBTools(self) -> str:
         self.log.info("未指定adb路径，已添加下载任务")
@@ -1184,7 +1245,9 @@ class JCZXGame:
     @property
     def inLocationActivities(self): return self.inLocation(self.ScreenLocs.activities, self.ScreenCut.cut3x3(1, 0))
     @property
-    def inlocationCompetition(self): return self.inLocation(self.ScreenLocs.competition, self.ScreenCut.cut2x2(1, 0))
+    def inlocationCompetition(self): return self.inLocation(self.ScreenLocs.competition, self.ScreenCut.cut3x7(2, 6))
+    @property
+    def inlocationGladiatorialArena(self): return self.inLocation(self.ScreenLocs.gladiatorialArena, self.ScreenCut.cut3x1(2, 0))
     @property
     def inlocationSimulatedMilitaryExercises(self): return self.inLocation(self.Buttons.competition_button, self.ScreenCut.cut2x1(0, 0))
     @property
@@ -1220,7 +1283,10 @@ class JCZXGame:
     def check(func):
         def wrapper(self, *args, **kwargs):
             if self.adb_path:
-                return func(self, *args, **kwargs)
+                try:
+                    return func(self, *args, **kwargs)
+                except Exception as e:
+                    self.log.warning(f"{e}")
         return wrapper
     
     def inLocation(self, screen_loc, cutPoints:tuple[tuple[int, int]] = None, per = 0.9, grayScreenshot = None) -> bool:
@@ -1228,6 +1294,7 @@ class JCZXGame:
         self.log.debug(f"检测界面 {screen_loc} {answer}")
         return answer
     
+    @check
     def getScreenSize(self) -> tuple[int, int]:
         if self.size:
             return self.size
@@ -1246,22 +1313,31 @@ class JCZXGame:
         self.log.debug("截图耗时 {:.2f} s".format(runningTime))
         return data
     
+    def showImg(self, img: MatLike):
+        cv2.namedWindow('test', cv2.WINDOW_NORMAL)
+        cv2.imshow("test", img)
+        cv2.waitKey()
+        
+    def CVscreenshot(self) -> MatLike:
+        return cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_ANYCOLOR)
+    
     def grayScreenshot(self, cutPoints = None):
         screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_GRAYSCALE)
         # self.log.debug(f"截图 size {screenshot.shape}")
         # self.log.debug(f"截取范围 {cutPoints}")
         return self.cutScreenshot(screenshot, cutPoints)
 
-    def cutScreenshot(self, screenshot, cutPoints = None):
+    def cutScreenshot(self, screenshot: MatLike, cutPoints = None):
         if cutPoints:
             (x0, y0), (x1, y1) = cutPoints
             return screenshot[y0:y1, x0:x1]
         else:
             return screenshot
     
+    @check
     def click(self, x:int, y:int, wait:int = 0):
         cmd = [self.adb_path, "-s", self.device, "shell", "input", "tap", str(x), str(y)]
-        subprocess.run(cmd, startupinfo = self.startupinfo)
+        subprocess.run(cmd, startupinfo = self.startupinfo, check = True)
         self.log.debug(f"执行点击 {' '.join(cmd)}")
         sleep(wait)
     
@@ -1361,7 +1437,7 @@ class JCZXGame:
     def clickSkipAnimation(self, log = False):
         return self._clickAndMsg(self.Buttons.skipAnimation_button, deepLog = log, cutPoints = self.ScreenCut.cut4x3(3, 0), per = 0.8)
     
-    def clickReadyTeamPlane(self, wait = 0.7):
+    def clickReadyTeamPlane(self, wait = 1.2):
         return self._clickAndMsg(self.Buttons.plane_button, wait = wait, deepLog = False, cutPoints = self.ScreenCut.cut3x7(1, 6))
     
     def clickGetItems(self, wait = 0.3, log = False):
@@ -1391,46 +1467,62 @@ class JCZXGame:
             sleep(60)
     
     def getCompetitionAndCancelTimes(self, grayScreenshot:MatLike = None) -> tuple[int, int]:
+        """获得竞技场挑战次数与刷新次数"""
         if grayScreenshot is None:
             grayScreenshot = self.grayScreenshot()
         return (self.getCompetitionTimes(grayScreenshot), self.getCompetitionCancelTimes(grayScreenshot))
         
     def getCompetitionTimes(self, grayScreenshot:MatLike = None) -> int:
-        cutPoints = self.ScreenCut.cut2x3(1, 0)
+        """获得竞技场挑战次数"""
+        cutPoints = self.ScreenCut.cut4x1(0, 0)
         if grayScreenshot is None:
             grayScreenshot = self.grayScreenshot()
         if self.findImageCenterLocation(self.Numbers.JJC10, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 10
-        if self.findImageCenterLocation(self.Numbers.JJC9, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 9
-        if self.findImageCenterLocation(self.Numbers.JJC8, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 8
+        if self.findImageCenterLocation(self.Numbers.JJC9, cutPoints = cutPoints, per = 0.99, grayScreenshot = grayScreenshot): return 9
+        if self.findImageCenterLocation(self.Numbers.JJC8, cutPoints = cutPoints, per = 0.99, grayScreenshot = grayScreenshot): return 8
         if self.findImageCenterLocation(self.Numbers.JJC7, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 7
-        if self.findImageCenterLocation(self.Numbers.JJC6, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 6
+        if self.findImageCenterLocation(self.Numbers.JJC6, cutPoints = cutPoints, per = 0.99, grayScreenshot = grayScreenshot): return 6
         if self.findImageCenterLocation(self.Numbers.JJC5, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 5
         if self.findImageCenterLocation(self.Numbers.JJC4, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 4
-        if self.findImageCenterLocation(self.Numbers.JJC3, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 3
-        if self.findImageCenterLocation(self.Numbers.JJC2, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 2
-        if self.findImageCenterLocation(self.Numbers.JJC1, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 1
+        if self.findImageCenterLocation(self.Numbers.JJC3, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 3
+        if self.findImageCenterLocation(self.Numbers.JJC2, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 2
+        if self.findImageCenterLocation(self.Numbers.JJC1, cutPoints = cutPoints, per = 0.98, grayScreenshot = grayScreenshot): return 1
         if self.findImageCenterLocation(self.Numbers.JJC0, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 0
     
     def getCompetitionCancelTimes(self, grayScreenshot:MatLike = None) -> int:
-        cutPoints = self.ScreenCut.cut2x3(1, 0)
+        """获得竞技场刷新次数"""
+        cutPoints = self.ScreenCut.cut4x3(3, 0)
         if grayScreenshot is None:
             grayScreenshot = self.grayScreenshot()
         if self.findImageCenterLocation(self.Numbers.cancel15, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 15
-        if self.findImageCenterLocation(self.Numbers.cancel14, cutPoints = cutPoints, per = 0.9, grayScreenshot = grayScreenshot): return 14
+        if self.findImageCenterLocation(self.Numbers.cancel14, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 14
         if self.findImageCenterLocation(self.Numbers.cancel13, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 13
         if self.findImageCenterLocation(self.Numbers.cancel12, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 12
         if self.findImageCenterLocation(self.Numbers.cancel11, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 11
-        if self.findImageCenterLocation(self.Numbers.cancel10, cutPoints = cutPoints, per = 0.85, grayScreenshot = grayScreenshot): return 10
-        if self.findImageCenterLocation(self.Numbers.cancel9, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 9
+        if self.findImageCenterLocation(self.Numbers.cancel10, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 10
+        if self.findImageCenterLocation(self.Numbers.cancel9, cutPoints = cutPoints, per = 0.98, grayScreenshot = grayScreenshot): return 9
         if self.findImageCenterLocation(self.Numbers.cancel8, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 8
         if self.findImageCenterLocation(self.Numbers.cancel7, cutPoints = cutPoints, per = 0.9, grayScreenshot = grayScreenshot): return 7
         if self.findImageCenterLocation(self.Numbers.cancel6, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 6
-        if self.findImageCenterLocation(self.Numbers.cancel5, cutPoints = cutPoints, per = 0.9, grayScreenshot = grayScreenshot): return 5
+        if self.findImageCenterLocation(self.Numbers.cancel5, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 5
         if self.findImageCenterLocation(self.Numbers.cancel4, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 4
         if self.findImageCenterLocation(self.Numbers.cancel3, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 3
         if self.findImageCenterLocation(self.Numbers.cancel2, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 2
         if self.findImageCenterLocation(self.Numbers.cancel1, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 1
         if self.findImageCenterLocation(self.Numbers.cancel0, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 0
+    
+    def getArenaFreeTimes(self, grayScreenshot: MatLike = None) -> int:
+        """获取当前可免费角斗场的次数"""
+        cutPoints = self.ScreenCut.cut3x2(1, 1)
+        if grayScreenshot is None:
+            grayScreenshot = self.grayScreenshot()
+        detail = self.findImageDetailLocations(self.ScreenLocs.ArenafreetimesLoc, cutPoints, grayScreenshot = grayScreenshot)
+        locs = detail.transRange(detail.transMoveFromTemleteSize(rightMoveTimes = 1))
+        img = self.cutScreenshot(detail.baseGrayScreenshot, locs)
+        if self.findImageCenterLocation(self.Numbers.freetimes3, grayScreenshot = img): return 3
+        if self.findImageCenterLocation(self.Numbers.freetimes2, grayScreenshot = img): return 2
+        if self.findImageCenterLocation(self.Numbers.freetimes1, grayScreenshot = img): return 1
+        if self.findImageCenterLocation(self.Numbers.freetimes0, grayScreenshot = img): return 0
     
     def challengeCompetition(self):
         thresholdValue = self.config.JJCThresholdValue
@@ -1444,16 +1536,17 @@ class JCZXGame:
             # 最小当前可刷新次数用于寻找符合阈值的+28挑战
             # 若刷新次数用完也没有找到符合阈值的挑战对象则 =》 挑战当前符合阈值的对象（无论+26 or +28）
             # 结束条件： 模拟次数或者挑战次数用完
-            info = self.findImageDetailLocations(self.ScreenLocs.firstScoreLoc, cutPoints = self.ScreenCut.cut3x1(0, 0))
+            info = self.findImageDetailLocations(self.ScreenLocs.firstScoreLoc, cutPoints = self.ScreenCut.cut3x3(2, 0))
             times, cancels = self.getCompetitionAndCancelTimes(info.baseGrayScreenshot)
             self.log.info(f"挑战次数{times},刷新次数{cancels}")
             if clicked: #如果已经挑战后更新点击次数
                 clickCancelTimes = cancels//times if times != 0 else 0
                 clickCancelTimes = maxClickCancelTImes if clickCancelTimes > maxClickCancelTImes else clickCancelTimes
                 clicked = False
-            loc = info.transRange(info.transMatchTempletePointFromSize(info.transMoveFromTemleteSize(rightMoveTimes = 1), rightHeightTimes = 1))
+            loc = info.transRange(info.transMoveFromTemleteSize(rightMoveTimes = 1))
             number = int(self.ocr.readtext(self.cutScreenshot(info.baseGrayScreenshot, loc))[0])
-            if number <= thresholdValue and self.inLocation(self.Numbers.score28, cutPoints = self.ScreenCut.cut2x2(0, 0), per = 0.95, grayScreenshot = info.baseGrayScreenshot) and times != 0:
+            self.log.debug(f"战力{number}")
+            if number <= thresholdValue and self.inLocation(self.Numbers.score28, cutPoints = self.ScreenCut.cut3x3(2, 0), per = 0.9, grayScreenshot = info.baseGrayScreenshot) and times != 0:
                 # 条件1： 符合阈值的+28挑战
                 self.log.info("已找到+28挑战")
                 self.click(*info.transCenterPoint(loc))
@@ -1465,9 +1558,9 @@ class JCZXGame:
                     competitionHistory["loss"] += 1
                 # self._clickAndMsg(self.ScreenLocs.newRanking, wait = 0.3, deepLog = False, cutPoints = self.ScreenCut.cut3x2(1, 0), per = 0.8)
                 # self.clickGetItems()
-                self.click(self.width//2, self.height//5, wait = 0.6)
-                self.click(self.width//2, self.height//5, wait = 0.6)
-                self.click(self.width//2, self.height//5, wait = 0.6)
+                self.click(self.width//4, self.height//5, wait = 0.6)
+                self.click(self.width//4, self.height//5, wait = 0.6)
+                self.click(self.width//4, self.height//5, wait = 0.6)
             elif number <= thresholdValue and clickCancelTimes <= 0 and times != 0:
                 # 条件2： 符合阈值，但已超出最小当前可刷新次数
                 self.log.info("已找到+26挑战")
@@ -1480,18 +1573,149 @@ class JCZXGame:
                     competitionHistory["loss"] += 1
                 # self._clickAndMsg(self.ScreenLocs.newRanking, wait = 0.3, deepLog = False, cutPoints = self.ScreenCut.cut3x2(1, 0), per = 0.8)
                 # self.clickGetItems()
-                self.click(self.width//2, self.height//5, wait = 0.6)
-                self.click(self.width//2, self.height//5, wait = 0.6)
-                self.click(self.width//2, self.height//5, wait = 0.6)
+                self.click(self.width//4, self.height//5, wait = 0.6)
+                self.click(self.width//4, self.height//5, wait = 0.6)
+                self.click(self.width//4, self.height//5, wait = 0.6)
             else:
                 if cancels == 0 or times == 0: #刷新次数为0 或战斗次数为0 时结束
                     break
-                self._clickAndMsg(self.Buttons.competitionCancel_button, "点击刷新", wait = 1, cutPoints = self.ScreenCut.cut2x3(1, 0), grayScreenshot = info.baseGrayScreenshot)
+                self._clickAndMsg(self.Buttons.competitionCancel_button, "点击刷新", wait = 1, cutPoints = self.ScreenCut.cut3x3(2, 0), grayScreenshot = info.baseGrayScreenshot)
                 clickCancelTimes -= 1
         self.log.info(f"+28 X {competitionHistory['+28']}")
         self.log.info(f"+26 X {competitionHistory['+26']}")
         self.log.info(f"挑战失败 X {competitionHistory['loss']}")
         if competitionHistory["loss"]: self.log.info("＞﹏＜ 红豆泥私密马赛 :(")
+    
+    def challengeArenaRandom(self):
+        if self.inLocation(self.ScreenLocs.ArenaRandomOnGoing, self.ScreenCut.cut3x2(1, 1)):
+            # 挑战正在进行
+            self.log.info("角斗场挑战正在进行")
+            self.clickArenaRandom()
+            roles = self.chooseArenaRole()
+            self.setArenaTeam(roles)
+            self.playArenaRandom()
+            self.challengeArenaRandom()
+        else:
+            # 无挑战进行
+            self.log.info("角斗场挑战初始化")
+            self.clickArenaRandom()
+            if freetimes := self.getArenaFreeTimes():
+                for i in range(freetimes):
+                    self.clickArenaRandomPower()
+                    roles = self.chooseArenaRole()
+                    self.setArenaTeam(roles)
+                    self.playArenaRandom()
+            else:
+                self.log.info("角斗场无免费次数可用")
+                self.click(self.width//2, self.height//5)
+    
+    def chooseArenaRole(self) -> list[_Roles.Role]:
+        assist = []
+        while self.inLocation(self.ScreenLocs.ArenaRoleSelected, self.ScreenCut.cut3x4(1, 0), 0.8):
+            # 位于角色选择界面
+            # NoneRoles = len(self.findImageCenterLocations(self.ScreenLocs.ArenaRoleNone, self.ScreenCut.cut1x4(0, 3)))
+            # self.log.debug(f"角色空位x{NoneRoles}")
+            # for _ in range(NoneRoles):
+            grayScreenshot = self.grayScreenshot()
+            for role in self.roles.Auxiliary:
+                detail = self.findImageDetailLocations(role.face, cutPoints = self.ScreenCut.cut1x2(0, 0), grayScreenshot = grayScreenshot)
+                if detail.matched and len(assist) < 2:
+                    # 匹配辅助角色，且已匹配角色少于两名
+                    temploc = detail.transRange(detail.transMatchTempletePointFromSize(None, 0, 9, 1, 3))
+                    self._clickAndMsg(self.Buttons.ArenaRoleSure_button, cutPoints = temploc, wait = 1, grayScreenshot = grayScreenshot)
+                    assist.append(role)
+                    break
+            else:
+                # 无匹配辅助角色，选择
+                detail = self.findImageDetailLocations(self.ScreenLocs.ArenaRoleBest, self.ScreenCut.cut1x2(0, 0), per = 0.8, grayScreenshot = grayScreenshot)
+                temploc = detail.transRange(detail.transMatchTempletePointFromSize(None, 0, 3, 0, 3))
+                self._clickAndMsg(self.Buttons.ArenaRoleSure_button, cutPoints = temploc, wait = 1, grayScreenshot = grayScreenshot)
+        return assist
+    
+    def setArenaTeam(self, roles: list[_Roles.Role] = []):
+        if self._clickAndMsg(self.ScreenLocs.ArenaRoleNone, cutPoints = self.ScreenCut.cut1x4(0, 3), wait = 2):
+            self.clickClearTeam()
+            self.clickReadyTeamPlane()
+            places = self.getEmptyPlace()
+            old_places_len, step = 0, 0
+            for j in roles:
+                if 1 in j.place[0]:
+                    index = j.place[0].index(1)
+                elif 1 in j.place[1]:
+                    index = j.place[1].index(1) + 3
+                else:
+                    index = j.place[2].index(1) + 6
+                self.dragAndDrop(*self.findImageCenterLocation(j.face, cutPoints = self.ScreenCut.cut2x1(1, 0)), *places[index], 500, 0.5)
+            while not self.inLocation(self.ScreenLocs.fiveRoleTeam, self.ScreenCut.cut4x3(0, 0), 0.95):
+                places = self.getEmptyPlace()
+                if old_places_len == len(places):
+                    step += 1
+                else:
+                    step = 0
+                old_places_len = len(places)
+                self.dragAndDrop(*self.findImageCenterLocation(self.ScreenLocs.Level80, cutPoints = self.ScreenCut.cut2x1(1, 0)), *places[(0 + step) % len(places)], 500, 1)
+            self.back()
+    
+    def clickClearTeam(self):
+        return self._clickAndMsg(self.Buttons.clearTeam_button, cutPoints = self.ScreenCut.cut4x3(0, 2))
+    
+    def getEmptyPlace(self):
+        locs = self.findImageCenterLocations(self.ScreenLocs.emptyPlace, per = 0.8)
+        self.log.debug(f"空位 {locs}")
+        return locs
+    
+    def playArenaRandom(self):
+        rounds = {self.Numbers.round1: 0.95, self.Numbers.round2: 0.95, self.Numbers.round3: 0.95, self.Numbers.round4: 0.95, self.Numbers.round5: 0.95, \
+            self.Numbers.round6: 0.97, self.Numbers.round7: 0.95, self.Numbers.round8: 0.97, self.Numbers.round9: 0.95}
+        now_round = self.getArenaNowRound()
+        for j in range(10 - now_round):
+            now_round = self.getArenaNowRound()
+            self.log.info(f"当前回合 {now_round}")
+            detail = self.findImageDetailLocations(list(rounds.keys())[now_round - 1], per = rounds[list(rounds.keys())[now_round - 1]])
+            self.log.debug(f"回合定位 {detail.matched}")
+            locs = detail.transRange(detail.transMatchTempletePointFromSize(None, 0, 8, 0, 2))
+            grayScreenshot = detail.baseGrayScreenshot
+            for i in [self.ScreenLocs.ArenaSlow, self.ScreenLocs.ArenaNormal, self.ScreenLocs.ArenaQuick]:
+                if self._clickAndMsg(i, cutPoints = locs, wait = 1, grayScreenshot = grayScreenshot):
+                    self._clickAndMsg(self.Buttons.ArenaRoundSure_button, cutPoints = self.ScreenCut.cut2x4(1, 3))
+                    if self.autoPlayLevels():
+                        if now_round in (4, 6):
+                            if roles := self.chooseArenaRole():
+                                self.setArenaTeam(roles)
+                        break
+                    else:
+                        self._clickAndMsg(self.Buttons.ArenaClaimAll_button, wait = 1, cutPoints = self.ScreenCut.cut3x2(1, 1))
+                        self.clickGetItems(1)
+                        return
+        else:
+            self._clickAndMsg(self.Buttons.ArenaClaimAll_button, wait = 1, cutPoints = self.ScreenCut.cut3x2(1, 1))
+            self.clickGetItems(1)
+    
+    def getArenaNowRound(self) -> int:
+        # 获得当前回合
+        if self.findImageCenterLocation(self.Numbers.roundUnknown):
+            while not (now_round := self.getArenaStaticRound()):
+                self.dragAndDropRightScreenCenter(2)
+        else:
+            while not self.findImageCenterLocation(self.Numbers.roundUnknown):
+                now_round = self.getArenaStaticRound()
+                if now_round == 9:
+                    break
+                self.dragAndDropLeftScreenCenter(2)
+        self.log.debug(f"当前回合{now_round}")
+        return now_round
+    
+    def getArenaStaticRound(self) -> int:
+        grayScreenshot = self.grayScreenshot()
+        if self.findImageCenterLocation(self.Numbers.round9, per = 0.95, grayScreenshot = grayScreenshot): return 9
+        if self.findImageCenterLocation(self.Numbers.round8, per = 0.97, grayScreenshot = grayScreenshot): return 8
+        if self.findImageCenterLocation(self.Numbers.round7, per = 0.95, grayScreenshot = grayScreenshot): return 7
+        if self.findImageCenterLocation(self.Numbers.round6, per = 0.97, grayScreenshot = grayScreenshot): return 6
+        if self.findImageCenterLocation(self.Numbers.round5, per = 0.95, grayScreenshot = grayScreenshot): return 5
+        if self.findImageCenterLocation(self.Numbers.round4, per = 0.95, grayScreenshot = grayScreenshot): return 4
+        if self.findImageCenterLocation(self.Numbers.round3, per = 0.95, grayScreenshot = grayScreenshot): return 3
+        if self.findImageCenterLocation(self.Numbers.round2, per = 0.95, grayScreenshot = grayScreenshot): return 2
+        if self.findImageCenterLocation(self.Numbers.round1, per = 0.95, grayScreenshot = grayScreenshot): return 1
     
     def loginJCZX(self):
         if self.startJCZX():
@@ -1563,6 +1787,15 @@ class JCZXGame:
             self._clickAndMsg(self.Buttons.competition_button, "前往【竞技场】", "前往【竞技场】失败", wait = 1, cutPoints = self.ScreenCut.cut2x1(0, 0))
             self.gotoCompetition()
     
+    def gotoGladiatorialArena(self):
+        """前往角斗场"""
+        if self.inlocationGladiatorialArena:
+            return
+        else:
+            self.gotoSimulatedMilitaryExercises()
+            self._clickAndMsg(self.Buttons.gladiatorialArena_button, "前往【角斗场】", "前往【角斗场】失败", wait = 1, cutPoints = self.ScreenCut.cut2x1(1, 0))
+            self.gotoGladiatorialArena()
+    
     def gotoSimulatedMilitaryExercises(self):
         if self.inlocationSimulatedMilitaryExercises:
             return
@@ -1630,6 +1863,7 @@ class JCZXGame:
         self.autoPlayLevels()
     
     def autoPlayLevels(self, wait = 0) -> bool:
+        """返回自动战斗的结果"""
         while not self.inLocationONfight:
             self.clickSkipAnimation()
             sleep(0.3)
@@ -1637,7 +1871,7 @@ class JCZXGame:
         win = None
         while True:
             info = self.findImageDetailLocations(self.ScreenLocs.fightWin, cutPoints = self.ScreenCut.cut2x2(0, 0))
-            if info.matchTempleteCenterPoint:
+            if info.matched:
                 win = True
                 break
             if self.findImageCenterLocation(self.ScreenLocs.fightLoss1, cutPoints = self.ScreenCut.cut2x2(0, 0), grayScreenshot = info.baseGrayScreenshot):
@@ -1655,6 +1889,7 @@ class JCZXGame:
         self.click(self.width//2, self.height//2, 1)
         self.click(self.width//2, self.height//2, 7)
         sleep(wait)
+        self.log.debug(f"自动战斗结果 {win}")
         return win
         
     def gotoIllusions(self):
@@ -1749,6 +1984,12 @@ class JCZXGame:
     
     def clickChallengeCompetition(self):
         return self._waitClickAndMsg(self.Buttons.challenge_button, wait = 1, cutPoints = self.ScreenCut.cut1x4(0, 3), per = 0.8)
+    
+    def clickArenaRandom(self):
+        return self._clickAndMsg(self.Buttons.gladiatorialArenaRandom_button, "选择【随机模式】", wait = 1, cutPoints = self.ScreenCut.cut3x2(2, 1))
+    
+    def clickArenaRandomPower(self):
+        return self._clickAndMsg(self.Buttons.ArenaPower_button, wait = 1, cutPoints = self.ScreenCut.cut2x3(0, 1))
     
     def addAndCraft(self, num:int):
         loc = self.findImageCenterLocation(self.Buttons.add_button, cutPoints = self.ScreenCut.cut3x3(2, 1))
@@ -2040,12 +2281,12 @@ class JCZXGame:
     def _waitClickAndMsg(self, button_path, newLocation: Callable | str = None, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, maxWaitSecond:int = 0, log:bool = False, cutPoints = None, per = 0.9, waitFunc:Callable = lambda: ..., func: Callable = lambda: ...) -> None:
         """等待并点击按钮
         - button_path   按钮样板路径
-        - newLocation   点击按钮后前往的界面
+        - newLocation   点击按钮后前往的界面或返回值为bool值的可调用对象
         - infoMsg       info等级日志信息
         - warnMsg       warn等级日志信息
         - index         若按钮匹配多个，则可指定索引
         - wait          点击后等待延迟
-        - maxWaitSecond 最大等待时间
+        - maxWaitSecond 最大等待时间，不设置表示无限等待时间
         - log           深度Debug日志信息是否显示
         - cutPoints     图片截取部分
         - per           模板匹配程度0~1
@@ -2173,6 +2414,7 @@ class JCZXGame:
     
     def findImageCenterLocation(self, button_path:str, cutPoints = None, per = 0.9, grayScreenshot = None) -> tuple[int, int] | None:
         locations = self.findImageCenterLocations(button_path, cutPoints, per, grayScreenshot)
+        self.log.debug(f"匹配{button_path} {locations}")
         if locations:
             return locations[0]
         else:
@@ -2226,17 +2468,25 @@ class JCZXGame:
             if loc := self._clickAndMsg(self.Buttons.accept_button, "点击【同意】x∞", wait = 0.7, deepLog = False, cutPoints = self.ScreenCut.cut3x2(2, 0)):
                 self.Pos.acceptPos = loc
     
+    @check
     def swipe(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
         cmd = [self.adb_path, "-s", self.device, "shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(duration)]
-        subprocess.run(cmd, startupinfo = self.startupinfo)
+        subprocess.run(cmd, startupinfo = self.startupinfo, check = True)
         self.log.debug(f"执行滑动 {' '.join(cmd)}")
         sleep(wait)
     
+    @check
     def dragAndDrop(self, x1:int, y1:int, x2:int, y2:int, duration:int = 200, wait:int = 0):
         cmd = [self.adb_path, "-s", self.device, "shell", "input", "draganddrop", str(x1), str(y1), str(x2), str(y2), str(duration)]
-        subprocess.run(cmd, startupinfo = self.startupinfo)
+        subprocess.run(cmd, startupinfo = self.startupinfo, check = True)
         self.log.debug(f"执行拖动 {' '.join(cmd)}")
         sleep(wait)
+    
+    def dragAndDropLeftScreenCenter(self, wait = 1.5):
+        self.dragAndDrop(self.width//1.6, self.height//2, self.width//2, self.height//2, 500, wait)
+    
+    def dragAndDropRightScreenCenter(self, wait = 1.5):
+        self.dragAndDrop(self.width//2, self.height//2, self.width//1.6, self.height//2, 500, wait)
     
     def swipeUPScreenCenter(self, wait = 1.5):
         self.swipe(self.width//2, self.height//1.4, self.width//2, self.height//2, 200, wait)
@@ -2258,8 +2508,9 @@ class JCZXGame:
     def setADBPath(self, path):
         self.adb_path = path
     
+    @check
     def startAPP(self, activity:str):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "am", "start", activity], startupinfo = self.startupinfo)
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "am", "start", activity], startupinfo = self.startupinfo, check = True)
     
     def startJCZX(self):
         try:
@@ -2269,8 +2520,9 @@ class JCZXGame:
             self.startAPP("com.megagame.crosscore/com.mjsdk.app.MJUnityActivity")
             return True
     
+    @check
     def stopJCZX(self):
-        subprocess.run([self.adb_path, "-s", self.device, "shell", "am", "force-stop", "com.megagame.crosscore"], startupinfo = self.startupinfo)
+        subprocess.run([self.adb_path, "-s", self.device, "shell", "am", "force-stop", "com.megagame.crosscore"], startupinfo = self.startupinfo, check = True)
     
     @check
     def devices(self) -> list[str]:
@@ -2296,9 +2548,9 @@ class JCZXGame:
 class WorkThread(QThread, WorkTags):
     referADBSignal = pyqtSignal(str)
     
-    def __init__(self, adb:JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
+    def __init__(self, adb: JCZXGame = None, log:logging.Logger = None, config:JsonConfig = None) -> None:
         super().__init__()
-        self.adb = adb
+        self.adb: JCZXGame = adb
         self.log = log
         self.mode = None
         self.config = config
@@ -2351,13 +2603,16 @@ class WorkThread(QThread, WorkTags):
                     self.tasks()
                 case self.JJC_TASK:
                     self.JJCTask()
+                case self.JDC_TASK:
+                    self.JDCTask()
                 case self.INIT_OCR:
                     self.initOCR()
                 case self.QUIT_JCZX:
                     (self.adb.stopJCZX(), self.log.info("退出游戏"))
                 case self.QUIT_DEVICE:
                     self.adb.DNConsole.quitDevice(self.config.dnconsoleDevices.Devices[self.adb.device])
-                    self.log.info(f"关闭模拟器【{self.adb.device}】")
+                    if self.adb.DNConsole.CAN_RUN:
+                        self.log.info(f"关闭模拟器【{self.adb.device}】")
                 case _:
                     self.log.error(f"未知模式 {self.mode}")
         
@@ -2374,7 +2629,8 @@ class WorkThread(QThread, WorkTags):
             try:
                 work()
             except Exception as e:
-                self.log.error(f"捕获到错误抛出 {e}")
+                file = e.__traceback__.tb_frame.f_globals["__file__"]
+                self.log.error(f"捕获到错误抛出 {e}, 文件{file}，{e.__traceback__.tb_lineno}行")
         else:
             work()
 
@@ -2386,12 +2642,24 @@ class WorkThread(QThread, WorkTags):
                 
     def __debug(self):
         adb = self.adb
-        adb.gotoCompetition()
-        info = adb.findImageDetailLocations(adb.ScreenLocs.firstScoreLoc, cutPoints = adb.ScreenCut.cut3x1(0, 0))
-        # cv2.namedWindow('test', cv2.WINDOW_NORMAL)
-        # cv2.imshow("test", cv2.rectangle(info.baseGrayScreenshot, *info.transRange(info.transMatchTempletePointFromSize(info.transMoveFromTemleteSize(rightMoveTimes = 1), rightHeightTimes = 1)), (255, 0, 0), 5))
-        # cv2.waitKey()
+        # detail = adb.findImageDetailLocations(adb.ScreenLocs.ArenaRoleBest, cutPoints = adb.ScreenCut.cut1x2(0, 0))
+        # locs = detail.transRange(detail.transMatchTempletePointFromSize(None, 0, 3, 0, 3))
+        # self.showImg(adb.cutScreenshot(detail.baseGrayScreenshot, locs))
+        # adb.chooseArenaRole()
+        # adb.setArenaTeam()
+        # screen = adb.grayScreenshot()
+        # for i in adb.getEmptyPlace():
+        #     screen = cv2.rectangle(screen, (i[0] - 15, i[1] + 15), (i[0] + 15, i[1] - 15), (255, 0, 0), 4)
+        # self.showImg(screen)
+        # self.log.info(adb.getArenaNowRound())
+        adb.gotoGladiatorialArena()
+        adb.challengeArenaRandom()
         
+    def showImg(self, img: MatLike):
+        cv2.namedWindow('test', cv2.WINDOW_NORMAL)
+        cv2.imshow("test", img)
+        cv2.waitKey()
+    
     def setADB(self, adb):
         self.adb = adb
     
@@ -2427,12 +2695,20 @@ class WorkThread(QThread, WorkTags):
             def __init__(self, **kwargs):
                 super().__init__(**kwargs)
 
-            def readtext(self, img:MatLike):
-                data = self.ocr(img, cls = False)
+            def readtext(self, img:MatLike, det = True, rec = True, cls = False, bin = False, inv = False) -> list:
+                data = self.ocr(
+                    img,
+                    det = det,
+                    rec = rec,
+                    cls = cls,
+                    bin = bin,
+                    inv = inv
+                )
                 result = []
-                for line in data[0]:
-                    text = line[1][0]
-                    result.append(text)
+                if all(data):
+                    for line in data[0]:
+                        text = line[1][0]
+                        result.append(text)
                 return result
             
         self.adb.ocr = OCR(
@@ -2598,6 +2874,15 @@ class WorkThread(QThread, WorkTags):
         adb.challengeCompetition()
         adb.gotoHome()
         self.log.info(f"任务【竞技场】结束")
+    
+    @check
+    def JDCTask(self):
+        adb = self.adb
+        self.log.info(f"开始【角斗场】任务")
+        adb.gotoGladiatorialArena()
+        adb.challengeArenaRandom()
+        adb.gotoHome()
+        self.log.info(f"任务【角斗场】结束")
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
