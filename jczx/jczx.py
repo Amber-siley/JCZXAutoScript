@@ -26,6 +26,7 @@ import subprocess
 import logging
 import sys
 import ctypes
+import logging.handlers
 
 import cv2
 import numpy as np
@@ -52,7 +53,7 @@ class LoggerHandler(logging.Handler):
         self.edit.append(msg)
         self.edit.moveCursor(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.MoveAnchor)
     
-    def write(self,text):
+    def write(self, text):
         self.edit.append(text)
     
     def format(self, record):
@@ -147,7 +148,7 @@ class MainManager(Ui_Form):
     
     def __init_logger(self):
         handler = LoggerHandler(self.logger_Browser)
-        fileHandler = logging.FileHandler("JCZXAutoScriptLog.log", "w", "utf-8")
+        fileHandler = logging.handlers.RotatingFileHandler("JCZXAutoScriptLog.log", 'a', 400_000, encoding = "utf-8")
         fileHandler.setFormatter(logging.Formatter('%(asctime)s [%(lineno)d] : %(message)s', datefmt = "%H:%M:%S"))
         fileHandler.setLevel(logging.DEBUG)
         self.log.addHandler(handler)
@@ -1307,10 +1308,10 @@ class JCZXGame:
     @check
     def screenshot(self) -> bytes:
         startTime = time()
-        data = subprocess.check_output([self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"], startupinfo = self.startupinfo)
-        # self.log.debug(f"data size {len(data)}, {img.shape}")
+        args = [self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"]
+        data = subprocess.check_output(args, startupinfo = self.startupinfo)
         runningTime = (time() - startTime)
-        self.log.debug("截图耗时 {:.2f} s".format(runningTime))
+        self.log.debug("截图耗时 {:.2f} s 图片大小 {}".format(runningTime, len(data)))
         return data
     
     def showImg(self, img: MatLike):
@@ -1321,6 +1322,7 @@ class JCZXGame:
     def CVscreenshot(self) -> MatLike:
         return cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_ANYCOLOR)
     
+    @check
     def grayScreenshot(self, cutPoints = None):
         screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_GRAYSCALE)
         # self.log.debug(f"截图 size {screenshot.shape}")
@@ -1501,12 +1503,12 @@ class JCZXGame:
         if self.findImageCenterLocation(self.Numbers.cancel11, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 11
         if self.findImageCenterLocation(self.Numbers.cancel10, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 10
         if self.findImageCenterLocation(self.Numbers.cancel9, cutPoints = cutPoints, per = 0.98, grayScreenshot = grayScreenshot): return 9
-        if self.findImageCenterLocation(self.Numbers.cancel8, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 8
-        if self.findImageCenterLocation(self.Numbers.cancel7, cutPoints = cutPoints, per = 0.9, grayScreenshot = grayScreenshot): return 7
-        if self.findImageCenterLocation(self.Numbers.cancel6, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 6
+        if self.findImageCenterLocation(self.Numbers.cancel8, cutPoints = cutPoints, per = 0.98, grayScreenshot = grayScreenshot): return 8
+        if self.findImageCenterLocation(self.Numbers.cancel7, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 7
+        if self.findImageCenterLocation(self.Numbers.cancel6, cutPoints = cutPoints, per = 0.98, grayScreenshot = grayScreenshot): return 6
         if self.findImageCenterLocation(self.Numbers.cancel5, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 5
         if self.findImageCenterLocation(self.Numbers.cancel4, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 4
-        if self.findImageCenterLocation(self.Numbers.cancel3, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 3
+        if self.findImageCenterLocation(self.Numbers.cancel3, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 3
         if self.findImageCenterLocation(self.Numbers.cancel2, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 2
         if self.findImageCenterLocation(self.Numbers.cancel1, cutPoints = cutPoints, per = 0.97, grayScreenshot = grayScreenshot): return 1
         if self.findImageCenterLocation(self.Numbers.cancel0, cutPoints = cutPoints, per = 0.95, grayScreenshot = grayScreenshot): return 0
@@ -1666,13 +1668,16 @@ class JCZXGame:
     
     def playArenaRandom(self):
         rounds = {self.Numbers.round1: 0.95, self.Numbers.round2: 0.95, self.Numbers.round3: 0.95, self.Numbers.round4: 0.95, self.Numbers.round5: 0.95, \
-            self.Numbers.round6: 0.97, self.Numbers.round7: 0.95, self.Numbers.round8: 0.97, self.Numbers.round9: 0.95}
+            self.Numbers.round6: 0.97, self.Numbers.round7: 0.95, self.Numbers.round8: 0.96, self.Numbers.round9: 0.95}
         now_round = self.getArenaNowRound()
-        for j in range(10 - now_round):
+        for _ in range(10 - now_round):
             now_round = self.getArenaNowRound()
             self.log.info(f"当前回合 {now_round}")
             detail = self.findImageDetailLocations(list(rounds.keys())[now_round - 1], per = rounds[list(rounds.keys())[now_round - 1]])
             self.log.debug(f"回合定位 {detail.matched}")
+            while not detail.matched:
+                detail = self.findImageDetailLocations(list(rounds.keys())[now_round - 1], per = rounds[list(rounds.keys())[now_round - 1]])
+                self.log.debug(f"回合定位 {detail.matched}")
             locs = detail.transRange(detail.transMatchTempletePointFromSize(None, 0, 8, 0, 2))
             grayScreenshot = detail.baseGrayScreenshot
             for i in [self.ScreenLocs.ArenaSlow, self.ScreenLocs.ArenaNormal, self.ScreenLocs.ArenaQuick]:
@@ -1708,7 +1713,7 @@ class JCZXGame:
     def getArenaStaticRound(self) -> int:
         grayScreenshot = self.grayScreenshot()
         if self.findImageCenterLocation(self.Numbers.round9, per = 0.95, grayScreenshot = grayScreenshot): return 9
-        if self.findImageCenterLocation(self.Numbers.round8, per = 0.97, grayScreenshot = grayScreenshot): return 8
+        if self.findImageCenterLocation(self.Numbers.round8, per = 0.96, grayScreenshot = grayScreenshot): return 8
         if self.findImageCenterLocation(self.Numbers.round7, per = 0.95, grayScreenshot = grayScreenshot): return 7
         if self.findImageCenterLocation(self.Numbers.round6, per = 0.97, grayScreenshot = grayScreenshot): return 6
         if self.findImageCenterLocation(self.Numbers.round5, per = 0.95, grayScreenshot = grayScreenshot): return 5
@@ -1723,6 +1728,7 @@ class JCZXGame:
             self._waitClickAndMsg(self.Buttons.userLogin_button, self.Buttons.login_button, wait = 0.6)
             self._waitClickAndMsg(self.Buttons.login_button, self.Buttons.base_button, wait = 2, maxWaitSecond = 20)
             self._waitClickAndMsg(self.Buttons.noReminders_button, wait = 0.5, maxWaitSecond = 3, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1))
+            self._waitClickAndMsg(self.Buttons.home_button, wait = 0.5, maxWaitSecond = 3)
             self._waitClickAndMsg(self.Buttons.signIn_button, wait = 1, maxWaitSecond = 2, func = lambda: (self.clickGetItems(wait = 1), self.back()))
             self._waitClickAndMsg(self.Buttons.noRemindersBase_button, wait = 0.3, maxWaitSecond = 2, per = 0.7, func = lambda: self._clickAndMsg(self.Buttons.closeNotice_button, wait = 1, per = 0.8))
             self._waitClickAndMsg(self.Buttons.noRemindersBase_button, wait = 0.3, maxWaitSecond = 2, per = 0.5, func = lambda: self.click(self.width//2, self.height//5, 1))
@@ -1738,13 +1744,8 @@ class JCZXGame:
     def gotoHome(self):
         if self.inLocation(self.ScreenLocs.home, cutPoints = self.ScreenCut.cut3x4(1, 3)):
             return
-        if self.Pos.homePos:
-            self.click(*self.Pos.homePos)
-            self.log.info("前往【主界面】")
         else:
-            if loc := self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0)):
-                self.Pos.homePos = loc
-            else:
+            if not self._clickAndMsg(self.Buttons.home_button, "前往【主界面】", "前往【主界面】失败", cutPoints = self.ScreenCut.cut3x7(0,0)):
                 self.click(self.width//2, self.height//5, 1)
                 self.back(1)
                 self.makeSure(5)
@@ -2630,7 +2631,7 @@ class WorkThread(QThread, WorkTags):
                 work()
             except Exception as e:
                 file = e.__traceback__.tb_frame.f_globals["__file__"]
-                self.log.error(f"捕获到错误抛出 {e}, 文件{file}，{e.__traceback__.tb_lineno}行")
+                self.log.error(f"捕获到错误抛出 {e}, 文件{file}")
         else:
             work()
 
@@ -2642,16 +2643,6 @@ class WorkThread(QThread, WorkTags):
                 
     def __debug(self):
         adb = self.adb
-        # detail = adb.findImageDetailLocations(adb.ScreenLocs.ArenaRoleBest, cutPoints = adb.ScreenCut.cut1x2(0, 0))
-        # locs = detail.transRange(detail.transMatchTempletePointFromSize(None, 0, 3, 0, 3))
-        # self.showImg(adb.cutScreenshot(detail.baseGrayScreenshot, locs))
-        # adb.chooseArenaRole()
-        # adb.setArenaTeam()
-        # screen = adb.grayScreenshot()
-        # for i in adb.getEmptyPlace():
-        #     screen = cv2.rectangle(screen, (i[0] - 15, i[1] + 15), (i[0] + 15, i[1] - 15), (255, 0, 0), 4)
-        # self.showImg(screen)
-        # self.log.info(adb.getArenaNowRound())
         adb.gotoGladiatorialArena()
         adb.challengeArenaRandom()
         
@@ -2718,8 +2709,8 @@ class WorkThread(QThread, WorkTags):
             enable_mkldnn = True,
             show_log = False,
             det_model_dir = joinPath('OCR', 'ch_PP-OCRv4_det_infer'),
-            rec_model_dir = joinPath('OCR', 'ch_PP-OCRv4_rec_infer')
-            # cls_model_dir = joinPath('OCR', 'ch_ppocr_mobile_v2.0_cls_infer')
+            rec_model_dir = joinPath('OCR', 'ch_PP-OCRv4_rec_infer'),
+            cls_model_dir = joinPath('OCR', 'ch_ppocr_mobile_v2.0_cls_infer')
         )
         self.log.info("OCR载入完成")
     
@@ -2854,14 +2845,17 @@ class WorkThread(QThread, WorkTags):
         choice = tasks.choice
         task = tasks[choice]
         self.log.info(f"开始运行任务【{choice}】")
-        for emulator, operate in task:
-            self.adb.lauchDevice(emulator)
-            if self.adb.device != emulator:
-                self.adb.setDevice(emulator)
-                self.log.info(f"设置设备【{emulator}】")
-                self.loginJCZX()
-            self.setMode(operate)
-            self.run()
+        try:
+            for emulator, operate in task:
+                self.adb.lauchDevice(emulator)
+                if self.adb.device != emulator:
+                    self.adb.setDevice(emulator)
+                    self.log.info(f"设置设备【{emulator}】")
+                    self.loginJCZX()
+                self.setMode(operate)
+                self.run()
+        except Exception as e:
+            self.log.error(f"捕获错误抛出 {e}")
         if self.config.adb_device in self.adb.devices():
             self.adb.setDevice(self.config.adb_device)
         self.log.info(f"任务【{choice}】结束")
@@ -2879,6 +2873,7 @@ class WorkThread(QThread, WorkTags):
     def JDCTask(self):
         adb = self.adb
         self.log.info(f"开始【角斗场】任务")
+        self.log.info(f"该功能还在测试开发中，有些不稳定，如有建议还请在GitHub提issue")
         adb.gotoGladiatorialArena()
         adb.challengeArenaRandom()
         adb.gotoHome()

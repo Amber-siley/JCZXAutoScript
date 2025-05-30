@@ -18,10 +18,11 @@ class WorkTags:
 class CreaterWorkTags:
     ORDER = WorkTags.ORDER
     AWARD = WorkTags.AWARD
-    ONLY_THIS_ORDERS = WorkTags.ONLY_THIS_ORDERS
+    # ONLY_THIS_ORDERS = WorkTags.ONLY_THIS_ORDERS
     SMALL_CRYSTAL = WorkTags.SMALL_CRYSTAL
     ILLUSION_TO_FAVOR = WorkTags.ILLUSION_TO_FAVOR
     JJC_TASK = WorkTags.JJC_TASK
+    JDC_TASK = WorkTags.JDC_TASK
     QUIT_JCZX = WorkTags.QUIT_JCZX
     
     @staticmethod
