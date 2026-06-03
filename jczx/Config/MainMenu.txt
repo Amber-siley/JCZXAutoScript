@@ -1,0 +1,272 @@
+[MainMenu]
+desc: 主菜单相关配置文件
+
+[launch-game]
+type: task
+name: 启动游戏
+action: launch-game-plan
+
+[launch-game-plan]
+type: func
+func: start_game
+args: com.megagame.crosscore,com.megagame.crosscore/com.mjsdk.app.MJUnityActivity
+action: user-login
+sleep: 30
+
+[user-login]
+type: click
+name: 点击登录
+condition: condition-start-game
+condition_then: click-start-game
+target: buttons\userLogin.png
+action: click-start-game,wait-5,goto-home
+max_wait: 40
+
+[condition-start-game]
+type: func
+func: in_location
+target: buttons\login.png
+
+[click-start-game]
+type: click
+name: 开始游戏
+target: buttons\login.png
+action: no-reminders
+max_wait: 15
+
+[no-reminders]
+type: click
+name: 不再提醒
+target: buttons\noReminders.png
+action: close-Notice
+break_point: on
+max_wait: 30
+
+[wait-5]
+type: click
+sleep: 5
+
+[wait-1]
+type: click
+sleep: 1
+
+[close-Notice]
+type: click
+name: 关闭公告
+target: buttons\closeNotice.png
+
+[screenshot-task]
+type: task
+view: on
+name: 截图
+action: screenshot
+settings: screenshot-task-settings
+
+[screenshot-task-settings]
+type: settings
+fields: screenshot-name
+
+[screenshot-name]
+type: setting
+setting_type: input
+label: 截图名称
+default: name
+
+[screenshot]
+type: func
+func: save_screenshot
+args: E:\\IDE\pyththon_project\\jczx_auto_script\\jczx\\template,${screenshot-name}
+
+[screenshot-task-values]
+screenshot-name: name_1
+
+[click-center]
+type: func
+func: click_center
+
+[in_location]
+type: func
+func: in_location
+
+/ 前往主界面，不是主界面 判断是否有主界面按钮，有的话点击，
+/ 无的话是否有返回按钮，有则点击 然后继续判断是主界面，无的话点击中间 继续判断
+[goto-home]
+type: task
+view: on
+name: 前往主界面
+desc: 判断是否主界面，不是则尝试返回或点击中间
+action: goto-home-click-home
+sleep: 4
+
+[auto-fight]
+type: task 
+name: 自动战斗
+action: click-skip-animation,click-auto-fight,wait-fight-end
+
+[click-skip-animation]
+type: click
+name: 跳过动画
+target: buttons\skipAnimation.png
+max_wait: 10
+
+[click-auto-fight]
+type: click
+name: 自动战斗
+target: buttons\fightAuto.png
+max_wait: 10
+
+/ 判断是否有获取物品  <----------------------\
+/   |Y          \--------N                  |
+/ 点击获取物品       判断是否获胜             |
+/   |                 |Y   |N               |
+/ 双击 <--------------/    判断是否失败      |
+/   |                         |Y    |N      |
+/   \-------------------------/     \-------/
+[wait-fight-end]
+type: click
+desc: 战斗结束
+condition: condition-in_location-getItem
+condition_then: click-center,wait-1,click-center,wait-1,click-center
+condition_else: condition-in_location-fight-over-win-click
+max_wait: 1000
+
+[condition-in_location-getItem]
+extend: in_location
+target: buttons\getItem.png
+
+[condition-in_location-fight-over-win-click]
+type: click
+condition: condition-in_location-fight-over-win
+condition_then: click-center,wait-1,click-center
+condition_else: condition-in_location-fight-over-loss1-click
+
+[condition-in_location-fight-over-win]
+extend: in_location
+target: locations\fightWin.png
+args: 0.7
+
+[condition-in_location-fight-over-loss1-click]
+type: click
+condition: condition-in_location-fight-over-loss1
+condition_then: click-center,wait-5,click-center
+condition_else: wait-fight-end
+
+[condition-in_location-fight-over-loss1]
+extend: condition-in_location-fight-over-win
+target: locations\fightLoss1.png
+
+[goto-home-click-home]
+type: click
+condition_not: condition-in_location-home
+condition_then: condition-to-home
+
+[click-home]
+type: click 
+target: buttons\home.png
+
+[click-back]
+type: click
+target: buttons\back.png
+
+[condition-to-home]
+type: click
+condition: condition-in_location-home-button
+condition_then: click-home
+condition_else: condition-to-back
+
+[condition-to-back]
+type: click
+condition: condition-in_location-back
+condition_then: click-back
+condition_else: click-center
+action: goto-home-click-home
+
+[condition-in_location-home]
+type: func
+func: in_location
+target: buttons\base.png
+args: 0.7
+
+[condition-in_location-home-button]
+type: func
+func: in_location
+target: buttons\home.png
+
+[condition-in_location-back]
+type: func
+func: in_location
+target: buttons\back.png
+
+# ═══════════════════════════════════════════════════════════
+# 示例: 任务设置配置
+# ═══════════════════════════════════════════════════════════
+
+[example-order-task]
+type: task
+view: off
+name: 订单交付(示例)
+desc: 自动交付订单
+action: launch-game-plan
+settings: example-order-settings
+
+[example-order-settings]
+type: settings
+fields: enable-orders, enable-craft
+
+[enable-orders]
+type: setting
+setting_type: multi_select
+label: 启用订单
+options: 初级订单,中级订单,高级订单,特殊订单
+
+[enable-craft]
+type: setting
+setting_type: multi_select_switch
+label: 订单合成配置
+options: 初级订单,中级订单,高级订单,特殊订单
+switch_label: 合成
+desc: 勾选订单并设置是否在材料不足时合成
+
+[example-arena-task]
+type: task
+view: off
+name: 角斗场挑战(示例)
+desc: 自动挑战角斗场
+settings: example-arena-settings
+
+[example-arena-settings]
+type: settings
+fields: power-threshold
+
+[power-threshold]
+type: setting
+setting_type: integer
+label: 战力阈值
+default: 50000
+min: 0
+
+[example-exec-task]
+type: task
+view: off
+name: 执行方式(示例)
+desc: 演示选项配置
+settings: example-exec-settings
+
+[example-exec-settings]
+type: settings
+fields: exec-mode
+
+[exec-mode]
+type: setting
+setting_type: select
+label: 执行方式
+options: 模式A-快速,模式B-均衡,模式C-完整
+default: 模式B-均衡
+
+[example-arena-task-values]
+power-threshold:25000
+
+[example-order-task-values]
+enable-orders:初级订单
+enable-craft:
+enable-craft__sub:

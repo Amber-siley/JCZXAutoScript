@@ -1,3 +1,5 @@
+from .configEntity import JczxSectionEntity
+
 class WorkTags:
     ORDER = "交付订单"
     SWITCH = "矿场换班"
@@ -120,3 +122,10 @@ ILLUSION_LEVELS_SETTINGS = [
 ]
 
 ADB_TOOLS_URL = "https://googledownloads.cn/android/repository/platform-tools-latest-windows.zip"
+
+
+        
+class Buttons:
+    back_button = ("buttons","back.png")
+    visit_button = ("buttons","visit.png")
+    login_button = ("buttons","login.png")

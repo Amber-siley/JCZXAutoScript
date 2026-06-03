@@ -13,14 +13,15 @@ from PyQt6.QtGui import QIntValidator,QTextCursor,QFont
 from PyQt6.QtCore import QThread,pyqtSignal,QSize
 from cv2.typing import MatLike
 
-from Ui_jczxUI import Ui_Form
-from jczxFM import FileManage,UrlManage
-from resources.icon.icon import *
-from Ui_jczxQuarryCalculator import Ui_QuarryCalculator
-from jczxQuarry import Quarry,floor
-from jczxMainInfo import *
-from Ui_jczxTaskCreater import Ui_jczxTaskCreater
-from jczxTyping import _OCR
+from .Ui_jczxUI import Ui_Form
+from .jczxFM import FileManage,UrlManage
+from .resources.icon.icon import *
+from .Ui_jczxQuarryCalculator import Ui_QuarryCalculator
+from .jczxQuarry import Quarry,floor
+from .jczxMainInfo import *
+from .Ui_jczxTaskCreater import Ui_jczxTaskCreater
+from .jczxTyping import _OCR
+from .jczxCli import JCZXGaming
 
 import subprocess
 import logging
@@ -40,7 +41,7 @@ def isadmin():
     return ctypes.windll.shell32.IsUserAnAdmin()
 
 LOG_LEVEL = logging.INFO
-# LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.DEBUG
 
 class LoggerHandler(logging.Handler):
     def __init__(self, edit) -> None:
@@ -761,7 +762,7 @@ class jczxTaskCreater(Ui_jczxTaskCreater):
         for emulator,task in taskList:
             self.addTaskListItem(emulator, task)
     
-class JCZXGame:
+class JCZXGame(JCZXGaming):
     class _ScreenCut:
         class Point: ...
         def __init__(self, w, h) -> None:
@@ -1204,11 +1205,11 @@ class JCZXGame:
         Strengths = []
     
     def __init__(self, adb_path: str, logger:logging.Logger, config:JsonConfig) -> None:
+        super().__init__(adb_path)
         self.adb_path = adb_path
         self.device = None
         self.log = logger
         self.config = config
-        self.ocr: _OCR = None
         self.startupinfo = subprocess.STARTUPINFO()
         self.startupinfo.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
         self.startupinfo.wShowWindow = subprocess.SW_HIDE
@@ -1221,6 +1222,7 @@ class JCZXGame:
         self.ScreenLocs = self._ScreenLocs()
         self.Pos = self._Pos()
         self.roles = self._Roles()
+        self.setDevice(self.get_device_names()[0])
     
     def dowloadADBTools(self) -> str:
         self.log.info("未指定adb路径，已添加下载任务")
@@ -1296,20 +1298,10 @@ class JCZXGame:
         return answer
     
     @check
-    def getScreenSize(self) -> tuple[int, int]:
-        if self.size:
-            return self.size
-        else:
-            msg = subprocess.check_output([self.adb_path, "-s", self.device, "shell", "wm", "size"], startupinfo = self.startupinfo).decode().split(" ")[-1].replace("\r\n","")
-            w, h = map(int, msg.split("x"))
-            self.size = (max(w, h), min(w, h))
-        return self.size
-    
-    @check
-    def screenshot(self) -> bytes:
+    def screenshotBytes(self) -> bytes:
         startTime = time()
-        args = [self.adb_path, "-s", self.device, "exec-out", "screencap", "-p"]
-        data = subprocess.check_output(args, startupinfo = self.startupinfo)
+        img = self.screenshot()
+        data = cv2.imencode('.png', img)[1].tobytes()
         runningTime = (time() - startTime)
         self.log.debug("截图耗时 {:.2f} s 图片大小 {}".format(runningTime, len(data)))
         return data
@@ -1320,11 +1312,11 @@ class JCZXGame:
         cv2.waitKey()
         
     def CVscreenshot(self) -> MatLike:
-        return cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_ANYCOLOR)
+        return cv2.imdecode(np.frombuffer(self.screenshotBytes(), np.uint8), cv2.IMREAD_ANYCOLOR)
     
     @check
     def grayScreenshot(self, cutPoints = None):
-        screenshot = cv2.imdecode(np.frombuffer(self.screenshot(), np.uint8), cv2.IMREAD_GRAYSCALE)
+        screenshot = cv2.imdecode(np.frombuffer(self.screenshotBytes(), np.uint8), cv2.IMREAD_GRAYSCALE)
         # self.log.debug(f"截图 size {screenshot.shape}")
         # self.log.debug(f"截取范围 {cutPoints}")
         return self.cutScreenshot(screenshot, cutPoints)
@@ -1355,7 +1347,7 @@ class JCZXGame:
             sleep(0.3)
         sleep(wait)
                     
-    def clickButton(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None, per = 0.9, grayScreenshot = None) -> tuple[int, int] | None:
+    def clickResource(self, button_path:str, index:int = 0, wait:int = 0, log:bool = True, cutPoints = None, per = 0.9, grayScreenshot = None) -> tuple[int, int] | None:
         if locations := self.findImageCenterLocations(button_path, cutPoints, per, grayScreenshot):
             self.click(*locations[index], wait)
             self.log.debug(f"点击按钮{button_path} {locations[index]}")
@@ -2057,6 +2049,7 @@ class JCZXGame:
                     self.click(*locality, 0.3)
                     if self.makeSure2():
                         self.submitOrders.append(des)
+        sleep(1)
                     
     def findRawNumbers(self, Raw_path:str) -> int | None:
         templete = cv2.imread(Raw_path, cv2.IMREAD_GRAYSCALE)
@@ -2071,6 +2064,7 @@ class JCZXGame:
             return None
     
     def translateNumber(self, Raw_num:cv2.typing.MatLike) -> int | None:
+        return int(self.ocr.readtext(Raw_num)[0])
         if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a18, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 18
         if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a17, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 17
         if any(np.where(cv2.matchTemplate(Raw_num, cv2.imread(self.Numbers.a16, cv2.IMREAD_GRAYSCALE), cv2.TM_CCOEFF_NORMED) > 0.9)[0]): return 16
@@ -2174,16 +2168,19 @@ class JCZXGame:
         """使用订单库切换好友进入订单库进行检测交付"""
         self.gotoChoiceFriendTradingPost()
         grayScreenshot = self.grayScreenshot()
-        visits = self.findImageCenterLocations(self.Buttons.visit_button, cutPoints = self.ScreenCut.cut1x2(0, 1), grayScreenshot = grayScreenshot)
-        visiting = self.findImageCenterLocation(self.ScreenLocs.visiting, cutPoints = self.ScreenCut.cut1x2(0, 1), grayScreenshot = grayScreenshot)
+        visits = self.findImageCenterLocations(self.Buttons.visit_button, grayScreenshot = grayScreenshot)
+        visiting = self.findImageCenterLocation(self.ScreenLocs.visiting, grayScreenshot = grayScreenshot)
         if not visits:
+            self.log.debug("无可拜访好友")
             return
         if visiting:
             visits = [(x, y) for x, y in visits if x > visiting[0]]
         if not visits:
+            self.log.debug("好友拜访完毕")
             return
         else:
             loc = visits[0]
+            self.log.debug(f"访问好友 {loc}")
             self.click(*loc, wait = 1.5)
         for index in range(40):
             self.log.info(f"进入【好友交易所】{index + 1}")
@@ -2272,7 +2269,7 @@ class JCZXGame:
             self._clickAndMsg(self.Buttons.switch_button, "交换工作员工", "交换工作员工失败", cutPoints = self.ScreenCut.cut2x1(1, 0))
     
     def _clickAndMsg(self, button_path, infoMsg:str = None, warnMsg:str = None, index:int = 0, wait:int = 0, deepLog:bool = True, cutPoints = None, per = 0.9, grayScreenshot = None) -> tuple[int, int] | None:
-        if loc := self.clickButton(button_path, index, wait, deepLog, cutPoints, per, grayScreenshot):
+        if loc := self.clickResource(button_path, index, wait, deepLog, cutPoints, per, grayScreenshot):
             if infoMsg: self.log.info(infoMsg)
             return loc
         else:
@@ -2525,7 +2522,6 @@ class JCZXGame:
     def stopJCZX(self):
         subprocess.run([self.adb_path, "-s", self.device, "shell", "am", "force-stop", "com.megagame.crosscore"], startupinfo = self.startupinfo, check = True)
     
-    @check
     def devices(self) -> list[str]:
         try:
             info = subprocess.check_output([self.adb_path, "devices"], startupinfo = self.startupinfo)
@@ -2643,8 +2639,7 @@ class WorkThread(QThread, WorkTags):
                 
     def __debug(self):
         adb = self.adb
-        adb.gotoGladiatorialArena()
-        adb.challengeArenaRandom()
+        FileManage.save(adb.screenshotBytes(), "screenshot.png")
         
     def showImg(self, img: MatLike):
         cv2.namedWindow('test', cv2.WINDOW_NORMAL)

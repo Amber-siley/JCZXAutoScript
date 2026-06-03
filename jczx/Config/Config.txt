@@ -1,0 +1,18 @@
+/ 日志等级 10 - DEBUG 20 - INFO
+logging.level : 10
+/ 日志格式
+logging.format : %(asctime)s [%(levelname)s] : %(message)s
+/ 日志文件大小 kB
+logging.file.size : 1024
+/ 日志文件模式 w/a
+logging.file.mode : w
+/ 文件中日志格式
+logging.file.format : %(asctime)s [%(levelname)s] [%(lineno)04d] : %(message)s
+/ 文件中日志等级
+logging.file.level : 10
+/ 初始化线程数
+thread.max_workers : 10
+/ adb路径
+adb.path : platform-tools/adb.exe
+/ adb连接端口
+adb.port : 7555
