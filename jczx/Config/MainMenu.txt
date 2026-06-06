@@ -32,7 +32,7 @@ type: click
 name: 开始游戏
 target: buttons\login.png
 action: no-reminders
-max_wait: 15
+max_wait: 30
 
 [no-reminders]
 type: click
@@ -75,14 +75,25 @@ default: name
 [screenshot]
 type: func
 func: save_screenshot
-args: E:\\IDE\pyththon_project\\jczx_auto_script\\jczx\\template,${screenshot-name}
+args: E:\\IDE\pyththon_project\\jczx_auto_script\\jczx\\template,${screenshot-task-values:screenshot-name}
 
 [screenshot-task-values]
 screenshot-name: name_1
 
 [click-center]
 type: func
-func: click_center
+func: click_proportion
+args: 2,2
+
+[drop-center-up]
+type: func
+func: drag_drop_proportion
+args: 2,2,3,10,1000
+
+[swipe-center-up]
+type: func
+func: swipe_proportion
+args: 2,2,3,4
 
 [in_location]
 type: func
@@ -92,7 +103,7 @@ func: in_location
 / 无的话是否有返回按钮，有则点击 然后继续判断是主界面，无的话点击中间 继续判断
 [goto-home]
 type: task
-view: on
+view: off
 name: 前往主界面
 desc: 判断是否主界面，不是则尝试返回或点击中间
 action: goto-home-click-home
@@ -100,8 +111,153 @@ sleep: 4
 
 [auto-fight]
 type: task 
+view: off
 name: 自动战斗
 action: click-skip-animation,click-auto-fight,wait-fight-end
+
+[goto-inllusion]
+type: task
+view: on
+name: 虚影周本
+action: goto-inllusion-1,condition-inllusion-to-action
+settings: settings-inllusion
+
+[condition-inllusion-to-action]
+type: click
+condition_not: condition-inllusion-enough
+condition_then: ${goto-inllusion-values:setting-inllusion-choose}
+condition_else: goto-home
+
+[condition-inllusion-enough]
+extend: in_location
+target: locations\enoughSmallCrytal.png
+
+[goto-inllusion-1]
+type: task
+view: off
+name: 前往戈里克虚影
+action: goto-home,click-fight,click-activity-fight,click-inllusion,click-inllusion-gelike
+
+[settings-inllusion]
+type: settings
+fields: setting-inllusion-choose,setting-team-choose
+
+[setting-team-choose]
+type: setting
+label: 选择挑战队伍[1-8]
+setting_type: select
+options: 队伍-01,队伍-02,队伍-03,队伍-04,队伍-05,队伍-06,队伍-07,队伍-08
+default: 队伍-01
+
+[setting-inllusion-choose]
+type: setting
+label: 选择挑战虚影
+setting_type: select
+options: 宙斯虚影-Inllusion,阿瑞斯虚影-Inllusion
+default: 宙斯虚影-Inllusion
+
+[goto-inllusion-values]
+setting-inllusion-choose: 宙斯虚影-Inllusion
+setting-team-choose: 队伍-03
+
+[get-choose-team-target]
+type: func
+func: string_concat
+args: ${goto-inllusion-values:setting-team-choose},-condition,:,target
+
+[队伍-01]
+type: click
+condition_not: 队伍-01-condition
+condition_then: choose-team
+
+[队伍-01-condition]
+extend: in_location
+target: numbers\team1.png
+per: 0.95
+
+[队伍-02]
+type: click
+condition_not: 队伍-02-condition
+condition_then: choose-team
+
+[队伍-02-condition]
+extend: in_location
+target: numbers\team2.png
+per: 0.95
+
+[队伍-03]
+type: click
+condition_not: 队伍-03-condition
+condition_then: choose-team
+
+[队伍-03-condition]
+extend: in_location
+target: numbers\team3.png
+per: 0.95
+
+[choose-team]
+type: click
+target: buttons\choiceTeam.png
+action: choose-team-click
+
+[choose-team-click]
+type: click
+target: ${队伍-01-condition:target}
+
+[宙斯虚影-Inllusion]
+type: task
+view: off
+name: 宙斯虚影-Inllusion
+action: swipe-center-up,wait-1,ZhouSi-step-1-click,click-close-team-2,${goto-inllusion-values:setting-team-choose}
+
+[click-close-team-2]
+type: click
+name: 关闭二队
+target: buttons\useTeam.png
+index: 1
+
+[ZhouSi-step-1-click]
+type: click
+name: 宙斯虚影
+target: buttons\ZhouSi.png
+action: click-start-fight-1
+sleep: 1
+
+[click-start-fight-1]
+type: click
+name: 开始战斗
+target: buttons\startFight.png
+sleep: 2
+
+[阿瑞斯虚影-Inllusion]
+type: task
+view: off
+name: 阿瑞斯虚影-Inllusion
+action: swipe-center-up
+
+[click-fight]
+type: click
+name: 出击
+target: buttons\fight.png
+sleep: 2
+
+[click-activity-fight]
+type: click
+name: 活动探索
+target: buttons\activities.png
+sleep: 2
+
+[click-inllusion]
+type: click
+name: 碎星虚影
+target: buttons\illusions.png
+sleep: 2
+
+[click-inllusion-gelike]
+type: click
+name: 戈里克虚影
+target: buttons\GeLiKe.png
+sleep: 2
 
 [click-skip-animation]
 type: click

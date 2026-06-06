@@ -46,7 +46,7 @@ class JczxSectionEntity(BaseEntity):
     type: str = None
     target: list[str] = field(default_factory=list)
     func: str = None
-    target_index: int = 0
+    index: int = 0
     name: str = None
     desc: str = None
     action: list[str] = field(default_factory=list)
@@ -64,8 +64,9 @@ class JczxSectionEntity(BaseEntity):
     break_point: str = "off"
     extend: str = None
     else_target: list[str] = field(default_factory=list)
-    view: str = "on"
+    view: str = "off"
     only_key: str = None
+    times: int = 1
     
     def get_task_name(self):
         return self.name or self.desc

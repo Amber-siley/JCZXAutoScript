@@ -53,7 +53,8 @@ class TaskManage:
         return cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     
     def get_resources_target(self, target: str):
-        rel_path = "\\".join(["resources"] + target.split("\\"))
+        name = self._resolve_placeholder(target)
+        rel_path = "\\".join(["resources"] + name.split("\\"))
         return str(self.fm.get_obj_relative_path(rel_path, self))
     
     def load_img_pool(self):
@@ -142,7 +143,7 @@ class TaskManage:
         """
         return self.img_pool[img_path]
 
-    def get_entity(self, entity_name: str) -> JczxSectionEntity:
+    def get_entity(self, entity_name: str, after_key: str = None) -> JczxSectionEntity:
         """获取实体
 
         Args:
@@ -151,7 +152,8 @@ class TaskManage:
         Returns:
             JczxSectionEntity: 实体
         """
-        return self.entity_pool[entity_name]
+        name = self._resolve_placeholder(entity_name, after_key)
+        return self.entity_pool[name]
      
     def get_next(self, section: JczxSectionEntity) -> list[JczxSectionEntity]:
         if section.action:
@@ -223,25 +225,28 @@ class TaskManage:
         """
         resolved = []
         for arg in args:
-            if not isinstance(arg, str):
-                resolved.append(arg)
-                continue
-            result = arg
-            for match in self._PLACEHOLDER_PATTERN.findall(arg):
-                parts = match.split(":", 2)
-                if len(parts) == 1:
-                    section = f"{task_key}-values" if task_key else "default"
-                    option = parts[0]
-                    default = ""
-                elif len(parts) == 2:
-                    section, option = parts
-                    default = ""
-                else:
-                    section, option, default = parts
-                try:
-                    val = self.menu_config.get_config(section, option)
-                except KeyError:
-                    val = default
-                result = result.replace("${" + match + "}", val if val else default)
+            result = self._resolve_placeholder(arg, task_key)
             resolved.append(result)
         return resolved
+    
+    def _resolve_placeholder(self, arg: str, task_key: str = None) -> str:
+        if not isinstance(arg, str):
+            return arg
+        result = arg
+        for match in self._PLACEHOLDER_PATTERN.findall(arg):
+            parts = match.split(":", 2)
+            if len(parts) == 1:
+                section = f"{task_key}-values" if task_key else "default"
+                option = parts[0]
+                default = ""
+            elif len(parts) == 2:
+                section, option = parts
+                default = ""
+            else:
+                section, option, default = parts
+            try:
+                val = self.menu_config.get_config(section, option)
+            except KeyError:
+                val = default
+            result = result.replace("${" + match + "}", val if val else default)
+        return result

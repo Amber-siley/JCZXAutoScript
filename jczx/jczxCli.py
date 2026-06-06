@@ -64,27 +64,30 @@ class JCZXGaming(Device):
             return None
         return getattr(self, method_name)
     
-    def exec_func(self, section: Union[JczxSectionEntity, str], task_key: str = None):
+    def exec_func(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        time.sleep(entity.pre_sleep)
-        method_name = entity.func
-        self.log.debug(f"计划预执行 section {section}")
-        if method := self._get_method(method_name):
-            raw_args = entity.target + entity.args
-            args = self.task_manage.resolve_placeholders(raw_args, task_key)
-            self.log.debug(f"开始执行方法 {method.__name__} 参数 {args}")
-            if args:
-                result = method(*args)
+        for _ in range(entity.times):
+            if self.stop_event.is_set():
+                return None
+            time.sleep(entity.pre_sleep)
+            method_name = entity.func
+            self.log.debug(f"计划预执行 section {section}")
+            if method := self._get_method(method_name):
+                raw_args = entity.target + entity.args
+                args = self.task_manage.resolve_placeholders(raw_args, entity.only_key)
+                self.log.debug(f"开始执行方法 {method.__name__} 参数 {args}")
+                if args:
+                    result = method(*args)
+                else:
+                    result = method()
+                time.sleep(entity.sleep)
+                if next_entities := self.task_manage.get_next(entity):
+                    for next_entity in next_entities:
+                        result = self.exec(next_entity)
             else:
-                result = method()
-            time.sleep(entity.sleep)
-            if next_entities := self.task_manage.get_next(entity):
-                for next_entity in next_entities:
-                    result = self.exec(next_entity)
-        else:
-            self.log.debug(f"方法未查询到 {method_name}")
+                self.log.debug(f"方法未查询到 {method_name}")
         return result
-    
+
     def exec(self, section: Union[JczxSectionEntity, str]):
         if not section:
             return None
@@ -100,62 +103,68 @@ class JCZXGaming(Device):
                 return self.exec_click(entity)
             case _:
                 return None
-    
+
     def exec_click(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        startTime = datetime.now()
-        time.sleep(entity.pre_sleep)
-        if entity.pos:
-            self.click(*entity.pos)
-        else:
-            target = entity.target[0] if entity.target else None
-            img = self.task_manage.get_img(target) if target else None
-            while True:
-                if self.stop_event.is_set():
-                    return
-                if entity.condition_not:
-                    if not self.exec(entity.condition_not):
-                        self.log.debug(f"条件 {entity.condition_not} 满足 condition_not，执行 {entity.condition_then}")
-                        for section in entity.condition_then:
-                            result = self.exec(section)
-                    else:
-                        self.log.debug(f"条件 {entity.condition_not} 不满足 condition_not，执行 {entity.condition_else}")
-                        for section in entity.condition_else:
-                            result = self.exec(section)
-                    break
-                elif entity.condition:
-                    if self.exec(entity.condition):
-                        self.log.debug(f"条件 {entity.condition} 满足 condition，执行 {entity.condition_then}")
-                        for section in entity.condition_then:
-                            result = self.exec(section)
-                    else:
-                        self.log.debug(f"条件 {entity.condition} 不满足 condition，执行 {entity.condition_else}")
-                        for section in entity.condition_else:
-                            result = self.exec(section)
-                    break
-                result = self.exec(entity.wait_sec)
-                start = time.monotonic()
-                self.log.debug(f"匹配资源 {target}")
-                if img is not None:
-                    if result := self.clickResource(img, per = entity.per):
-                        self.log.debug(f"匹配并点击资源 {target} 耗时 {time.monotonic() - start:.2f}")
-                        self.log.info(f"执行点击 {entity.get_task_name()}") if entity.get_task_name() else ...
-                        break
-                    self.log.debug(f"匹配资源耗时 {time.monotonic() - start:.2f}")
-                runTime = (datetime.now() - startTime).seconds
-                if runTime >= entity.max_wait:
-                    self.log.debug(f"最大等待时间 {entity.max_wait}s 结束, 未匹配到资源 {target}")
-                    if entity.break_point == "on":
-                        self.log.debug(f"未执行，跳出执行链")
-                        time.sleep(entity.sleep)
+        for _ in range(entity.times):
+            if self.stop_event.is_set():
+                return None
+            startTime = datetime.now()
+            result = None
+            time.sleep(entity.pre_sleep)
+            if entity.pos:
+                self.click(*entity.pos)
+            else:
+                target = entity.target[0] if entity.target else None
+                img = self.task_manage.get_img(target) if target else None
+                while True:
+                    if self.stop_event.is_set():
                         return None
-                    break
-        time.sleep(entity.sleep)
-        entities = self.task_manage.get_next(entity)
-        if entities:
-            self.log.debug(f"获取下一执行链 {entities}")
-        for i in entities:
-            result = self.exec(i)
+                    if entity.condition_not:
+                        if not self.exec(entity.condition_not):
+                            self.log.debug(f"条件 {entity.condition_not} 满足 condition_not，执行 condition_then {entity.condition_then}")
+                            for section in entity.condition_then:
+                                result = self.exec(section)
+                        else:
+                            self.log.debug(f"条件 {entity.condition_not} 不满足 condition_not，执行 condition_else {entity.condition_else}")
+                            for section in entity.condition_else:
+                                result = self.exec(section)
+                        break
+                    elif entity.condition:
+                        if self.exec(entity.condition):
+                            self.log.debug(f"条件 {entity.condition} 满足 condition，执行 condition_then {entity.condition_then}")
+                            for section in entity.condition_then:
+                                result = self.exec(section)
+                        else:
+                            self.log.debug(f"条件 {entity.condition} 不满足 condition，执行 condition_else {entity.condition_else}")
+                            for section in entity.condition_else:
+                                result = self.exec(section)
+                        break
+                    result = self.exec(entity.wait_sec)
+                    start = time.monotonic()
+                    self.log.debug(f"匹配资源 {target}")
+                    if img is not None:
+                        if result := self.clickResource(img, per = entity.per, index = entity.index):
+                            self.log.debug(f"匹配并点击资源 {target} 耗时 {time.monotonic() - start:.2f}")
+                            self.log.info(f"执行点击 {entity.get_task_name()}") if entity.get_task_name() else None
+                            self.log.debug(f"匹配资源耗时 {time.monotonic() - start:.2f}")
+                            break
+                        else: 
+                            self.log.debug(f"未匹配到资源 {target}，耗时 {time.monotonic() - start:.2f}")
+                    runTime = (datetime.now() - startTime).seconds
+                    if runTime >= entity.max_wait:
+                        self.log.debug(f"最大等待时间 {entity.max_wait}s 结束, 未匹配到资源 {target}")
+                        if entity.break_point == "on":
+                            self.log.debug(f"未执行，跳出执行链")
+                            time.sleep(entity.sleep)
+                            return None
+                        break
+            time.sleep(entity.sleep)
+            entities = self.task_manage.get_next(entity)
+            if entities:
+                self.log.debug(f"获取下一执行链 {entities}")
+            for i in entities:
+                result = self.exec(i)
         return result
 
     def get_resources_target(self, target: str):
@@ -164,21 +173,27 @@ class JCZXGaming(Device):
 
     def exec_task(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        next_entities = self.task_manage.get_next(entity)
-        self.log.info(f"开始执行任务 {entity.get_task_name()}") if entity.get_task_name() else ...
-        time.sleep(entity.pre_sleep)
-        for i in next_entities:
+        for _ in range(entity.times):
             if self.stop_event.is_set():
-                self.log.info("任务已被用户停止")
-                return
-            self.log.debug(f"开始执行实体 {i.get_task_name()} {i}")
-            result = self.exec(i)
-        time.sleep(entity.sleep)
-        self.log.info(f"任务执行完毕 {entity.get_task_name()}") if entity.get_task_name() else ...
+                return None
+            result = None
+            next_entities = self.task_manage.get_next(entity)
+            self.log.info(f"开始执行任务 {entity.get_task_name()}") if entity.get_task_name() else None
+            time.sleep(entity.pre_sleep)
+            for i in next_entities:
+                if self.stop_event.is_set():
+                    self.log.info("任务已被用户停止")
+                    return None
+                self.log.debug(f"开始执行实体 {i.get_task_name()} {i}")
+                result = self.exec(i)
+            time.sleep(entity.sleep)
+            self.log.info(f"任务执行完毕 {entity.get_task_name()}") if entity.get_task_name() else None
         return result
     
     def in_location(self, target: str, per: float = 0.8):
-        return bool(self.findImageCenterLocations(self.task_manage.get_img(target), per = float(per)))
+        list_pos = self.findImageCenterLocations(self.task_manage.get_img(target), per = float(per))
+        self.log.debug(f"查找资源 {target} 位置 {list_pos}")
+        return bool(list_pos)
         
     def start_game(self, app: str, activity: str):
         if not self.get_app_pid(app):
@@ -190,10 +205,20 @@ class JCZXGaming(Device):
         cv2.imwrite(path, array)
         self.log.debug(f"截图已保存到 {path}")
         
-    def click_center(self):
+    def click_proportion(self, w_pro: int, h_pro: int):
         width, height = self.getScreenSize()
-        self.click(width // 2, height // 2)
+        self.click(width // int(w_pro), height // int(h_pro))
+    
+    def drag_drop_proportion(self, w1_pro: int, h1_pro: int, w2_pro: int, h2_pro: int, duration: int = 200):
+        width, height = self.getScreenSize()
+        self.dragAndDrop(width // int(w1_pro), height // int(h1_pro), width // int(w2_pro), height // int(h2_pro), int(duration))
 
+    def swipe_proportion(self, w1_pro: int, h1_pro: int, w2_pro: int, h2_pro: int, duration: int = 200):
+        width, height = self.getScreenSize()
+        self.swipe(width // int(w1_pro), height // int(h1_pro), width // int(w2_pro), height // int(h2_pro), int(duration))
+
+    def string_concat(self, *args):
+        return "".join(args)
 
 class RichLogHandler(Handler):
     """StreamHandler that only auto-scrolls to bottom when the RichLog is already at the end."""
@@ -459,6 +484,9 @@ class JczxTUI(App, JczxCli):
         if not self.device:
             self.logger.warning("设备未就绪，无法启动任务")
             return False
+        if not self.ocr:
+            self.logger.warning("OCR 未初始化完成，无法启动任务")
+            return False
         entity = self.task_manage.get_task(task_id)
         if not entity:
             self.logger.error("任务实体不存在: %s", task_id)
@@ -539,6 +567,8 @@ class JczxTUI(App, JczxCli):
         self.task_manage.save_task_values(self._settings_task_id, event.values)
         self.logger.info("任务设置已保存: task=%s, values=%s",
                          self._settings_task_id, event.values)
+        self._reload_configs()
+        self.logger.debug("配置已自动重载")
 
     # ── TaskEditorPanel handlers ─────────────────────────
 
