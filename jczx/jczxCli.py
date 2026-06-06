@@ -1,6 +1,7 @@
 import threading
 import time
 import logging
+import re
 
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from enum import Enum
@@ -64,6 +65,25 @@ class JCZXGaming(Device):
             return None
         return getattr(self, method_name)
     
+    _EXEC_PLACEHOLDER_PATTERN = re.compile(r"@\{(.+?)\}")
+
+    def resolve_exec_placeholders(self, args: list) -> list:
+        resolved = []
+        for arg in args:
+            result = self._resolve_exec_placeholder(arg)
+            resolved.append(result)
+        return resolved
+
+    def _resolve_exec_placeholder(self, arg: str) -> str:
+        if not isinstance(arg, str):
+            return arg
+        result = arg
+        for match in self._EXEC_PLACEHOLDER_PATTERN.findall(arg):
+            self.log.debug(f"解析 执行占位符 {match}，原字符串 {arg}")
+            exec_result = self.exec(match)
+            result = result.replace("@{" + match + "}", str(exec_result) if exec_result is not None else "")
+        return result
+
     def exec_func(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         for _ in range(entity.times):
@@ -75,6 +95,7 @@ class JCZXGaming(Device):
             if method := self._get_method(method_name):
                 raw_args = entity.target + entity.args
                 args = self.task_manage.resolve_placeholders(raw_args, entity.only_key)
+                args = self.resolve_exec_placeholders(args)
                 self.log.debug(f"开始执行方法 {method.__name__} 参数 {args}")
                 if args:
                     result = method(*args)
@@ -86,6 +107,7 @@ class JCZXGaming(Device):
                         result = self.exec(next_entity)
             else:
                 self.log.debug(f"方法未查询到 {method_name}")
+                raise AttributeError(f"方法未查询到 {method_name}")
         return result
 
     def exec(self, section: Union[JczxSectionEntity, str]):
@@ -101,8 +123,24 @@ class JCZXGaming(Device):
                 return self.exec_func(entity)
             case SectionType.CLICK.value:
                 return self.exec_click(entity)
+            case SectionType.DYNAMIC.value:
+                return self.exec_dynamic(entity)
             case _:
                 return None
+
+    def exec_dynamic(self, section: Union[JczxSectionEntity, str]):
+        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+        for _ in range(entity.times):
+            if self.stop_event.is_set():
+                return None
+            for key in entity.action:
+                if self.stop_event.is_set():
+                    return None
+                result = self.exec(key)
+                result_str = str(result) if result is not None else ""
+                if result_str:
+                    self.exec(result_str)
+        return None
 
     def exec_click(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
@@ -116,6 +154,8 @@ class JCZXGaming(Device):
                 self.click(*entity.pos)
             else:
                 target = entity.target[0] if entity.target else None
+                target = self._resolve_placeholder(target)
+                target = self._resolve_exec_placeholder(target) if target else None
                 img = self.task_manage.get_img(target) if target else None
                 while True:
                     if self.stop_event.is_set():
@@ -166,6 +206,12 @@ class JCZXGaming(Device):
             for i in entities:
                 result = self.exec(i)
         return result
+
+    def _resolve_placeholder(self, key):
+        return self.task_manage._resolve_placeholder(key) if key else None
+
+    def parse_placeholder(self, key: str):
+        return self._resolve_placeholder("${"+ key +"}")
 
     def get_resources_target(self, target: str):
         rel_path = "\\".join(["resources"] + target.split("\\"))

@@ -58,10 +58,9 @@ adb.path : platform-tools/adb.exe
 | `task` | 任务入口，聚合一组操作，在 TUI 任务列表中显示 |
 | `func` | 函数调用，执行 `JCZXGaming` 上的方法 |
 | `click` | 模板匹配点击，在屏幕上查找图片并点击 |
+| `dynamic` | 动态执行，依次执行 action 实体并将其返回值作为实体 key 再次执行 |
 | `settings` | 设置容器，引用一组 `setting` 字段 |
 | `setting` | 单个设置字段定义，描述一个表单控件的类型、标签、选项等 |
-| `file` | 文件引用（预留） |
-| `option` | 配置选项（预留） |
 
 ### 所有字段一览
 
@@ -69,10 +68,13 @@ adb.path : platform-tools/adb.exe
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `type` | str | — | **必填**。值为 `task` / `func` / `click` |
+| `type` | str | — | **必填**。值为 `task` / `func` / `click` / `dynamic` |
 | `name` | str | — | 显示名称 |
-| `desc` | str | — | 描述信息 |
+| `desc` | str | — | 长文本备注（不用于显示名称） |
 | `action` | list[str] | `[]` | 当前实体执行完毕后要执行的下一个实体 key 列表 |
+| `times` | int | `1` | 执行次数，func / task / click / dynamic 均支持 |
+| `view` | str | `off` | 控制 task 在 TUI 任务列表中是否显示。`on`=显示，`off`=隐藏 |
+| `only_key` | str | — | 系统自动赋值：当前 section 的名称，用于占位符短格式解析 |
 | `pre_sleep` | int | `0` | 执行前等待秒数 |
 | `sleep` | int | `0` | 执行后等待秒数 |
 | `extend` | str | — | 继承另一个实体的所有字段（详见下方继承章节） |
@@ -83,7 +85,7 @@ adb.path : platform-tools/adb.exe
 |------|------|--------|------|
 | `settings` | str | — | 指向一个 `settings` 类型的 section，定义该任务的设置表单 |
 
-`task` 通过 `action` 指向其包含的子任务链。
+`task` 通过 `action` 指向其包含的子任务链。设置 `view: off` 可隐藏任务（仍可通过其他实体引用执行）。
 
 #### func 类型专用
 
@@ -92,7 +94,6 @@ adb.path : platform-tools/adb.exe
 | `func` | str | — | 要调用的方法名，必须是 `JCZXGaming` 上的方法 |
 | `target` | list[str] | `[]` | 传给方法的参数（与 `args` 合并） |
 | `args` | list[str] | `[]` | 传给方法的额外参数 |
-| `target_index` | int | `0` | 指定 target 的索引（多 target 时使用） |
 
 #### click 类型专用
 
@@ -108,6 +109,83 @@ adb.path : platform-tools/adb.exe
 | `condition_then` | list[str] | `[]` | 条件满足时转而执行的实体 key 列表（正向分支） |
 | `condition_else` | list[str] | `[]` | 条件不满足时转而执行的实体 key 列表（反向分支） |
 | `wait_sec` | list[str] | `[]` | 每次匹配失败后的等待操作实体 key 列表 |
+| `index` | int | `0` | 指定 target 匹配的结果 的索引 |
+
+#### dynamic 类型专用
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `action` | list[str] | `[]` | 要依次执行的实体 key 列表。每个实体执行完后，其返回值（转为 str）立即作为实体 key 再次调用 `exec()` |
+
+**执行流程**：
+```
+dynamic.action[key1, key2, key3]
+→ exec(key1) → result1 → exec(str(result1))
+→ exec(key2) → result2 → exec(str(result2))
+→ exec(key3) → result3 → exec(str(result3))
+```
+
+---
+
+## 占位符语法 `${...}`
+
+func / click 的 `target`、`args`、`action` 字段支持 `${...}` 占位符，运行时会从配置中读取对应的值进行替换。
+
+### 语法
+
+| 形式 | 含义 | 示例 |
+|------|------|------|
+| `${section:option}` | 引用指定 section 下的 option 值 | `${screenshot-task-values:screenshot-name}` |
+| `${section:option:default}` | 带默认值 | `${mine-values:level:5}` |
+| `${option}` | 短格式，自动补全为 `{entity.only_key}-values:{option}` | `${screenshot-name}` |
+
+### 示例
+
+```ini
+[screenshot]
+type: func
+func: save_screenshot
+args: ${screenshot-task-values:dir},${screenshot-name}
+```
+
+---
+
+## 执行占位符 `@{...}`
+
+`func` 的 `target` / `args` 字段支持 `@{entity_key}` 占位符，运行时执行对应实体并将其返回值作为参数替换。
+
+`click` 的 `target` 字段也支持 `@{entity_key}`
+
+### 语法
+
+| 形式 | 含义 |
+|------|------|
+| `@{entity_key}` | 执行 `entity_key` 对应实体，返回值替换 `@{...}` |
+
+### 与 `${...}` 的区别
+
+| | `${...}` | `@{...}` |
+|------|----------|----------|
+| 解析方式 | 从配置读取值 | 执行实体获取返回值 |
+| 解析时机 | 先解析 | 后解析（在 `${}` 之后） |
+
+### 示例
+
+```ini
+[get-device-name]
+type: func
+func: get_app_activity
+args: com.megagame.crosscore
+
+[use-device-name]
+type: func
+func: save_screenshot
+args: @{get-device-name},${screenshot-name}
+```
+
+`use-device-name` 运行时：
+1. `${screenshot-name}` → 从配置取值
+2. `@{get-device-name}` → 执行 `get-device-name` 实体，返回值替换
 
 ---
 
@@ -155,7 +233,6 @@ TASK → [action] → FUNC/CLICK → [action] → CLICK → [action] → ...
 [launch-game]
 type: task
 name: 启动游戏
-desc: 启动游戏
 action: launch-game-plan
 
 / 执行计划：调起游戏 App
@@ -169,7 +246,7 @@ sleep: 30
 / 点击登录按钮
 [user-login]
 type: click
-desc: 点击登录按钮
+name: 点击登录
 target: buttons\userLogin.png
 condition: condition-start-game
 condition_then: click-start-game
@@ -185,7 +262,7 @@ target: buttons\login.png
 / 点击"开始游戏"
 [click-start-game]
 type: click
-desc: 点击"开始游戏"按钮
+name: 开始游戏
 target: buttons\login.png
 action: no-reminders
 max_wait: 15
@@ -193,7 +270,7 @@ max_wait: 15
 / 关闭提醒弹窗
 [no-reminders]
 type: click
-desc: 点击"不再提醒"按钮
+name: 不再提醒
 target: buttons\noReminders.png
 action: close-Notice
 break_point: on
@@ -202,7 +279,7 @@ max_wait: 30
 / 关闭公告
 [close-Notice]
 type: click
-desc: 点击关闭公告按钮
+name: 关闭公告
 target: buttons\closeNotice.png
 ```
 
@@ -398,4 +475,11 @@ locations\mainScreen.png
 
 - **task 类型**的实体会出现在右侧"任务列表"面板中
 - 显示名称为 `name` 字段，若未设置则回退到 `desc`，最后回退到 key
-- 其他类型（func、click）不出现在任务列表中，但可在"任务编辑器"下拉中选择 task 实体进行手动执行
+- 其他类型（func、click、dynamic）不出现在任务列表中，但可在"任务编辑器"下拉中选择 task 实体进行手动执行
+
+### 快捷键
+
+| 按键 | 功能 |
+|------|------|
+| `q` | 退出程序 |
+| `ctrl+l` | 清空日志控制台 |

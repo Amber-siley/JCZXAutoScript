@@ -141,7 +141,8 @@ class TaskManage:
         Returns:
             MatLike: 图片
         """
-        return self.img_pool[img_path]
+        name = self._resolve_placeholder(img_path)
+        return self.img_pool[name]
 
     def get_entity(self, entity_name: str, after_key: str = None) -> JczxSectionEntity:
         """获取实体

@@ -1,11 +1,81 @@
 [MainMenu]
 desc: 主菜单相关配置文件
 
+/ -------------
+/ 预制常用函数
+/ -------------
+[click-center]
+type: func
+func: click_proportion
+args: 2,2
+
+[drop-center-up]
+type: func
+func: drag_drop_proportion
+args: 2,2,3,10,1000
+
+[swipe-center-up]
+type: func
+func: swipe_proportion
+args: 2,2,3,4
+
+/ -------------
+/ func template 执行函数模板
+/ -------------
+[in_location]
+type: func
+func: in_location
+
+[parse_placeholder]
+type: func
+func: parse_placeholder
+
+[string_concat]
+type: func
+func: string_concat
+
+/ -------------
+/ 常规任务
+/ -------------
 [launch-game]
 type: task
+view: on
 name: 启动游戏
 action: launch-game-plan
 
+[screenshot-task]
+type: task
+view: on
+name: 截图
+action: screenshot
+settings: screenshot-task-settings
+
+/ 前往主界面，不是主界面 判断是否有主界面按钮，有的话点击，
+/ 无的话是否有返回按钮，有则点击 然后继续判断是主界面，无的话点击中间 继续判断
+[goto-home]
+type: task
+view: off
+name: 前往主界面
+desc: 判断是否主界面，不是则尝试返回或点击中间
+action: goto-home-click-home
+sleep: 4
+
+[auto-fight]
+type: task 
+view: off
+name: 自动战斗
+action: click-skip-animation,click-auto-fight,wait-fight-end
+
+[goto-inllusion]
+type: task
+view: on
+name: 虚影周本
+action: goto-inllusion-1,condition-inllusion-to-action
+settings: settings-inllusion
+
+/ -------------
+/ 杂项
+/ -------------
 [launch-game-plan]
 type: func
 func: start_game
@@ -50,17 +120,14 @@ sleep: 5
 type: click
 sleep: 1
 
+[wait-2]
+type: click
+sleep: 2
+
 [close-Notice]
 type: click
 name: 关闭公告
 target: buttons\closeNotice.png
-
-[screenshot-task]
-type: task
-view: on
-name: 截图
-action: screenshot
-settings: screenshot-task-settings
 
 [screenshot-task-settings]
 type: settings
@@ -80,48 +147,6 @@ args: E:\\IDE\pyththon_project\\jczx_auto_script\\jczx\\template,${screenshot-ta
 [screenshot-task-values]
 screenshot-name: name_1
 
-[click-center]
-type: func
-func: click_proportion
-args: 2,2
-
-[drop-center-up]
-type: func
-func: drag_drop_proportion
-args: 2,2,3,10,1000
-
-[swipe-center-up]
-type: func
-func: swipe_proportion
-args: 2,2,3,4
-
-[in_location]
-type: func
-func: in_location
-
-/ 前往主界面，不是主界面 判断是否有主界面按钮，有的话点击，
-/ 无的话是否有返回按钮，有则点击 然后继续判断是主界面，无的话点击中间 继续判断
-[goto-home]
-type: task
-view: off
-name: 前往主界面
-desc: 判断是否主界面，不是则尝试返回或点击中间
-action: goto-home-click-home
-sleep: 4
-
-[auto-fight]
-type: task 
-view: off
-name: 自动战斗
-action: click-skip-animation,click-auto-fight,wait-fight-end
-
-[goto-inllusion]
-type: task
-view: on
-name: 虚影周本
-action: goto-inllusion-1,condition-inllusion-to-action
-settings: settings-inllusion
-
 [condition-inllusion-to-action]
 type: click
 condition_not: condition-inllusion-enough
@@ -131,6 +156,7 @@ condition_else: goto-home
 [condition-inllusion-enough]
 extend: in_location
 target: locations\enoughSmallCrytal.png
+args: 0.9
 
 [goto-inllusion-1]
 type: task
@@ -158,11 +184,16 @@ default: 宙斯虚影-Inllusion
 
 [goto-inllusion-values]
 setting-inllusion-choose: 宙斯虚影-Inllusion
-setting-team-choose: 队伍-03
+setting-team-choose: 队伍-01
 
-[get-choose-team-target]
-type: func
-func: string_concat
+[get-illusion-choose-team-target]
+extend: parse_placeholder
+name: 获取虚影选择队伍的匹配资源路径
+args: @{get-illusion-choose-team-target-string-key}
+
+[get-illusion-choose-team-target-string-key]
+extend: string_concat
+name: 拼接配置队伍资源的key
 args: ${goto-inllusion-values:setting-team-choose},-condition,:,target
 
 [队伍-01]
@@ -173,7 +204,7 @@ condition_then: choose-team
 [队伍-01-condition]
 extend: in_location
 target: numbers\team1.png
-per: 0.95
+args: 0.95
 
 [队伍-02]
 type: click
@@ -183,32 +214,38 @@ condition_then: choose-team
 [队伍-02-condition]
 extend: in_location
 target: numbers\team2.png
-per: 0.95
+args: 0.95
 
 [队伍-03]
 type: click
 condition_not: 队伍-03-condition
-condition_then: choose-team
+condition_then: choose-illusion-team
 
 [队伍-03-condition]
 extend: in_location
 target: numbers\team3.png
-per: 0.95
+args: 0.95
 
-[choose-team]
+[choose-illusion-team]
 type: click
 target: buttons\choiceTeam.png
-action: choose-team-click
+action: choose-illusion-team-click
 
-[choose-team-click]
+[choose-illusion-team-click]
 type: click
-target: ${队伍-01-condition:target}
+name: 动态获取选择虚影队伍
+target: @{get-illusion-choose-team-target}
+per: 0.9
 
 [宙斯虚影-Inllusion]
 type: task
 view: off
 name: 宙斯虚影-Inllusion
-action: swipe-center-up,wait-1,ZhouSi-step-1-click,click-close-team-2,${goto-inllusion-values:setting-team-choose}
+action: swipe-center-up,wait-1,宙斯虚影-Inllusion-step
+
+[宙斯虚影-Inllusion-step]
+type: click
+action: ZhouSi-step-1-click,click-close-team-2,${goto-inllusion-values:setting-team-choose},click-start-act,ZhouSi-step,auto-fight,condition-inllusion-to-action
 
 [click-close-team-2]
 type: click
@@ -220,14 +257,56 @@ index: 1
 type: click
 name: 宙斯虚影
 target: buttons\ZhouSi.png
-action: click-start-fight-1
+action: click-start-fight
 sleep: 1
 
-[click-start-fight-1]
+[ZhouSi-step]
+type: click
+action: ZhouSi-step-1,ZhouSi-step-2,ZhouSi-step-3,ZhouSi-step-4,ZhouSi-step-5
+
+[ZhouSi-step-1]
+type: click
+target: locations\ZhouSi_c_1.png
+per: 0.9
+max_wait: 10
+
+[ZhouSi-step-2]
+type: click
+target: locations\ZhouSi_c_2.png
+per: 0.9
+max_wait: 10
+
+[ZhouSi-step-3]
+type: click
+target: locations\ZhouSi_c_3.png
+per: 0.9
+sleep: 1
+max_wait: 10
+
+[ZhouSi-step-4]
+type: click
+target: locations\ZhouSi_c_4.png
+per: 0.9
+max_wait: 10
+sleep: 3
+
+[ZhouSi-step-5]
+type: click
+target: locations\ZhouSi_c_5.png
+per: 0.9
+max_wait: 10
+
+[click-start-fight]
 type: click
 name: 开始战斗
 target: buttons\startFight.png
 sleep: 2
+
+[click-start-act]
+type: click
+name: 开始行动
+target: buttons\startToAct.png
+sleep: 10
 
 [阿瑞斯虚影-Inllusion]
 type: task
@@ -263,7 +342,7 @@ sleep: 2
 type: click
 name: 跳过动画
 target: buttons\skipAnimation.png
-max_wait: 10
+max_wait: 20
 
 [click-auto-fight]
 type: click
@@ -327,7 +406,7 @@ target: buttons\back.png
 [condition-to-home]
 type: click
 condition: condition-in_location-home-button
-condition_then: click-home
+condition_then: click-home,wait-2,goto-home-click-home
 condition_else: condition-to-back
 
 [condition-to-back]

@@ -12,6 +12,7 @@ class SectionType(Enum):
     OPTION = "option"
     SETTINGS = "settings"
     SETTING = "setting"
+    DYNAMIC = "dynamic"
     
     @classmethod
     def __contains__(cls, value):
