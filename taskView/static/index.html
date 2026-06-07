@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>taskView — 任务执行流程图</title>
+<script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+<script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+<script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+<script src="https://unpkg.com/cytoscape-svg@1.6.0/cytoscape-svg.js"></script>
+<script src="https://unpkg.com/canvas-toBlob@1.0.0/canvas-toBlob.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #ccc; display: flex; height: 100vh; overflow: hidden; }
+
+#sidebar { width: 220px; background: #16213e; display: flex; flex-direction: column; border-right: 1px solid #0f3460; flex-shrink: 0; }
+#sidebar h2 { padding: 12px; font-size: 16px; color: #e94560; border-bottom: 1px solid #0f3460; }
+#sidebar .section { padding: 10px 12px; border-bottom: 1px solid #0f3460; }
+#sidebar .section h3 { font-size: 12px; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+#file-list { list-style: none; max-height: 200px; overflow-y: auto; }
+#file-list li { padding: 6px 8px; cursor: pointer; border-radius: 3px; font-size: 13px; margin: 2px 0; }
+#file-list li:hover { background: #0f3460; }
+#file-list li.active { background: #e94560; color: #fff; }
+#stats { font-size: 12px; margin-top: auto; padding: 10px 12px; border-top: 1px solid #0f3460; }
+.layout-switch { display: flex; gap: 4px; flex-wrap: wrap; }
+.layout-switch button { padding: 4px 8px; border: 1px solid #0f3460; background: #1a1a2e; color: #ccc; border-radius: 3px; cursor: pointer; font-size: 11px; }
+.layout-switch button.active { background: #e94560; border-color: #e94560; color: #fff; }
+.export-btns { display: flex; gap: 4px; }
+.export-btns button { padding: 4px 10px; border: 1px solid #0f3460; background: #1a1a2e; color: #ccc; border-radius: 3px; cursor: pointer; font-size: 11px; }
+.export-btns button:hover { background: #0f3460; }
+
+#cy { flex: 1; min-width: 0; }
+
+#detail { width: 260px; background: #16213e; border-left: 1px solid #0f3460; overflow-y: auto; flex-shrink: 0; }
+#detail h2 { padding: 12px; font-size: 16px; color: #e94560; border-bottom: 1px solid #0f3460; position: sticky; top: 0; background: #16213e; }
+#detail-content { padding: 12px; font-size: 13px; line-height: 1.7; }
+#detail-content .key { color: #888; }
+#detail-content .val { color: #e0e0e0; word-break: break-all; }
+#detail-content .field { margin-bottom: 8px; }
+#detail-content .tag { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin: 1px 2px; background: #0f3460; }
+#detail-content .type-tag { background: #e94560; color: #fff; font-weight: bold; }
+#detail-empty { padding: 40px 20px; text-align: center; color: #555; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>taskView</h2>
+  <div class="section">
+    <h3>配置文件</h3>
+    <ul id="file-list"><li>加载中…</li></ul>
+  </div>
+  <div class="section">
+    <h3>布局</h3>
+    <div class="layout-switch" id="layout-btns">
+      <button data-layout="dagre" class="active">dagre</button>
+      <button data-layout="breadthfirst">bfs</button>
+      <button data-layout="fcose">fcose</button>
+    </div>
+  </div>
+  <div class="section">
+    <h3>导出</h3>
+    <div class="export-btns">
+      <button id="btn-png">PNG</button>
+      <button id="btn-svg">SVG</button>
+    </div>
+  </div>
+  <div id="stats">节点 0 · 边 0</div>
+</div>
+
+<div id="cy"></div>
+
+<div id="detail">
+  <h2>节点详情</h2>
+  <div id="detail-content"><div id="detail-empty">点击画布中的节点查看详情</div></div>
+</div>
+
+<script>
+let cy;
+let currentFile = null;
+let currentLayout = 'dagre';
+
+const NODE_STYLES = {
+  'task':     { 'background-color': '#42a5f5', 'border-color': '#1e88e5', 'shape': 'round-rectangle', 'text-outline-color': '#42a5f5' },
+  'func':     { 'background-color': '#66bb6a', 'border-color': '#43a047', 'shape': 'ellipse', 'text-outline-color': '#66bb6a' },
+  'click':    { 'background-color': '#ffa726', 'border-color': '#fb8c00', 'shape': 'ellipse', 'text-outline-color': '#ffa726' },
+  'dynamic':  { 'background-color': '#ab47bc', 'border-color': '#8e24aa', 'shape': 'ellipse', 'text-outline-color': '#ab47bc' },
+  'settings': { 'background-color': '#78909c', 'border-color': '#546e7a', 'shape': 'round-rectangle', 'text-outline-color': '#78909c' },
+  'setting':  { 'background-color': '#78909c', 'border-color': '#546e7a', 'shape': 'round-rectangle', 'text-outline-color': '#78909c' },
+};
+
+const EDGE_STYLES = {
+  'action':          { 'line-style': 'solid',  'line-color': '#888', 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' },
+  'condition':       { 'line-style': 'dashed', 'line-color': '#4fc3f7', 'target-arrow-color': '#4fc3f7', 'target-arrow-shape': 'triangle' },
+  'condition_not':   { 'line-style': 'dashed', 'line-color': '#4fc3f7', 'target-arrow-color': '#4fc3f7', 'target-arrow-shape': 'triangle' },
+  'condition_then':  { 'line-style': 'dashed', 'line-color': '#66bb6a', 'target-arrow-color': '#66bb6a', 'target-arrow-shape': 'triangle' },
+  'condition_else':  { 'line-style': 'dotted', 'line-color': '#ef5350', 'target-arrow-color': '#ef5350', 'target-arrow-shape': 'triangle' },
+  'extend':          { 'line-style': 'dashed', 'line-color': '#555', 'target-arrow-shape': 'none' },
+  'settings':        { 'line-style': 'solid',  'line-color': '#555', 'target-arrow-shape': 'none' },
+};
+
+function initCy() {
+  cy = cytoscape({
+    container: document.getElementById('cy'),
+    style: [
+      { selector: 'node', style: { 'label': 'data(label)', 'font-size': '12px', 'color': '#fff', 'text-valign': 'center', 'text-halign': 'center', 'width': 'label', 'height': 'label', 'padding': '8px', 'text-wrap': 'wrap', 'text-max-width': '120px', 'border-width': 2 } },
+      ...Object.entries(NODE_STYLES).map(([cls, sty]) => ({ selector: `node.${cls}`, style: sty })),
+      { selector: 'node:selected', style: { 'border-color': '#e94560', 'border-width': 3 } },
+      { selector: 'edge', style: { 'width': 1.5, 'curve-style': 'bezier', 'font-size': '10px', 'color': '#888', 'text-background-color': '#1a1a2e', 'text-background-opacity': 0.8, 'text-background-padding': '2px', 'text-rotation': 'autorotate' } },
+      ...Object.entries(EDGE_STYLES).map(([cls, sty]) => ({ selector: `edge.${cls}`, style: sty })),
+    ],
+    layout: { name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 },
+    wheelSensitivity: 0.3,
+    minZoom: 0.1,
+    maxZoom: 3,
+  });
+
+  cy.on('tap', 'node', async function (evt) {
+    const node = evt.target;
+    const entityName = node.data('id');
+    if (!currentFile || !entityName) return;
+    try {
+      const res = await fetch(`/api/entity/${encodeURIComponent(entityName)}?file=${encodeURIComponent(currentFile)}`);
+      const detail = await res.json();
+      renderDetail(detail);
+    } catch (e) {
+      document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载详情失败</div>';
+    }
+  });
+
+  cy.on('tap', function (evt) {
+    if (evt.target === cy) {
+      document.getElementById('detail-content').innerHTML = '<div id="detail-empty">点击画布中的节点查看详情</div>';
+    }
+  });
+}
+
+function renderDetail(d) {
+  const fields = [
+    ['类型', `<span class="tag type-tag">${esc(d.type)}</span>`],
+    ['名称', esc(d.name || d.key)],
+    ['描述', esc(d.desc)],
+    ['方法', esc(d.func)],
+    ['目标', esc(d.target)],
+    ['action', d.action && d.action.length ? d.action.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
+    ['args', d.args && d.args.length ? d.args.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
+    ['condition', esc(d.condition)],
+    ['condition_not', esc(d.condition_not)],
+    ['condition_then', d.condition_then && d.condition_then.length ? d.condition_then.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
+    ['condition_else', d.condition_else && d.condition_else.length ? d.condition_else.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
+    ['extend', esc(d.extend)],
+    ['sleep', `${d.sleep}s`],
+    ['pre_sleep', `${d.pre_sleep}s`],
+    ['per', d.per],
+    ['max_wait', `${d.max_wait}s`],
+    ['break_point', esc(d.break_point)],
+    ['times', d.times],
+  ];
+  let html = `<div style="margin-bottom:8px;font-weight:bold;color:#e94560;">${esc(d.key)}</div>`;
+  for (const [label, val] of fields) {
+    if (!val || val === '—' || val === '') continue;
+    html += `<div class="field"><span class="key">${label}:</span> <span class="val">${val}</span></div>`;
+  }
+  document.getElementById('detail-content').innerHTML = html || '<div id="detail-empty">无额外信息</div>';
+}
+
+function esc(s) { if (!s && s !== 0) return '—'; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+
+async function loadFiles() {
+  try {
+    const res = await fetch('/api/files');
+    const files = await res.json();
+    const list = document.getElementById('file-list');
+    list.innerHTML = files.map(f => `<li data-file="${esc(f)}">${esc(f)}</li>`).join('');
+    list.querySelectorAll('li').forEach(li => {
+      li.addEventListener('click', () => {
+        list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+        li.classList.add('active');
+        loadGraph(li.dataset.file);
+      });
+    });
+    if (files.length > 0) {
+      const first = list.querySelector('li');
+      first.classList.add('active');
+      loadGraph(files[0]);
+    }
+  } catch (e) {
+    document.getElementById('file-list').innerHTML = '<li>加载失败</li>';
+  }
+}
+
+async function loadGraph(filename) {
+  currentFile = filename;
+  try {
+    const res = await fetch(`/api/graph?file=${encodeURIComponent(filename)}`);
+    const data = await res.json();
+    cy.json({ elements: { nodes: data.nodes, edges: data.edges } });
+    cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
+    document.getElementById('stats').textContent = `节点 ${data.nodes.length} · 边 ${data.edges.length}`;
+    document.getElementById('detail-content').innerHTML = '<div id="detail-empty">点击画布中的节点查看详情</div>';
+  } catch (e) {
+    console.error('Failed to load graph:', e);
+  }
+}
+
+document.getElementById('layout-btns').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  document.querySelectorAll('#layout-btns button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentLayout = btn.dataset.layout;
+  if (cy) cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
+});
+
+document.getElementById('btn-png').addEventListener('click', () => {
+  if (!cy) return;
+  const png64 = cy.png({ scale: 2, full: true, bg: '#1a1a2e' });
+  const a = document.createElement('a');
+  a.download = (currentFile || 'graph') + '.png';
+  a.href = png64;
+  a.click();
+});
+
+document.getElementById('btn-svg').addEventListener('click', () => {
+  if (!cy) return;
+  const svgContent = cy.svg({ scale: 1, full: true });
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.download = (currentFile || 'graph') + '.svg';
+  a.href = url;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+initCy();
+loadFiles();
+</script>
+</body>
+</html>
