@@ -109,6 +109,11 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 _add_node(configs[target])
                 _add_edge(src, target, "action", "action")
 
+        for i in range(len(entity.action) - 1):
+            a, b = entity.action[i], entity.action[i + 1]
+            if a in configs and b in configs:
+                _add_edge(a, b, "", "chain")
+
         if entity.condition and entity.condition in configs:
             _add_node(configs[entity.condition])
             _add_edge(src, entity.condition, "condition", "condition")
