@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Any
 
 from jczx.CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig
@@ -9,6 +10,9 @@ CONFIG_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     "jczx", "Config"
 )
+
+_RE_EXEC = re.compile(r"@\{([^}]+)\}")
+_RE_CFG = re.compile(r"\$\{([^}:]+)(?::[^}]*)?}")
 
 
 def list_config_files() -> list[str]:
@@ -129,6 +133,26 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
             if settings_key and settings_key in configs:
                 _add_node(configs[settings_key])
                 _add_edge(src, settings_key, "settings", "settings")
+
+    for key, entity in configs.items():
+        src = entity.only_key
+        texts = []
+        if entity.target:
+            texts.append(entity.target)
+        if entity.args:
+            texts.extend(entity.args)
+
+        for text in texts:
+            if not isinstance(text, str):
+                continue
+            for m in _RE_EXEC.findall(text):
+                if m in configs:
+                    _add_node(configs[m])
+                    _add_edge(src, m, f"@{{{m}}}", "execute")
+            for m in _RE_CFG.findall(text):
+                if m in configs:
+                    _add_node(configs[m])
+                    _add_edge(src, m, f"${{{m}}}", "config")
 
     return {"nodes": nodes, "edges": edges}
 
