@@ -139,8 +139,14 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
         texts = []
         if entity.target:
             texts.append(entity.target)
-        if entity.args:
-            texts.extend(entity.args)
+        for lst in (entity.args, entity.action, entity.condition_then,
+                     entity.condition_else, entity.wait_sec):
+            if lst:
+                texts.extend(lst)
+        if entity.condition:
+            texts.append(entity.condition)
+        if entity.condition_not:
+            texts.append(entity.condition_not)
 
         for text in texts:
             if not isinstance(text, str):
