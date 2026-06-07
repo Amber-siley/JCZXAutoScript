@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import get_type_hints, get_origin, get_args
 
-LIST_STR_ATTRS = ["target", "list_targets", "action", "list_actions", "choose_tasks", "args", "pos", "condition_then", "condition_else"]
+LIST_STR_ATTRS = ["list_targets", "action", "list_actions", "choose_tasks", "args", "pos", "condition_then", "condition_else"]
 
 class SectionType(Enum):
     TASK = "task"
@@ -45,7 +45,7 @@ class BaseEntity:
 @dataclass
 class JczxSectionEntity(BaseEntity):
     type: str = None
-    target: list[str] = field(default_factory=list)
+    target: str = None
     func: str = None
     index: int = 0
     name: str = None
@@ -53,8 +53,8 @@ class JczxSectionEntity(BaseEntity):
     action: list[str] = field(default_factory=list)
     args: list[str] = field(default_factory=list)
     pos: list[int] = field(default_factory=list)
-    pre_sleep: int = 0
-    sleep: int = 0
+    pre_sleep: float = 0
+    sleep: float = 0
     per: float = 0.8
     max_wait: int = 0
     wait_sec: list[str] = field(default_factory=list)

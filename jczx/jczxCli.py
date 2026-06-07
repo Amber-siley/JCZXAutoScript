@@ -55,19 +55,28 @@ class JCZXGaming(Device):
         self.fm = FileManage()
         self.task_manage = TaskManage(config_dir, log)
         self.ocr = None
+        self._context: dict[str, str] = {}
         self.stop_event = threading.Event()
     
     def set_ocr(self, ocr):
         self.ocr = ocr
-    
+
+    def context_get(self, key: str, default: str = "") -> str:
+        return self._context.get(key, default)
+
+    def context_set(self, key: str, value: str) -> None:
+        self._context[key] = str(value)
+        self.log.debug(f"上下文设置 {key} = {value}")
+
     def _get_method(self, method_name: str) -> Callable[..., Any]:
         if method_name not in self.__dir__():
             return None
         return getattr(self, method_name)
     
     _EXEC_PLACEHOLDER_PATTERN = re.compile(r"@\{(.+?)\}")
+    _CTX_PLACEHOLDER_PATTERN = re.compile(r"%\{(.+?)\}")
 
-    def resolve_exec_placeholders(self, args: list) -> list:
+    def _resolve_exec_placeholders(self, args: list) -> list:
         resolved = []
         for arg in args:
             result = self._resolve_exec_placeholder(arg)
@@ -79,9 +88,13 @@ class JCZXGaming(Device):
             return arg
         result = arg
         for match in self._EXEC_PLACEHOLDER_PATTERN.findall(arg):
-            self.log.debug(f"解析 执行占位符 {match}，原字符串 {arg}")
             exec_result = self.exec(match)
             result = result.replace("@{" + match + "}", str(exec_result) if exec_result is not None else "")
+            self.log.debug(f"解析 执行占位符 {match}，值 {exec_result}，原字符串 {arg}")
+        for match in self._CTX_PLACEHOLDER_PATTERN.findall(arg):
+            val = self.context_get(match)
+            result = result.replace("%{" + match + "}", val)
+            self.log.debug(f"解析 上下文占位符 {match}，值 {val}，原字符串 {arg}")
         return result
 
     def exec_func(self, section: Union[JczxSectionEntity, str]):
@@ -93,9 +106,9 @@ class JCZXGaming(Device):
             method_name = entity.func
             self.log.debug(f"计划预执行 section {section}")
             if method := self._get_method(method_name):
-                raw_args = entity.target + entity.args
+                raw_args = ([entity.target] if entity.target else []) + entity.args
                 args = self.task_manage.resolve_placeholders(raw_args, entity.only_key)
-                args = self.resolve_exec_placeholders(args)
+                args = self._resolve_exec_placeholders(args)
                 self.log.debug(f"开始执行方法 {method.__name__} 参数 {args}")
                 if args:
                     result = method(*args)
@@ -133,6 +146,8 @@ class JCZXGaming(Device):
         for _ in range(entity.times):
             if self.stop_event.is_set():
                 return None
+            self.log.debug(f"开始动态执行 {entity.get_task_name()} {entity}")
+            time.sleep(entity.pre_sleep)
             for key in entity.action:
                 if self.stop_event.is_set():
                     return None
@@ -140,6 +155,8 @@ class JCZXGaming(Device):
                 result_str = str(result) if result is not None else ""
                 if result_str:
                     self.exec(result_str)
+            time.sleep(entity.sleep)
+            self.log.debug(f"动态执行完成 {entity.get_task_name()}") if entity.get_task_name() else None
         return None
 
     def exec_click(self, section: Union[JczxSectionEntity, str]):
@@ -153,7 +170,7 @@ class JCZXGaming(Device):
             if entity.pos:
                 self.click(*entity.pos)
             else:
-                target = entity.target[0] if entity.target else None
+                target = entity.target
                 target = self._resolve_placeholder(target)
                 target = self._resolve_exec_placeholder(target) if target else None
                 img = self.task_manage.get_img(target) if target else None
@@ -216,6 +233,13 @@ class JCZXGaming(Device):
     def get_resources_target(self, target: str):
         rel_path = "\\".join(["resources"] + target.split("\\"))
         return str(self.fm.get_obj_relative_path(rel_path, self))
+
+    def exec_task_raw(self, section: Union[JczxSectionEntity, str]):
+        self._context.clear()
+        try:
+            return self.exec_task(section)
+        finally:
+            self._context.clear()
 
     def exec_task(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
@@ -554,7 +578,7 @@ class JczxTUI(App, JczxCli):
 
     def _run_task(self, entity: JczxSectionEntity, task_id: str) -> None:
         try:
-            self.device.exec_task(entity)
+            self.device.exec_task_raw(entity)
         except Exception as e:
             self.logger.error("任务执行异常: %s", e)
         finally:
@@ -613,8 +637,9 @@ class JczxTUI(App, JczxCli):
         self.task_manage.save_task_values(self._settings_task_id, event.values)
         self.logger.info("任务设置已保存: task=%s, values=%s",
                          self._settings_task_id, event.values)
-        self._reload_configs()
-        self.logger.debug("配置已自动重载")
+        if self.device is not None:
+            self.device.task_manage.menu_config = self.task_manage.menu_config
+            self.logger.debug("已同步配置到设备端")
 
     # ── TaskEditorPanel handlers ─────────────────────────
 

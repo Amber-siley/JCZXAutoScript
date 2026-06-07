@@ -34,6 +34,14 @@ func: parse_placeholder
 type: func
 func: string_concat
 
+[context_get]
+type: func
+func: context_get
+
+[context_set]
+type: func
+func: context_set
+
 / -------------
 / 常规任务
 / -------------
@@ -64,7 +72,7 @@ sleep: 4
 type: task 
 view: off
 name: 自动战斗
-action: click-skip-animation,click-auto-fight,wait-fight-end
+action: click-skip-animation,click-auto-fight,wait-fight-end,wait-5
 
 [goto-inllusion]
 type: task
@@ -219,22 +227,27 @@ args: 0.95
 [队伍-03]
 type: click
 condition_not: 队伍-03-condition
-condition_then: choose-illusion-team
+condition_then: choose-team
 
 [队伍-03-condition]
 extend: in_location
 target: numbers\team3.png
 args: 0.95
 
-[choose-illusion-team]
+[context-set-illusion-choose-team]
+extend: context_set
+desc: 设置 'team_target' 为 虚影周本 选择队伍的资源路径
+args: team_target,@{get-illusion-choose-team-target}
+
+[choose-team]
 type: click
 target: buttons\choiceTeam.png
-action: choose-illusion-team-click
+action: choose-team-click
 
-[choose-illusion-team-click]
+[choose-team-click]
 type: click
-name: 动态获取选择虚影队伍
-target: @{get-illusion-choose-team-target}
+name: 动态获取选择队伍
+target: %{team_target}
 per: 0.9
 
 [宙斯虚影-Inllusion]
@@ -245,7 +258,7 @@ action: swipe-center-up,wait-1,宙斯虚影-Inllusion-step
 
 [宙斯虚影-Inllusion-step]
 type: click
-action: ZhouSi-step-1-click,click-close-team-2,${goto-inllusion-values:setting-team-choose},click-start-act,ZhouSi-step,auto-fight,condition-inllusion-to-action
+action: ZhouSi-step-1-click,click-close-team-2,context-set-illusion-choose-team,${goto-inllusion-values:setting-team-choose},click-start-act,ZhouSi-step,auto-fight,condition-inllusion-to-action
 
 [click-close-team-2]
 type: click
@@ -257,8 +270,15 @@ index: 1
 type: click
 name: 宙斯虚影
 target: buttons\ZhouSi.png
-action: click-start-fight
-sleep: 1
+action: click-start-fight,make-sure-enter
+sleep: 0.5
+
+[make-sure-enter]
+type: click
+target: buttons\sureEnter.png
+name: 开启
+max_wait: 2
+sleep: 2
 
 [ZhouSi-step]
 type: click
@@ -282,13 +302,14 @@ target: locations\ZhouSi_c_3.png
 per: 0.9
 sleep: 1
 max_wait: 10
+sleep: 3
 
 [ZhouSi-step-4]
 type: click
 target: locations\ZhouSi_c_4.png
 per: 0.9
 max_wait: 10
-sleep: 3
+sleep: 5
 
 [ZhouSi-step-5]
 type: click
@@ -300,7 +321,7 @@ max_wait: 10
 type: click
 name: 开始战斗
 target: buttons\startFight.png
-sleep: 2
+sleep: 1
 
 [click-start-act]
 type: click

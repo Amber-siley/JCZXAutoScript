@@ -68,7 +68,12 @@ class TaskManage:
         configs = self.menu_config.trans_entity_dict(JczxSectionEntity)
         put_size, fail_size = 0, 0
         for config_entity in configs.values():
-            for target in config_entity.target:
+            targets = config_entity.target
+            if not targets:
+                continue
+            if isinstance(targets, str):
+                targets = [targets]
+            for target in targets:
                 rel_target = self.get_resources_target(target)
                 if not self.fm.isfile(rel_target):
                     self.log.debug(f"图片路径 {target} 不存在，跳过加载")
@@ -214,6 +219,23 @@ class TaskManage:
             self.menu_config.set_config(section, field_name, str(val))
         self.menu_config.save()
         self.log.debug(f"任务 {task_key} 设置已保存: {values}")
+        self._update_entities_after_save(task_key)
+
+    def _update_entities_after_save(self, task_key: str) -> None:
+        entity = self.get_task(task_key)
+        if not entity or not entity.settings:
+            return
+        try:
+            settings_section = self.menu_config.get_config(task_key, "settings")
+        except KeyError:
+            return
+        if not settings_section:
+            return
+        settings_entity = self._get_setting_entity(settings_section, SectionType.SETTINGS)
+        if not settings_entity:
+            return
+        self.entity_pool[settings_section] = settings_entity
+        self.log.debug(f"已刷新实体 {settings_section}")
 
     _PLACEHOLDER_PATTERN = re.compile(r"\$\{(.+?)\}")
 

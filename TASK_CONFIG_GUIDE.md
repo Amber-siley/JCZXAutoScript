@@ -75,8 +75,8 @@ adb.path : platform-tools/adb.exe
 | `times` | int | `1` | 执行次数，func / task / click / dynamic 均支持 |
 | `view` | str | `off` | 控制 task 在 TUI 任务列表中是否显示。`on`=显示，`off`=隐藏 |
 | `only_key` | str | — | 系统自动赋值：当前 section 的名称，用于占位符短格式解析 |
-| `pre_sleep` | int | `0` | 执行前等待秒数 |
-| `sleep` | int | `0` | 执行后等待秒数 |
+| `pre_sleep` | float | `0` | 执行前等待秒数 |
+| `sleep` | float | `0` | 执行后等待秒数 |
 | `extend` | str | — | 继承另一个实体的所有字段（详见下方继承章节） |
 
 #### task 类型专用
@@ -108,7 +108,7 @@ adb.path : platform-tools/adb.exe
 | `condition_not` | str | — | 反向条件实体 key，该实体执行成功则跳过匹配 |
 | `condition_then` | list[str] | `[]` | 条件满足时转而执行的实体 key 列表（正向分支） |
 | `condition_else` | list[str] | `[]` | 条件不满足时转而执行的实体 key 列表（反向分支） |
-| `wait_sec` | list[str] | `[]` | 每次匹配失败后的等待操作实体 key 列表 |
+| `wait_sec` | list[str] | `[]` | 等待过程中执行的操作实体 key 列表 |
 | `index` | int | `0` | 指定 target 匹配的结果 的索引 |
 
 #### dynamic 类型专用
@@ -186,6 +186,49 @@ args: @{get-device-name},${screenshot-name}
 `use-device-name` 运行时：
 1. `${screenshot-name}` → 从配置取值
 2. `@{get-device-name}` → 执行 `get-device-name` 实体，返回值替换
+
+---
+
+## 上下文变量 `%{...}`
+
+任务执行期间可创建临时上下文变量，在任务链中传递数据，任务完成后自动释放。
+
+### 内建方法
+
+| 方法 | 参数 | 说明 |
+|------|------|------|
+| `context_set` | key, value | 写入上下文变量 |
+| `context_get` | key, default | 读取上下文变量，未设置时返回 default |
+
+### 占位符
+
+| 形式 | 含义 |
+|------|------|
+| `%{key}` | 读取上下文变量 key 的值，未设置时为空字符串 |
+
+### 示例
+
+```ini
+[save-name-to-ctx]
+type: func
+func: context_set
+args: filename,screenshot_001
+
+[use-ctx-value]
+type: func
+func: save_screenshot
+args: %{filename}
+```
+
+`use-ctx-value` 运行时，`%{filename}` 被替换为 `screenshot_001`。
+
+### 占位符解析顺序
+
+`func` 的 `args` / `target` 按以下顺序解析：
+
+1. `${...}` — 从配置文件读取值
+2. `@{...}` — 执行实体获取返回值
+3. `%{...}` — 从上下文变量读取值
 
 ---
 
