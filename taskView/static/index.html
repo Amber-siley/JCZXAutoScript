@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
 <script src="https://unpkg.com/cytoscape-svg@1.6.0/cytoscape-svg.js"></script>
 <script src="https://unpkg.com/canvas-toBlob@1.0.0/canvas-toBlob.js"></script>
+<script src="https://unpkg.com/cytoscape-fcose@2.2.0/cytoscape-fcose.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #ccc; display: flex; height: 100vh; overflow: hidden; }
@@ -149,10 +150,10 @@ function renderDetail(d) {
     ['condition_then', d.condition_then && d.condition_then.length ? d.condition_then.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
     ['condition_else', d.condition_else && d.condition_else.length ? d.condition_else.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
     ['extend', esc(d.extend)],
-    ['sleep', `${d.sleep}s`],
-    ['pre_sleep', `${d.pre_sleep}s`],
-    ['per', d.per],
-    ['max_wait', `${d.max_wait}s`],
+    ['sleep', d.sleep != null ? `${d.sleep}s` : '—'],
+    ['pre_sleep', d.pre_sleep != null ? `${d.pre_sleep}s` : '—'],
+    ['per', d.per != null ? d.per : '—'],
+    ['max_wait', d.max_wait != null ? `${d.max_wait}s` : '—'],
     ['break_point', esc(d.break_point)],
     ['times', d.times],
   ];
