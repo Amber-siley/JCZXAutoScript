@@ -123,6 +123,29 @@ class JCZXGaming(Device):
                 raise AttributeError(f"方法未查询到 {method_name}")
         return result
 
+    def exec_match(self, section: Union[JczxSectionEntity, str]):
+        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+        target = entity.target
+        if not target:
+            self.log.debug("match 类型缺少 target")
+            return None
+        img = self.task_manage.get_img(target)
+        if img is None:
+            self.log.debug(f"match 图片未找到: {target}")
+            return None
+        per = entity.per
+        result = self.findImageDetail(img, per=per)
+        if not result or not result.matched:
+            self.log.debug(f"match 未匹配到: {target}")
+            return None
+        for action in entity.action:
+            result = self._transform_match(result, action)
+        return result
+
+    @staticmethod
+    def _transform_match(mt, action: str):
+        return mt.transform(action)
+
     def exec(self, section: Union[JczxSectionEntity, str]):
         if not section:
             return None
@@ -131,15 +154,20 @@ class JCZXGaming(Device):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         match entity.type:
             case SectionType.TASK.value:
-                return self.exec_task(entity)
+                result = self.exec_task(entity)
             case SectionType.FUNC.value:
-                return self.exec_func(entity)
+                result = self.exec_func(entity)
             case SectionType.CLICK.value:
-                return self.exec_click(entity)
+                result = self.exec_click(entity)
             case SectionType.DYNAMIC.value:
-                return self.exec_dynamic(entity)
+                result = self.exec_dynamic(entity)
+            case SectionType.MATCH.value:
+                result = self.exec_match(entity)
             case _:
                 return None
+        if entity.context_key and result is not None:
+            self.context_set(entity.context_key, str(result))
+        return result
 
     def exec_dynamic(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
@@ -161,14 +189,34 @@ class JCZXGaming(Device):
 
     def exec_click(self, section: Union[JczxSectionEntity, str]):
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+        test_before_img = None
+        test_after_img = None
+        if entity.testFor_before:
+            test_before_img = self.task_manage.get_img(entity.testFor_before)
+        if entity.testFor_after:
+            test_after_img = self.task_manage.get_img(entity.testFor_after)
         for _ in range(entity.times):
             if self.stop_event.is_set():
                 return None
+            if test_before_img is not None:
+                time.sleep(entity.testFor_pre_sleep)
+                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else entity.max_wait
+                if not self._wait_for_image(test_before_img, test_wait):
+                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
+                    return None
+                time.sleep(entity.testFor_sleep)
             startTime = datetime.now()
             result = None
             time.sleep(entity.pre_sleep)
             if entity.pos:
                 self.click(*entity.pos)
+            elif entity.match:
+                mt = self.exec(entity.match)
+                if mt is not None and getattr(mt, 'matchTempleteCenterPoints', None):
+                    idx = entity.target_index
+                    pt = mt.matchTempleteCenterPoints[idx] if idx < len(mt.matchTempleteCenterPoints) else mt.matchTempleteCenterPoints[0]
+                    self.click(*pt)
+                    result = mt
             else:
                 target = entity.target
                 target = self._resolve_placeholder(target)
@@ -222,7 +270,20 @@ class JCZXGaming(Device):
                 self.log.debug(f"获取下一执行链 {entities}")
             for i in entities:
                 result = self.exec(i)
+            if test_after_img is not None and not self.in_location(entity.testFor_after):
+                self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
+                continue
         return result
+
+    def _wait_for_image(self, img, max_wait: int, per: float = 0.8) -> bool:
+        start = time.monotonic()
+        while not self.stop_event.is_set():
+            if self.findImageCenterLocations(img, per=per):
+                return True
+            if max_wait > 0 and time.monotonic() - start >= max_wait:
+                break
+            time.sleep(0.3)
+        return False
 
     def _resolve_placeholder(self, key):
         return self.task_manage._resolve_placeholder(key) if key else None

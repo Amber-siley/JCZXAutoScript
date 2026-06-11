@@ -24,6 +24,8 @@ option : value
 - `option : value` 是键值对，冒号前后空格可选
 - 逗号分隔的字符串值会自动解析为列表（见下方字段说明）
 
+> **注意：** 逗号分隔时会保留空格。例如 `"初级订单, 中级订单, 高级订单"` 会解析为 `["初级订单", " 中级订单", " 高级订单"]`，元素可能带有前导空格。在 `action`、`args` 等引用实体 key 的列表字段中，**不要**在逗号后加空格，否则会导致实体查找失败。
+
 ---
 
 ## Config.txt — 主配置
@@ -59,6 +61,7 @@ adb.path : platform-tools/adb.exe
 | `func` | 函数调用，执行 `JCZXGaming` 上的方法 |
 | `click` | 模板匹配点击，在屏幕上查找图片并点击 |
 | `dynamic` | 动态执行，依次执行 action 实体并将其返回值作为实体 key 再次执行 |
+| `match` | 纯模板匹配（不点击），返回匹配结果供其他实体使用 |
 | `settings` | 设置容器，引用一组 `setting` 字段 |
 | `setting` | 单个设置字段定义，描述一个表单控件的类型、标签、选项等 |
 
@@ -68,15 +71,16 @@ adb.path : platform-tools/adb.exe
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `type` | str | — | **必填**。值为 `task` / `func` / `click` / `dynamic` |
+| `type` | str | — | **必填**。值为 `task` / `func` / `click` / `dynamic` / `match` |
 | `name` | str | — | 显示名称 |
 | `desc` | str | — | 长文本备注（不用于显示名称） |
-| `action` | list[str] | `[]` | 当前实体执行完毕后要执行的下一个实体 key 列表 |
-| `times` | int | `1` | 执行次数，func / task / click / dynamic 均支持 |
+| `action` | list[str] | `[]` | 当前实体执行完毕后要执行的下一个实体 key 列表（`dynamic`、`match` 除外，见各自说明） |
+| `times` | int | `1` | 执行次数，所有类型均支持 |
 | `view` | str | `off` | 控制 task 在 TUI 任务列表中是否显示。`on`=显示，`off`=隐藏 |
 | `only_key` | str | — | 系统自动赋值：当前 section 的名称，用于占位符短格式解析 |
+| `context_key` | str | — | 若设置，实体执行完毕后将返回值（转字符串）存入上下文变量（`%{...}`），可通过 `context_get` 读取 |
 | `pre_sleep` | float | `0` | 执行前等待秒数 |
-| `sleep` | float | `0` | 执行后等待秒数 |
+| `sleep` | float | `0` | 执行后等待秒数（在 action 链之前） |
 | `extend` | str | — | 继承另一个实体的所有字段（详见下方继承章节） |
 
 #### task 类型专用
@@ -99,17 +103,23 @@ adb.path : platform-tools/adb.exe
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `target` | list[str] | `[]` | 要匹配的图片路径，相对于 `resources/` 目录 |
-| `pos` | list[int] | `[]` | 直接点击坐标，设置后将跳过模板匹配 |
+| `target` | str | — | 要匹配的图片路径，相对于 `resources/` 目录（支持 `${}`、`@{}` 占位符） |
+| `pos` | list[int] | `[]` | 直接点击坐标 `[x, y]`，设置后跳过模板匹配和 match |
 | `per` | float | `0.8` | 模板匹配阈值 (0.0–1.0)，越高越严格 |
 | `max_wait` | int | — | 最大等待时间（秒），超时后跳过或进入 break_point 逻辑 |
 | `break_point` | str | `off` | 超时后是否跳出执行链。`on`=跳出，`off`=继续 |
-| `condition` | str | — | 前置条件实体 key，该实体执行成功后继续匹配 |
-| `condition_not` | str | — | 反向条件实体 key，该实体执行成功则跳过匹配 |
+| `index` | int | `0` | 指定 target 匹配结果的索引（多个匹配时） |
+| `condition` | str | — | 前置条件实体 key，该实体执行成功后进入 condition_then 分支 |
+| `condition_not` | str | — | 反向条件实体 key，该实体执行失败时进入 condition_then 分支（优先级高于 `condition`） |
 | `condition_then` | list[str] | `[]` | 条件满足时转而执行的实体 key 列表（正向分支） |
 | `condition_else` | list[str] | `[]` | 条件不满足时转而执行的实体 key 列表（反向分支） |
-| `wait_sec` | list[str] | `[]` | 等待过程中执行的操作实体 key 列表 |
-| `index` | int | `0` | 指定 target 匹配的结果 的索引 |
+| `wait_sec` | list[str] | `[]` | 等待过程中每轮执行的操作实体 key 列表 |
+| `match` | str | — | 引用一个 `match` 类型实体，用其匹配结果坐标直接点击（跳过 `target` 模板匹配循环） |
+| `testFor_before` | str | — | 执行前检测图片路径，确保目标界面临场。图片不可见则跳过整个实体 |
+| `testFor_after` | str | — | 执行后检测图片路径（action 链完成之后）。若不可见则回到 times 循环开头重试 |
+| `testFor_max_wait` | float | `0` | testFor_before 的最大等待时间（秒）。为 0 时沿用 `max_wait` 的值 |
+| `testFor_pre_sleep` | float | `0` | testFor_before 门控检查前的等待秒数 |
+| `testFor_sleep` | float | `0` | testFor_before 门控检查通过后的等待秒数 |
 
 #### dynamic 类型专用
 
@@ -117,19 +127,149 @@ adb.path : platform-tools/adb.exe
 |------|------|--------|------|
 | `action` | list[str] | `[]` | 要依次执行的实体 key 列表。每个实体执行完后，其返回值（转为 str）立即作为实体 key 再次调用 `exec()` |
 
-**执行流程**：
+**注意：** `dynamic` 的 `action` 字段**不是**执行链——它是动态循环的源数据。`dynamic` 不支持 `get_next()` action 链。
+
+#### match 类型专用
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `target` | str | — | 要匹配的图片路径 |
+| `per` | float | `0.8` | 匹配阈值 |
+| `action` | list[str] | `[]` | 匹配结果的变换操作列表（见下方 match 章节） |
+
+**注意：** `match` 的 `action` 字段**不是**执行链——它是变换操作列表。`match` 不支持 `get_next()` action 链。
+
+---
+
+## 执行流程
+
+### 整体调度
+
+`exec(entity)` 根据 `type` 分发到对应方法。所有类型执行完毕后，若设置了 `context_key`，将返回值存入上下文：
+
 ```
-dynamic.action[key1, key2, key3]
-→ exec(key1) → result1 → exec(str(result1))
-→ exec(key2) → result2 → exec(str(result2))
-→ exec(key3) → result3 → exec(str(result3))
+exec(entity)
+  ├─ type=task    → exec_task(entity)
+  ├─ type=func    → exec_func(entity)
+  ├─ type=click   → exec_click(entity)
+  ├─ type=dynamic → exec_dynamic(entity)
+  └─ type=match   → exec_match(entity)
+  → if context_key: context_set(context_key, str(result))
+```
+
+### task 类型执行流程
+
+```
+exec_task(entity)
+  for _ in range(times):
+      sleep(pre_sleep)
+      for each key in entity.action:
+          result = exec(get_entity(key))       ← 递归分发
+      sleep(sleep)
+  return result
+```
+
+顶层入口为 `exec_task_raw()`，会在执行前后清空上下文变量，确保每个顶层任务上下文隔离。
+
+### func 类型执行流程
+
+```
+exec_func(entity)
+  for _ in range(times):
+      sleep(pre_sleep)
+      method = getattr(self, entity.func)
+      args = [entity.target] + entity.args       ← target 作为首参数
+      args = resolve_placeholders(args)           ← ${...} 替换
+      args = resolve_exec_placeholders(args)      ← @{...} 然后 %{...} 替换
+      method(*args)                               ← 调用方法
+      sleep(sleep)
+      for each key in entity.action:              ← get_next() 执行链
+          result = exec(get_entity(key))
+  return result
+```
+
+### click 类型执行流程
+
+```
+exec_click(entity)
+  test_before_img = load_image(entity.testFor_before) if present
+  test_after_img = load_image(entity.testFor_after) if present
+  for _ in range(times):
+      ═══ 执行前门控 ═══
+      if test_before_img:
+          sleep(testFor_pre_sleep)
+          wait = testFor_max_wait or max_wait
+          if not _wait_for_image(test_before_img, wait):
+              return None
+          sleep(testFor_sleep)
+```
+
+**注意：** `dynamic` 不支持 action 链（`get_next()` 不会被调用）。`entity.action` 是动态循环的数据源，不是执行链。
+
+### match 类型执行流程
+
+```
+exec_match(entity)
+  img = load_image(entity.target)
+  result = findImageDetail(img, per)              ← 返回 MatchTemplete 对象
+  if 未匹配: return None
+  for each transform in entity.action:            ← 变换操作（非执行链）
+      result = result.transform(transform)
+  return result                                    ← 返回 MatchTemplete
+```
+
+**支持的变换操作**（`action` 列表中的每个字符串）：
+
+| 变换 | 示例 | 说明 |
+|------|------|------|
+| `up-N` | `up-0.5` | 向上移动 N × 模板高度 |
+| `down-N` | `down-1.0` | 向下移动 N × 模板高度 |
+| `left-N` | `left-2.0` | 向左移动 N × 模板宽度 |
+| `right-N` | `right-1.5` | 向右移动 N × 模板宽度 |
+| `reW-N` | `reW-0.5` | 缩放宽度为 N 倍 |
+| `reH-N` | `reH-2.0` | 缩放高度为 N 倍 |
+
+#### 典型用法：click 配合 match
+
+```ini
+[find-menu]
+type: match
+target: buttons\menu_icon.png
+action: down-1.5
+
+[click-sub-menu]
+type: click
+name: 点击子菜单
+match: find-menu
+```
+
+`click-sub-menu` 执行时，先执行 `find-menu` 匹配 `menu_icon.png`，将结果中心点下移 1.5 个模板高度，然后在计算结果坐标处点击。此时不需要设置 `target`。
+
+---
+
+## 执行流程总结图
+
+```
+exec_task_raw(section)              ← 顶层入口（清空上下文）
+  └─ exec_task(section)
+       └─ for times:
+            pre_sleep
+            for action_entity in section.action:
+                exec(action_entity)
+                    ├─ task   → exec_task       (递归)
+                    ├─ func   → exec_func       (方法调用 + action 链)
+                    ├─ click  → exec_click      (检测 + 匹配点击 + action 链)
+                    ├─ dynamic→ exec_dynamic    (循环 action key)
+                    └─ match  → exec_match      (纯匹配 + 变换，无链)
+            sleep
+            (click 专属: testFor_before 复检)
 ```
 
 ---
 
 ## 占位符语法 `${...}`
 
-func / click 的 `target`、`args`、`action` 字段支持 `${...}` 占位符，运行时会从配置中读取对应的值进行替换。
+func / click / match 的 `target`、`args`、`action` 字段支持 `${...}` 占位符，运行时会从配置中读取对应的值进行替换。
 
 ### 语法
 
@@ -154,7 +294,7 @@ args: ${screenshot-task-values:dir},${screenshot-name}
 
 `func` 的 `target` / `args` 字段支持 `@{entity_key}` 占位符，运行时执行对应实体并将其返回值作为参数替换。
 
-`click` 的 `target` 字段也支持 `@{entity_key}`
+`click` 的 `target` 字段也支持 `@{entity_key}`。
 
 ### 语法
 
@@ -191,7 +331,7 @@ args: @{get-device-name},${screenshot-name}
 
 ## 上下文变量 `%{...}`
 
-任务执行期间可创建临时上下文变量，在任务链中传递数据，任务完成后自动释放。
+任务执行期间可创建临时上下文变量，在任务链中传递数据，顶层任务完成后自动释放。
 
 ### 内建方法
 
@@ -206,6 +346,20 @@ args: @{get-device-name},${screenshot-name}
 |------|------|
 | `%{key}` | 读取上下文变量 key 的值，未设置时为空字符串 |
 
+### 通过 context_key 自动写入
+
+任何实体执行完毕后，若设置了 `context_key` 字段，其返回值会自动存入上下文：
+
+```ini
+[detect-screen]
+type: func
+func: in_location
+target: buttons\mainScreen.png
+context_key: is_main_screen
+```
+
+执行后可通过 `%{is_main_screen}` 读取。
+
 ### 示例
 
 ```ini
@@ -219,8 +373,6 @@ type: func
 func: save_screenshot
 args: %{filename}
 ```
-
-`use-ctx-value` 运行时，`%{filename}` 被替换为 `screenshot_001`。
 
 ### 占位符解析顺序
 
@@ -261,13 +413,7 @@ target: buttons\special.png
 
 ---
 
-## 执行流程
-
-每个实体执行完毕后，按 `action` 列表依次执行下一个实体：
-
-```
-TASK → [action] → FUNC/CLICK → [action] → CLICK → [action] → ...
-```
+## 示例
 
 ### 示例：启动游戏
 
@@ -326,23 +472,26 @@ name: 关闭公告
 target: buttons\closeNotice.png
 ```
 
-### 带条件的 click 执行逻辑
+### 示例：testFor_before / testFor_after 使用
 
+```ini
+[check-and-claim-reward]
+type: click
+name: 领取奖励
+target: buttons\claim.png
+testFor_before: buttons\reward_panel.png
+testFor_after: buttons\reward_available.png
+testFor_max_wait: 5
+max_wait: 10
+break_point: on
+action: claim-next-reward
 ```
-1. 若设置了 condition_not → 先执行它：
-   - 失败（未检测到）→ 按顺序执行 condition_then 列表
-   - 成功（检测到）   → 按顺序执行 condition_else 列表（若有），否则继续匹配
-2. 若设置了 condition → 先执行它：
-   - 成功 → 按顺序执行 condition_then 列表
-   - 失败 → 按顺序执行 condition_else 列表（若有），否则继续匹配
-3. 执行 wait_sec 中的操作
-4. 开始模板匹配循环：
-   - 匹配成功 → 点击 → 结束
-   - 匹配失败 → 回到步骤 3，直到超过 max_wait
-5. 超时后：
-    - break_point=on → 跳出，不执行 action 链
-    - break_point=off → 继续执行 action 链
-```
+
+执行逻辑：
+1. 等待 `reward_panel.png` 出现（最多 5s），不出现则返回
+2. 匹配并点击 `claim.png`（最多 10s）
+3. 执行 `claim-next-reward` 链
+4. 复检 `reward_available.png` 是否仍然可见，若消失则回到步骤 1
 
 ---
 
@@ -501,7 +650,7 @@ exec-mode: 模式C-完整
 
 ## 图片资源
 
-click 类型的 `target` 路径相对于 `jczx/resources/` 目录。图片在加载时自动转为灰度图存入图片池。
+click / match 类型的 `target` 路径相对于 `jczx/resources/` 目录。图片在加载时自动转为灰度图存入图片池。
 
 支持的路径写法：
 ```
@@ -512,13 +661,15 @@ locations\mainScreen.png
 
 图片格式要求：PNG，程序会用 `cv2.imread(..., IMREAD_GRAYSCALE)` 读取。
 
+所有 `target`、`testFor_before` 和 `testFor_after` 字段引用的图片都在初始化时加载到缓冲池，避免运行时重复读取。
+
 ---
 
 ## TUI 中的任务显示
 
 - **task 类型**的实体会出现在右侧"任务列表"面板中
 - 显示名称为 `name` 字段，若未设置则回退到 `desc`，最后回退到 key
-- 其他类型（func、click、dynamic）不出现在任务列表中，但可在"任务编辑器"下拉中选择 task 实体进行手动执行
+- 其他类型（func、click、dynamic、match）不出现在任务列表中，但可在"任务编辑器"下拉中选择 task 实体进行手动执行
 
 ### 快捷键
 

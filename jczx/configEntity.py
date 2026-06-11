@@ -13,6 +13,7 @@ class SectionType(Enum):
     SETTINGS = "settings"
     SETTING = "setting"
     DYNAMIC = "dynamic"
+    MATCH = "match"
     
     @classmethod
     def __contains__(cls, value):
@@ -56,7 +57,7 @@ class JczxSectionEntity(BaseEntity):
     pre_sleep: float = 0
     sleep: float = 0
     per: float = 0.8
-    max_wait: int = 0
+    max_wait: float = 0
     wait_sec: list[str] = field(default_factory=list)
     condition: str = None
     condition_not: str = None
@@ -68,6 +69,13 @@ class JczxSectionEntity(BaseEntity):
     view: str = "off"
     only_key: str = None
     times: int = 1
+    context_key: str = None
+    match: str = None
+    testFor_before: str = None
+    testFor_after: str = None
+    testFor_max_wait: float = 0
+    testFor_pre_sleep: float = 0
+    testFor_sleep: float = 0
     
     def get_task_name(self):
         return self.name or self.desc

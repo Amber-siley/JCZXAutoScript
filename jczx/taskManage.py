@@ -68,22 +68,34 @@ class TaskManage:
         configs = self.menu_config.trans_entity_dict(JczxSectionEntity)
         put_size, fail_size = 0, 0
         for config_entity in configs.values():
-            targets = config_entity.target
-            if not targets:
-                continue
-            if isinstance(targets, str):
-                targets = [targets]
-            for target in targets:
-                rel_target = self.get_resources_target(target)
-                if not self.fm.isfile(rel_target):
-                    self.log.debug(f"图片路径 {target} 不存在，跳过加载")
-                    fail_size += 1
-                    continue
-                if target not in self.img_pool.keys():
-                    self.log.debug(f"加载图片 {target} 到缓冲池")
-                    self.img_pool[target] = self.read_gray_img(rel_target)
+            target = config_entity.target
+            if target:
+                if self._load_img_to_pool(target):
                     put_size += 1
+                else:
+                    fail_size += 1
+            if config_entity.testFor_before:
+                if self._load_img_to_pool(config_entity.testFor_before):
+                    put_size += 1
+                else:
+                    fail_size += 1
+            if config_entity.testFor_after:
+                if self._load_img_to_pool(config_entity.testFor_after):
+                    put_size += 1
+                else:
+                    fail_size += 1
         self.log.debug(f"图片缓冲池加载完成，成功加载 {put_size} 张图片，失败 {fail_size} 张图片")
+
+    def _load_img_to_pool(self, target: str) -> bool:
+        if target in self.img_pool:
+            return True
+        rel_target = self.get_resources_target(target)
+        if not self.fm.isfile(rel_target):
+            self.log.debug(f"图片路径 {target} 不存在，跳过加载")
+            return False
+        self.log.debug(f"加载图片 {target} 到缓冲池")
+        self.img_pool[target] = self.read_gray_img(rel_target)
+        return True
     
     def load_task_entity_pool(self):
         """加载任务实体池"""

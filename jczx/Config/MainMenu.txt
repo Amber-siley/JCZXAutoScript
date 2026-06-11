@@ -98,7 +98,7 @@ condition: condition-start-game
 condition_then: click-start-game
 target: buttons\userLogin.png
 action: click-start-game,wait-5,goto-home
-max_wait: 40
+max_wait: 300
 
 [condition-start-game]
 type: func
@@ -415,6 +415,13 @@ target: locations\fightLoss1.png
 type: click
 condition_not: condition-in_location-home
 condition_then: condition-to-home
+condition_else: click-main-menu-close-1
+
+[click-main-menu-close-1]
+type: click
+name: 主界面补给 关闭-1
+target: locations\mainMemuClose1.png
+max_wait: 1
 
 [click-home]
 type: click 
