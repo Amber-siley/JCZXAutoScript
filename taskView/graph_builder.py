@@ -41,6 +41,16 @@ def _resolve_extends(configs: dict[str, JczxSectionEntity]) -> None:
                 setattr(entity, field_name, getattr(parent, field_name))
 
 
+def _find_condition_entities(configs: dict[str, JczxSectionEntity]) -> set[str]:
+    result: set[str] = set()
+    for entity in configs.values():
+        if entity.condition:
+            result.add(entity.condition)
+        if entity.condition_not:
+            result.add(entity.condition_not)
+    return result
+
+
 def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
     filepath = os.path.join(CONFIG_DIR, filename)
     if not os.path.isfile(filepath):
@@ -53,6 +63,8 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
     for key, entity in configs.items():
         entity.only_key = key
 
+    condition_keys = _find_condition_entities(configs)
+
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     seen_node_ids: set[str] = set()
@@ -63,6 +75,12 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
         if nid in seen_node_ids:
             return nid
         seen_node_ids.add(nid)
+        classes = entity.type or ""
+        if nid in condition_keys:
+            classes = (classes + " condition-entity").strip()
+        if entity.break_point == "on":
+            classes = (classes + " breakpoint").strip()
+        has_test_after = bool(getattr(entity, "testFor_after", ""))
         nodes.append({
             "data": {
                 "id": nid,
@@ -76,8 +94,9 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 "times": entity.times,
                 "max_wait": entity.max_wait,
                 "break_point": entity.break_point,
+                "has_test_after": has_test_after,
             },
-            "classes": entity.type or "",
+            "classes": classes,
         })
         return nid
 
@@ -104,35 +123,39 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
     for key, entity in configs.items():
         src = entity.only_key
 
-        for target in entity.action:
+        for idx, target in enumerate(entity.action):
             if target in configs:
                 _add_node(configs[target])
-                _add_edge(src, target, "action", "action")
+                if len(entity.action) > 1:
+                    label = chr(0x2460 + min(idx, 19))
+                else:
+                    label = ""
+                _add_edge(src, target, label, "action")
 
         if entity.condition and entity.condition in configs:
             _add_node(configs[entity.condition])
-            _add_edge(src, entity.condition, "condition", "condition")
+            _add_edge(src, entity.condition, "", "condition")
         if entity.condition_not and entity.condition_not in configs:
             _add_node(configs[entity.condition_not])
-            _add_edge(src, entity.condition_not, "condition_not", "condition_not")
+            _add_edge(src, entity.condition_not, "", "condition_not")
 
         for target in entity.condition_then:
             if target in configs:
                 _add_node(configs[target])
-                _add_edge(src, target, "condition_then", "condition_then")
+                _add_edge(src, target, "是", "condition_then")
         for target in entity.condition_else:
             if target in configs:
                 _add_node(configs[target])
-                _add_edge(src, target, "condition_else", "condition_else")
+                _add_edge(src, target, "否", "condition_else")
 
         if entity.extend and entity.extend in configs:
-            _add_edge(src, entity.extend, "extend", "extend")
+            _add_edge(src, entity.extend, "继承", "extend")
 
         if entity.type == SectionType.TASK.value and getattr(entity, "settings", None):
             settings_key = getattr(entity, "settings", "")
             if settings_key and settings_key in configs:
                 _add_node(configs[settings_key])
-                _add_edge(src, settings_key, "settings", "settings")
+                _add_edge(src, settings_key, "设置", "settings")
 
     for key, entity in configs.items():
         src = entity.only_key

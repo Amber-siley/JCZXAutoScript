@@ -89,14 +89,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="legend-item"><div class="legend-dot" style="background:#42a5f5;"></div><span class="legend-tag">task 任务</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#66bb6a;border-radius:50%;"></div><span class="legend-tag">func 函数</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#ffa726;border-radius:50%;"></div><span class="legend-tag">click 点击</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#26c6da;border-radius:50%;"></div><span class="legend-tag">match 匹配</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#ab47bc;border-radius:50%;"></div><span class="legend-tag">dynamic 动态</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#78909c;"></div><span class="legend-tag">settings 设置</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:transparent;border:2px solid #42a5f5;transform:rotate(45deg);width:8px;height:8px;"></div><span class="legend-tag">◇ 判断节点</span></div>
+    <div class="legend-item"><span style="width:12px;font-size:10px;text-align:center;">⚡</span><span class="legend-tag">break_point 超时跳出</span></div>
     <div style="margin:6px 0 2px;color:#666;">━━━━━━━━━━━━</div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px solid #888;"></div><span class="legend-tag">action 动作链</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #4fc3f7;"></div><span class="legend-tag">condition 条件</span></div>
-    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #66bb6a;"></div><span class="legend-tag">condition_then 命中</span></div>
-    <div class="legend-item"><div class="legend-line" style="border-top:2px dotted #ef5350;"></div><span class="legend-tag">condition_else 未命中</span></div>
-    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #555;"></div><span class="legend-tag">extend 继承</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #66bb6a;"></div><span class="legend-tag">是 命中分支</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px dotted #ef5350;"></div><span class="legend-tag">否 未命中分支</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #555;"></div><span class="legend-tag">继承 extend</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px solid #ce93d8;"></div><span class="legend-tag">@{..} 执行引用</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #ffd54f;"></div><span class="legend-tag">${..} 配置引用</span></div>
   </div>
@@ -151,9 +154,20 @@ function collectReachable(rootId) {
   return visited;
 }
 
+function processLabels(nodes) {
+  return nodes.map(n => {
+    const d = { ...n.data };
+    const parts = [];
+    if (n.classes && n.classes.includes('breakpoint')) parts.push('⚡');
+    parts.push(d.label);
+    if (d.times > 1) parts.push('×' + d.times);
+    if (d.has_test_after) parts.push('↻');
+    return { ...n, data: { ...d, label: parts.join(' ') } };
+  });
+}
 function filterByTask(taskId) {
   const reachable = collectReachable(taskId);
-  const filteredNodes = fullNodes.filter(n => reachable.has(n.data.id));
+  const filteredNodes = processLabels(fullNodes.filter(n => reachable.has(n.data.id)));
   const filteredEdges = fullEdges.filter(e => reachable.has(e.data.source) && reachable.has(e.data.target));
   cy.elements().remove();
   cy.add({ nodes: filteredNodes, edges: filteredEdges });
@@ -163,13 +177,14 @@ function filterByTask(taskId) {
 
 function showAll() {
   cy.elements().remove();
-  cy.add({ nodes: fullNodes, edges: fullEdges });
+  cy.add({ nodes: processLabels(fullNodes), edges: fullEdges });
   cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
   document.getElementById('stats').textContent = `节点 ${fullNodes.length} · 边 ${fullEdges.length}`;
 }
 
 const NODE_STYLES = {
   'task':     { 'background-color': '#42a5f5', 'border-color': '#1e88e5', 'shape': 'round-rectangle', 'text-outline-color': '#42a5f5' },
+  'match':    { 'background-color': '#26c6da', 'border-color': '#00acc1', 'shape': 'ellipse', 'text-outline-color': '#26c6da' },
   'func':     { 'background-color': '#66bb6a', 'border-color': '#43a047', 'shape': 'ellipse', 'text-outline-color': '#66bb6a' },
   'click':    { 'background-color': '#ffa726', 'border-color': '#fb8c00', 'shape': 'ellipse', 'text-outline-color': '#ffa726' },
   'dynamic':  { 'background-color': '#ab47bc', 'border-color': '#8e24aa', 'shape': 'ellipse', 'text-outline-color': '#ab47bc' },
@@ -195,6 +210,8 @@ function initCy() {
     style: [
       { selector: 'node', style: { 'label': 'data(label)', 'font-size': '12px', 'color': '#fff', 'text-valign': 'center', 'text-halign': 'center', 'width': 'label', 'height': 'label', 'padding': '8px', 'text-wrap': 'wrap', 'text-max-width': '120px', 'border-width': 2 } },
       ...Object.entries(NODE_STYLES).map(([cls, sty]) => ({ selector: `node.${cls}`, style: sty })),
+      { selector: 'node.condition-entity', style: { 'shape': 'diamond', 'padding': '14px' } },
+      { selector: 'node.breakpoint', style: { 'border-color': '#ffeb3b', 'border-width': 3 } },
       { selector: 'node:selected', style: { 'border-color': '#e94560', 'border-width': 3 } },
       { selector: 'edge', style: { 'width': 1.5, 'curve-style': 'bezier', 'font-size': '10px', 'color': '#888', 'text-background-color': '#1a1a2e', 'text-background-opacity': 0.8, 'text-background-padding': '2px', 'text-rotation': 'autorotate' } },
       ...Object.entries(EDGE_STYLES).map(([cls, sty]) => ({ selector: `edge.${cls}`, style: sty })),
