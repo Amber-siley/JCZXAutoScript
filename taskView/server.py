@@ -2,7 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
 import os
 
-from .graph_builder import list_config_files, build_graph, get_entity_detail
+from .graph_builder import list_config_files, build_graph, get_entity_detail, build_flow_tree
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
@@ -36,3 +36,11 @@ async def api_entity(name: str, file: str = Query(..., description="Config filen
     if detail is None:
         raise HTTPException(status_code=404, detail=f"Entity not found: {name}")
     return detail
+
+
+@app.get("/api/flow")
+async def api_flow(file: str = Query(...), task: str = Query(...)):
+    result = build_flow_tree(file, task)
+    if not result["nodes"] and not result["edges"]:
+        raise HTTPException(status_code=404, detail=f"Task not found or empty: {task}")
+    return result

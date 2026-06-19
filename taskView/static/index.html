@@ -74,6 +74,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="layout-switch" id="layout-btns">
       <button data-layout="dagre" class="active">dagre</button>
       <button data-layout="breadthfirst">bfs</button>
+      <button data-layout="flow">流程</button>
     </div>
   </div>
   <div class="section">
@@ -116,6 +117,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 let cy;
 let currentFile = null;
 let currentLayout = 'dagre';
+let currentView = 'graph';
+let currentFlowTask = null;
 let detailVisible = true;
 let fullNodes = [];
 let fullEdges = [];
@@ -166,6 +169,11 @@ function processLabels(nodes) {
   });
 }
 function filterByTask(taskId) {
+  if (currentView === 'flow') {
+    currentFlowTask = taskId;
+    loadFlowTree(taskId);
+    return;
+  }
   const reachable = collectReachable(taskId);
   const filteredNodes = processLabels(fullNodes.filter(n => reachable.has(n.data.id)));
   const filteredEdges = fullEdges.filter(e => reachable.has(e.data.source) && reachable.has(e.data.target));
@@ -175,7 +183,33 @@ function filterByTask(taskId) {
   document.getElementById('stats').textContent = `节点 ${filteredNodes.length} · 边 ${filteredEdges.length}`;
 }
 
+async function loadFlowTree(taskId) {
+  if (!currentFile || !taskId) return;
+  try {
+    const res = await fetch(`/api/flow?file=${encodeURIComponent(currentFile)}&task=${encodeURIComponent(taskId)}`);
+    const data = await res.json();
+    const flowNodes = processLabels(data.nodes);
+    const flowEdges = data.edges;
+    if (data.cycles) {
+      data.cycles.forEach(c => {
+        flowEdges.push({ data: { id: c.from + '→' + c.to + '::cycle', source: c.from, target: c.to, label: c.label }, classes: 'cycle' });
+      });
+    }
+    cy.elements().remove();
+    cy.add({ nodes: flowNodes, edges: flowEdges });
+    cy.layout({ name: 'dagre', rankDir: 'LR', spacingFactor: 1.2 }).run();
+    document.getElementById('stats').textContent = `节点 ${flowNodes.length} · 边 ${flowEdges.length}`;
+    document.getElementById('detail-content').innerHTML = '<div id="detail-empty">点击画布中的节点查看详情</div>';
+  } catch (e) {
+    console.error('Failed to load flow tree:', e);
+  }
+}
+
 function showAll() {
+  if (currentView === 'flow') {
+    if (currentFlowTask) loadFlowTree(currentFlowTask);
+    return;
+  }
   cy.elements().remove();
   cy.add({ nodes: processLabels(fullNodes), edges: fullEdges });
   cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
@@ -202,6 +236,7 @@ const EDGE_STYLES = {
   'settings':        { 'line-style': 'solid',  'line-color': '#555', 'target-arrow-shape': 'none' },
   'execute':         { 'line-style': 'solid',  'line-color': '#ce93d8', 'target-arrow-color': '#ce93d8', 'target-arrow-shape': 'diamond' },
   'config':          { 'line-style': 'dashed', 'line-color': '#ffd54f', 'target-arrow-color': '#ffd54f', 'target-arrow-shape': 'tee' },
+  'cycle':           { 'line-style': 'dashed', 'line-color': '#ef5350', 'target-arrow-color': '#ef5350', 'target-arrow-shape': 'triangle', 'width': 1, 'curve-style': 'unbundled-bezier' },
 };
 
 function initCy() {
@@ -339,8 +374,18 @@ document.getElementById('layout-btns').addEventListener('click', (e) => {
   if (!btn) return;
   document.querySelectorAll('#layout-btns button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  currentLayout = btn.dataset.layout;
-  if (cy) cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
+  const layout = btn.dataset.layout;
+  if (layout === 'flow') {
+    currentView = 'flow';
+    currentFlowTask = currentFlowTask || (fullNodes.filter(n => n.data.type === 'task')[0] || {}).data?.id;
+    if (currentFlowTask) loadFlowTree(currentFlowTask);
+  } else {
+    currentView = 'graph';
+    currentLayout = layout;
+    showAll();
+    document.getElementById('task-list').querySelectorAll('li').forEach(l => l.classList.remove('active'));
+    document.getElementById('task-list').querySelector('li.all').classList.add('active');
+  }
 });
 
 document.getElementById('btn-png').addEventListener('click', () => {

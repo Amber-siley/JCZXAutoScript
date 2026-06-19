@@ -186,6 +186,102 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
     return {"nodes": nodes, "edges": edges}
 
 
+def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[str, Any]:
+    filepath = os.path.join(CONFIG_DIR, filename)
+    if not os.path.isfile(filepath):
+        return {"nodes": [], "edges": [], "cycles": []}
+
+    config = TxtConfig(filepath)
+    configs = config.trans_entity_dict(JczxSectionEntity)
+    _resolve_extends(configs)
+    for key, entity in configs.items():
+        entity.only_key = key
+    condition_keys = _find_condition_entities(configs)
+
+    if task_key not in configs:
+        return {"nodes": [], "edges": [], "cycles": []}
+
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
+    cycles: list[dict[str, Any]] = []
+    counter: dict[str, int] = {}
+
+    def _uid(key: str) -> str:
+        c = counter.get(key, 0) + 1
+        counter[key] = c
+        return f"{key}#{c}"
+
+    def _node(entity: JczxSectionEntity, uid: str) -> dict[str, Any]:
+        classes = entity.type or ""
+        if uid.split("#")[0] in condition_keys:
+            classes = (classes + " condition-entity").strip()
+        if entity.break_point == "on":
+            classes = (classes + " breakpoint").strip()
+        has_test_after = bool(getattr(entity, "testFor_after", ""))
+        return {
+            "data": {
+                "id": uid, "label": entity.name or entity.desc or uid,
+                "type": entity.type or "", "desc": entity.desc or "",
+                "func": entity.func or "", "target": entity.target or "",
+                "sleep": entity.sleep, "per": entity.per, "times": entity.times,
+                "max_wait": entity.max_wait, "break_point": entity.break_point,
+                "has_test_after": has_test_after,
+            },
+            "classes": classes,
+        }
+
+    def _expand(key: str, path: list[str]) -> str:
+        if len(path) > max_depth:
+            return ""
+        if key not in configs:
+            return ""
+        uid = _uid(key)
+        entity = configs[key]
+        nodes.append(_node(entity, uid))
+
+        for idx, target in enumerate(entity.action):
+            if target in path:
+                label = "⟲" if len(entity.action) == 1 else chr(0x2460 + min(idx, 19))
+                cycles.append({"from": uid, "to": _uid(path[path.index(target)]), "label": label})
+                continue
+            child_uid = _expand(target, path + [key])
+            if child_uid:
+                label = chr(0x2460 + min(idx, 19)) if len(entity.action) > 1 else ""
+                edges.append({"data": {"id": f"{uid}→{child_uid}::action", "source": uid, "target": child_uid, "label": label}, "classes": "action"})
+
+        cond_key = entity.condition or entity.condition_not
+        is_not = bool(entity.condition_not)
+        if cond_key and cond_key in configs:
+            if cond_key in path:
+                cycles.append({"from": uid, "to": _uid(path[path.index(cond_key)]), "label": "⟲"})
+            else:
+                cond_uid = _expand(cond_key, path + [key])
+                if cond_uid:
+                    edges.append({"data": {"id": f"{uid}→{cond_uid}::condition", "source": uid, "target": cond_uid, "label": ""}, "classes": "condition_not" if is_not else "condition"})
+                    then_label = "否" if is_not else "是"
+                    else_label = "是" if is_not else "否"
+                    then_list = entity.condition_then
+                    else_list = entity.condition_else
+                    for t in (then_list or []):
+                        if t in path:
+                            cycles.append({"from": cond_uid, "to": _uid(path[path.index(t)]), "label": "⟲"})
+                            continue
+                        tuid = _expand(t, path + [key, cond_key])
+                        if tuid:
+                            edges.append({"data": {"id": f"{cond_uid}→{tuid}::then", "source": cond_uid, "target": tuid, "label": then_label}, "classes": "condition_then"})
+                    for t in (else_list or []):
+                        if t in path:
+                            cycles.append({"from": cond_uid, "to": _uid(path[path.index(t)]), "label": "⟲"})
+                            continue
+                        tuid = _expand(t, path + [key, cond_key])
+                        if tuid:
+                            edges.append({"data": {"id": f"{cond_uid}→{tuid}::else", "source": cond_uid, "target": tuid, "label": else_label}, "classes": "condition_else"})
+        return uid
+
+    _expand(task_key, [])
+    return {"nodes": nodes, "edges": edges, "cycles": cycles}
+
+
 def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
     filepath = os.path.join(CONFIG_DIR, filename)
     if not os.path.isfile(filepath):
