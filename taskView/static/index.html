@@ -192,7 +192,7 @@ async function loadFlowTree(taskId) {
     const flowEdges = data.edges;
     cy.elements().remove();
     cy.add({ nodes: flowNodes, edges: flowEdges });
-    cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
+    cy.layout({ name: 'dagre', rankDir: 'LR', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
     if (data.cycles) {
       data.cycles.forEach(c => {
         cy.add({ data: { id: c.from + '→' + c.to + '::cycle', source: c.from, target: c.to, label: c.label }, classes: 'cycle' });
@@ -260,10 +260,11 @@ function initCy() {
   cy.on('tap', 'node', async function (evt) {
     const node = evt.target;
     const entityName = node.data('id');
+    const lookupName = entityName.replace(/#\d+$/, '');
     if (!currentFile || !entityName) return;
     if (!detailVisible) toggleDetail();
     try {
-      const res = await fetch(`/api/entity/${encodeURIComponent(entityName)}?file=${encodeURIComponent(currentFile)}`);
+      const res = await fetch(`/api/entity/${encodeURIComponent(lookupName)}?file=${encodeURIComponent(currentFile)}`);
       const detail = await res.json();
       renderDetail(detail);
     } catch (e) {
