@@ -205,11 +205,20 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
     edges: list[dict[str, Any]] = []
     cycles: list[dict[str, Any]] = []
     counter: dict[str, int] = {}
+    key_to_uid: dict[str, str] = {}
 
     def _uid(key: str) -> str:
         c = counter.get(key, 0) + 1
         counter[key] = c
-        return f"{key}#{c}"
+        uid = f"{key}#{c}"
+        key_to_uid[uid] = uid
+        return uid
+
+    def _first_uid(key: str) -> str:
+        for uid in key_to_uid:
+            if uid.split("#")[0] == key:
+                return uid
+        return ""
 
     def _node(entity: JczxSectionEntity, uid: str) -> dict[str, Any]:
         classes = entity.type or ""
@@ -242,7 +251,7 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
         for idx, target in enumerate(entity.action):
             if target in path:
                 label = "⟲" if len(entity.action) == 1 else chr(0x2460 + min(idx, 19))
-                cycles.append({"from": uid, "to": _uid(path[path.index(target)]), "label": label})
+                cycles.append({"from": uid, "to": _first_uid(target), "label": label})
                 continue
             child_uid = _expand(target, path + [key])
             if child_uid:
@@ -253,7 +262,7 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
         is_not = bool(entity.condition_not)
         if cond_key and cond_key in configs:
             if cond_key in path:
-                cycles.append({"from": uid, "to": _uid(path[path.index(cond_key)]), "label": "⟲"})
+                cycles.append({"from": uid, "to": _first_uid(cond_key), "label": "⟲"})
             else:
                 cond_uid = _expand(cond_key, path + [key])
                 if cond_uid:
@@ -264,14 +273,14 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                     else_list = entity.condition_else
                     for t in (then_list or []):
                         if t in path:
-                            cycles.append({"from": cond_uid, "to": _uid(path[path.index(t)]), "label": "⟲"})
+                            cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
                             continue
                         tuid = _expand(t, path + [key, cond_key])
                         if tuid:
                             edges.append({"data": {"id": f"{cond_uid}→{tuid}::then", "source": cond_uid, "target": tuid, "label": then_label}, "classes": "condition_then"})
                     for t in (else_list or []):
                         if t in path:
-                            cycles.append({"from": cond_uid, "to": _uid(path[path.index(t)]), "label": "⟲"})
+                            cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
                             continue
                         tuid = _expand(t, path + [key, cond_key])
                         if tuid:

@@ -190,15 +190,15 @@ async function loadFlowTree(taskId) {
     const data = await res.json();
     const flowNodes = processLabels(data.nodes);
     const flowEdges = data.edges;
-    if (data.cycles) {
-      data.cycles.forEach(c => {
-        flowEdges.push({ data: { id: c.from + '→' + c.to + '::cycle', source: c.from, target: c.to, label: c.label }, classes: 'cycle' });
-      });
-    }
     cy.elements().remove();
     cy.add({ nodes: flowNodes, edges: flowEdges });
-    cy.layout({ name: 'dagre', rankDir: 'LR', spacingFactor: 1.2 }).run();
-    document.getElementById('stats').textContent = `节点 ${flowNodes.length} · 边 ${flowEdges.length}`;
+    cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
+    if (data.cycles) {
+      data.cycles.forEach(c => {
+        cy.add({ data: { id: c.from + '→' + c.to + '::cycle', source: c.from, target: c.to, label: c.label }, classes: 'cycle' });
+      });
+    }
+    document.getElementById('stats').textContent = `节点 ${flowNodes.length} · 边 ${flowEdges.length + (data.cycles || []).length}`;
     document.getElementById('detail-content').innerHTML = '<div id="detail-empty">点击画布中的节点查看详情</div>';
   } catch (e) {
     console.error('Failed to load flow tree:', e);
