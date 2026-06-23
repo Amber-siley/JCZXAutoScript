@@ -58,8 +58,6 @@ name: 截图
 action: screenshot
 settings: screenshot-task-settings
 
-/ 前往主界面，不是主界面 判断是否有主界面按钮，有的话点击，
-/ 无的话是否有返回按钮，有则点击 然后继续判断是主界面，无的话点击中间 继续判断
 [goto-home]
 type: task
 view: off
@@ -81,9 +79,78 @@ name: 虚影周本
 action: goto-inllusion-1,condition-inllusion-to-action
 settings: settings-inllusion
 
+[jjc-simulate]
+type: task
+view: on
+name: 竞技场日常
+action: get-simulate-times,get-simulate-refresh-times,get-combat-power,context-simulate-fight-refresh-times,context-simulate-continue-times
+
 / -------------
 / 杂项
 / -------------
+/ 竞技场
+/   | 获取(挑战次数,获取第一位的战力值,获取剩余刷新次数,获取是+28/+26)
+/ 计算平均使用刷新次数 - times
+/   | 
+/ 判断是否小于战力阈值 & (times是否<=0 | 是+28挑战)  <----------------\
+/   | Y             |                                              |
+/ 发起挑战           \---------------N-----------> 点击刷新，times-1/
+/
+[get-simulate-times]
+type: ocr
+name: 获取剩余挑战次数
+match: match-get-simulate-times
+context_key: simulate_times
+context_type: int
+
+[get-simulate-refresh-times]
+type: ocr
+name: 获取剩余刷新次数
+match: match-simulate-refresh-times
+context_key: refresh_times
+context_type: int
+
+[get-combat-power]
+type: ocr
+name: 获取第一位的战力值
+match: match-combat-power
+context_key: combat_power
+context_type: int
+
+[match-combat-power]
+type: match
+target: locations\firstScoreLoc.png
+action: right-1
+
+[match-simulate-refresh-times]
+type: match
+target: locations\cancel15Loc.png
+per: 0.9
+action: left-1
+
+[match-get-simulate-times]
+type: match
+target: locations\competitionTimesLoc.png
+per: 0.9
+action: left-1
+
+[context-simulate-continue-times]
+type: context
+name: 计算可以平均使用刷新的次数
+context_get: refresh_times
+context_type: int
+action: /|%{simulate_times}
+context_key: average_times
+
+[context-simulate-fight-refresh-times]
+type: context
+name: 挑战花费刷新次数
+context_get: fight_refresh_times
+context_default: 0
+context_default_type: int
+action: +|1
+context_key: fight_refresh_times
+
 [launch-game-plan]
 type: func
 func: start_game
@@ -94,11 +161,16 @@ sleep: 30
 [user-login]
 type: click
 name: 点击登录
+testFor_before: locations\onUseLogin.png
 condition: condition-start-game
-condition_then: click-start-game
-target: buttons\userLogin.png
-action: click-start-game,wait-5,goto-home
+condition_then: click-start-game,wait-5,goto-home
+condition_else: click-userLogin,click-start-game,wait-5,goto-home
 max_wait: 300
+
+[click-userLogin]
+type: click
+name: 进入游戏
+target: buttons\userLogin.png
 
 [condition-start-game]
 type: func
@@ -110,7 +182,7 @@ type: click
 name: 开始游戏
 target: buttons\login.png
 action: no-reminders
-max_wait: 30
+max_wait: 300
 
 [no-reminders]
 type: click
@@ -286,18 +358,24 @@ action: ZhouSi-step-1,ZhouSi-step-2,ZhouSi-step-3,ZhouSi-step-4,ZhouSi-step-5
 
 [ZhouSi-step-1]
 type: click
+testFor_before: locations\ZhouSi_c_1.png
+testFor_per: 0.9
 target: locations\ZhouSi_c_1.png
 per: 0.9
 max_wait: 10
 
 [ZhouSi-step-2]
 type: click
+testFor_before: locations\ZhouSi_c_2.png
+testFor_per: 0.9
 target: locations\ZhouSi_c_2.png
 per: 0.9
 max_wait: 10
 
 [ZhouSi-step-3]
 type: click
+testFor_before: locations\ZhouSi_c_3.png
+testFor_per: 0.9
 target: locations\ZhouSi_c_3.png
 per: 0.9
 sleep: 1
@@ -306,6 +384,8 @@ sleep: 3
 
 [ZhouSi-step-4]
 type: click
+testFor_before: locations\ZhouSi_c_4.png
+testFor_per: 0.9
 target: locations\ZhouSi_c_4.png
 per: 0.9
 max_wait: 10
@@ -313,6 +393,8 @@ sleep: 5
 
 [ZhouSi-step-5]
 type: click
+testFor_before: locations\ZhouSi_c_5.png
+testFor_per: 0.9
 target: locations\ZhouSi_c_5.png
 per: 0.9
 max_wait: 10
@@ -421,7 +503,9 @@ condition_else: click-main-menu-close-1
 type: click
 name: 主界面补给 关闭-1
 target: locations\mainMemuClose1.png
+times: 2
 max_wait: 1
+sleep: 0.5
 
 [click-home]
 type: click 

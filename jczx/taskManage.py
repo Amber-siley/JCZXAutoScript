@@ -15,7 +15,7 @@ class TaskManage:
         # 创建默认配置
         self.fm = FileManage(FileManage(__file__).work_path)
         self.default_config_dir = self.fm.get_obj_relative_path("Config", self)
-        self.default_config_path = self.fm.get_obj_relative_path("Config\Config.txt", self)
+        self.default_config_path = self.fm.get_obj_relative_path("Config\\Config.txt", self)
         self.config_dir = config_dir if config_dir else self.default_config_dir
         self.main_config_path = self.fm.join(self.config_dir, "Config.txt", seq="\\")
         self.menu_config_path = self.fm.join(self.config_dir, "MainMenu.txt", seq="\\")

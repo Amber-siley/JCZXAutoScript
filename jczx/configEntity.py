@@ -14,6 +14,9 @@ class SectionType(Enum):
     SETTING = "setting"
     DYNAMIC = "dynamic"
     MATCH = "match"
+    OCR = "ocr"
+    CONTEXT = "context"
+    CONDITION = "condition"
     
     @classmethod
     def __contains__(cls, value):
@@ -25,11 +28,19 @@ class SectionType(Enum):
 
 @dataclass
 class BaseEntity:
+    _type_hints_cache = None
+
     def __setattr__(self, name, value):
         if value is None:
             super().__setattr__(name, value)
             return
-        hints = get_type_hints(self)
+        cls = type(self)
+        if cls._type_hints_cache is None:
+            cls._type_hints_cache = get_type_hints(cls)
+        hints = cls._type_hints_cache
+        if name not in hints:
+            super().__setattr__(name, value)
+            return
         typ = hints[name]
         origin = get_origin(typ)
         if origin is list:
@@ -70,10 +81,15 @@ class JczxSectionEntity(BaseEntity):
     only_key: str = None
     times: int = 1
     context_key: str = None
+    context_type: str = "str"
+    context_default_type: str = "str"
+    context_get: str = None
+    context_default: str = ""
     match: str = None
     testFor_before: str = None
     testFor_after: str = None
     testFor_max_wait: float = 0
+    testFor_per: float = 0.8
     testFor_pre_sleep: float = 0
     testFor_sleep: float = 0
     

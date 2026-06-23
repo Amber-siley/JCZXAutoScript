@@ -2677,35 +2677,27 @@ class WorkThread(QThread, WorkTags):
         # from easyocr import Reader
         # self.adb.ocr = Reader(["ch_sim", "en"], model_storage_directory = joinPath("EasyOCR", "model"), download_enabled = False)
         from paddleocr import PaddleOCR
+        import onnxruntime
+        onnxruntime.set_default_logger_severity(3)
         class OCR(PaddleOCR):
             def __init__(self, **kwargs):
                 super().__init__(**kwargs)
 
-            def readtext(self, img:MatLike, det = True, rec = True, cls = False, bin = False, inv = False) -> list:
-                data = self.ocr(
-                    img,
-                    det = det,
-                    rec = rec,
-                    cls = cls,
-                    bin = bin,
-                    inv = inv
-                )
+            def readtext(self, img:MatLike, cls: bool = False) -> list:
+                data = self.predict(img, use_textline_orientation = cls)
                 result = []
-                if all(data):
-                    for line in data[0]:
-                        text = line[1][0]
-                        result.append(text)
+                if data:
+                    for item in data:
+                        texts = item.get("rec_texts", [])
+                        result.extend(texts)
                 return result
             
         self.adb.ocr = OCR(
-            use_angle_cls = False,
+            use_textline_orientation = False,
+            use_doc_orientation_classify = False,
             lang = 'ch',
-            use_gpu = False,
-            enable_mkldnn = True,
-            show_log = False,
-            det_model_dir = joinPath('OCR', 'ch_PP-OCRv4_det_infer'),
-            rec_model_dir = joinPath('OCR', 'ch_PP-OCRv4_rec_infer'),
-            cls_model_dir = joinPath('OCR', 'ch_ppocr_mobile_v2.0_cls_infer')
+            device = 'cpu',
+            engine = 'onnxruntime',
         )
         self.log.info("OCR载入完成")
     

@@ -1,39 +1,26 @@
 import threading
 import time
-import logging
 import re
 
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from enum import Enum
 from logging import Logger, Formatter, Handler, getLevelName
 from logging.handlers import RotatingFileHandler
-from typing import List, Callable, Any, Optional, Union
-from dataclasses import dataclass
+from typing import Callable, Any, Optional, Union
 from datetime import datetime
 
 import cv2
-import uiautomator2 as u2
-
-from rich import print
-from rich.logging import RichHandler
-from rich.console import Console
-from pick import Option, Picker
 from textual.app import App, ComposeResult
-from textual.widgets import RichLog, Footer, Header, Input, Select, Button
-from textual.containers import Container, HorizontalGroup, VerticalScroll
-from textual.reactive import reactive
-from textual import on
+from textual.widgets import RichLog, Footer, Header
+from textual.containers import Container, VerticalScroll
 from textual.binding import Binding
-from textual.events import Mount, Key
 from numpy.typing import NDArray
 
-from .CommoneBuilder.CommonBuilder.Android.Adb import Adb, Device
+from .CommoneBuilder.CommonBuilder.Android.Adb import Device, MatchTemplete
 from .CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig
-from .CommoneBuilder.CommonBuilder.FileTools.Base.Define import DictConst
 from .CommoneBuilder.CommonBuilder.FileTools.File import FileManage
+from .CommoneBuilder.CommonBuilder.Ocr.typing import OCR
 from .translate import Lang, translate
-from .configEntity import JczxConfigFileEntity, JczxSectionEntity, SectionType
-from .multPick import pick
+from .configEntity import JczxSectionEntity, SectionType
 from .taskManage import TaskManage
 from .widgets import (
     DeviceBar,
@@ -54,18 +41,18 @@ class JCZXGaming(Device):
         super().__init__(adb_path, device_id, connect_port, max_workers, log=self.log)
         self.fm = FileManage()
         self.task_manage = TaskManage(config_dir, log)
-        self.ocr = None
+        self.ocr: OCR = None
         self._context: dict[str, str] = {}
         self.stop_event = threading.Event()
     
     def set_ocr(self, ocr):
         self.ocr = ocr
 
-    def context_get(self, key: str, default: str = "") -> str:
+    def context_get(self, key: str, default = ""):
         return self._context.get(key, default)
 
-    def context_set(self, key: str, value: str) -> None:
-        self._context[key] = str(value)
+    def context_set(self, key: str, value) -> None:
+        self._context[key] = value
         self.log.debug(f"上下文设置 {key} = {value}")
 
     def _get_method(self, method_name: str) -> Callable[..., Any]:
@@ -75,6 +62,113 @@ class JCZXGaming(Device):
     
     _EXEC_PLACEHOLDER_PATTERN = re.compile(r"@\{(.+?)\}")
     _CTX_PLACEHOLDER_PATTERN = re.compile(r"%\{(.+?)\}")
+    _CONDITION_EXPR_PATTERN = re.compile(r"^&\{(.+)\}$")
+
+    def _eval_condition(self, condition: str) -> bool:
+        """评估条件表达式：&{...} 表达式或单实体执行。"""
+        if not condition:
+            return False
+        match = self._CONDITION_EXPR_PATTERN.match(condition)
+        if match:
+            return self._eval_condition_expr(match.group(1))
+        return bool(self.exec(condition))
+
+    def _eval_condition_expr(self, expr: str) -> bool:
+        """解析并计算 &{...} 内的条件表达式，支持实体执行和逻辑/比较运算符。"""
+        tokens = self._tokenize_condition(expr)
+        pos = 0
+
+        def parse_or():
+            nonlocal pos
+            left = parse_and()
+            while pos < len(tokens) and tokens[pos] == "|":
+                pos += 1
+                left = bool(left) or bool(parse_and())
+            return left
+
+        def parse_and():
+            nonlocal pos
+            left = parse_cmp()
+            while pos < len(tokens) and tokens[pos] == "&":
+                pos += 1
+                left = bool(left) and bool(parse_cmp())
+            return left
+
+        def parse_cmp():
+            nonlocal pos
+            left = parse_primary()
+            if pos < len(tokens) and tokens[pos] in (">=", "<=", ">", "<", "==", "!="):
+                op_token = tokens[pos]
+                pos += 1
+                right = parse_primary()
+                if op_token == ">=":
+                    return float(left) >= float(right)
+                if op_token == "<=":
+                    return float(left) <= float(right)
+                if op_token == ">":
+                    return float(left) > float(right)
+                if op_token == "<":
+                    return float(left) < float(right)
+                if op_token == "==":
+                    return str(left) == str(right)
+                if op_token == "!=":
+                    return str(left) != str(right)
+            return left
+
+        def parse_primary():
+            nonlocal pos
+            if pos >= len(tokens):
+                return False
+            token = tokens[pos]
+            pos += 1
+            if token == "(":
+                result = parse_or()
+                if pos < len(tokens) and tokens[pos] == ")":
+                    pos += 1
+                return result
+            try:
+                if "." in token:
+                    return float(token)
+                return int(token)
+            except (ValueError, TypeError):
+                pass
+            return self.exec(token)
+
+        result = parse_or()
+        return bool(result) if result is not None else False
+
+    @staticmethod
+    def _tokenize_condition(expr: str) -> list:
+        tokens = []
+        i = 0
+        n = len(expr)
+        while i < n:
+            c = expr[i]
+            if c.isspace():
+                i += 1
+                continue
+            if c in "()":
+                tokens.append(c)
+                i += 1
+            elif c == "&":
+                tokens.append("&")
+                i += 1
+            elif c == "|":
+                tokens.append("|")
+                i += 1
+            elif expr[i : i + 2] in (">=", "<=", "!=", "=="):
+                tokens.append(expr[i : i + 2])
+                i += 2
+            elif c in "><":
+                tokens.append(c)
+                i += 1
+            else:
+                j = i
+                while j < n and not expr[j].isspace() and expr[j] not in "()&|><=!":
+                    j += 1
+                tokens.append(expr[i:j])
+                i = j
+        return tokens
 
     def _resolve_exec_placeholders(self, args: list) -> list:
         resolved = []
@@ -93,11 +187,12 @@ class JCZXGaming(Device):
             self.log.debug(f"解析 执行占位符 {match}，值 {exec_result}，原字符串 {arg}")
         for match in self._CTX_PLACEHOLDER_PATTERN.findall(arg):
             val = self.context_get(match)
-            result = result.replace("%{" + match + "}", val)
+            result = result.replace("%{" + match + "}", str(val) if val else "")
             self.log.debug(f"解析 上下文占位符 {match}，值 {val}，原字符串 {arg}")
         return result
 
     def exec_func(self, section: Union[JczxSectionEntity, str]):
+        """执行 func 类型实体：调用 JCZXGaming 上的方法，支持 times / pre_sleep / sleep / action 链"""
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         for _ in range(entity.times):
             if self.stop_event.is_set():
@@ -124,6 +219,8 @@ class JCZXGaming(Device):
         return result
 
     def exec_match(self, section: Union[JczxSectionEntity, str]):
+        """执行 match 类型实体：纯模板匹配不点击，返回 MatchTemplete 对象供其他实体使用。
+        action 字段为变换操作列表（非执行链），如 down-0.5、reW-1.0 等。"""
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         target = entity.target
         if not target:
@@ -144,9 +241,246 @@ class JCZXGaming(Device):
 
     @staticmethod
     def _transform_match(mt, action: str):
+        """对 MatchTemplete 结果应用变换操作（如 down-1.5、reW-2.0 等）。"""
         return mt.transform(action)
 
+    def exec_ocr(self, section: Union[JczxSectionEntity, str]):
+        """执行 ocr 类型实体：匹配图像区域 → 裁剪 → OCR 识别 → 返回文本。"""
+        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+        test_before_img = None
+        test_after_img = None
+        if entity.testFor_before:
+            test_before_img = self.task_manage.get_img(entity.testFor_before)
+        if entity.testFor_after:
+            test_after_img = self.task_manage.get_img(entity.testFor_after)
+        for _ in range(entity.times):
+            if self.stop_event.is_set():
+                return None
+            if test_before_img is not None:
+                time.sleep(entity.testFor_pre_sleep)
+                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else 0
+                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
+                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
+                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
+                    return None
+                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
+                time.sleep(entity.testFor_sleep)
+            result = ""
+            time.sleep(entity.pre_sleep)
+            if entity.match:
+                mt = self.exec(entity.match)
+                if mt is not None and getattr(mt, "matched", False):
+                    result = self._ocr_match_region(mt)
+            elif entity.target:
+                target = self._resolve_placeholder(entity.target)
+                target = self._resolve_exec_placeholder(target) if target else None
+                img = self.task_manage.get_img(target) if target else None
+                if img is not None:
+                    mt = self.findImageDetail(img, per=entity.per)
+                    if mt and mt.matched and mt.matchTempletePointRange:
+                        result = self._ocr_match_region(mt)
+                        self.log.info(f"OCR 识别 {entity.get_task_name()}: {result}") if entity.get_task_name() else None
+            time.sleep(entity.sleep)
+            for i in self.task_manage.get_next(entity):
+                result = self.exec(i)
+            if test_after_img is not None:
+                if not self.in_location(entity.testFor_after):
+                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
+                    continue
+                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
+        return result
+
+    def _ocr_match_region(self, mt: MatchTemplete) -> str:
+        """从 MatchTemplete 结果中裁剪区域并执行 OCR，返回识别文本。"""
+        pt_range = mt.matchTempletePointRange
+        if pt_range is None:
+            return ""
+        (x0, y0), (x1, y1) = pt_range
+        if x0 >= x1 or y0 >= y1:
+            return ""
+        cropped = mt.baseGrayScreenshot[y0:y1, x0:x1]
+        if cropped is None or cropped.size == 0:
+            return ""
+        if len(cropped.shape) == 2:
+            cropped = cv2.cvtColor(cropped, cv2.COLOR_GRAY2BGR)
+        if self.ocr is None:
+            self.log.warning("OCR 未初始化，无法识别")
+            return ""
+        texts = self.ocr.readtext(cropped)
+        result = "".join(texts) if texts else ""
+        self.log.debug(f"OCR 识别结果: {result}")
+        return result
+
+    def exec_context(self, section: Union[JczxSectionEntity, str]):
+        """执行 context 类型实体：读取上下文变量 → 按 action 链运算 → 输出结果。"""
+        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+        test_before_img = None
+        test_after_img = None
+        if entity.testFor_before:
+            test_before_img = self.task_manage.get_img(entity.testFor_before)
+        if entity.testFor_after:
+            test_after_img = self.task_manage.get_img(entity.testFor_after)
+        for _ in range(entity.times):
+            if self.stop_event.is_set():
+                return None
+            if test_before_img is not None:
+                time.sleep(entity.testFor_pre_sleep)
+                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else 0
+                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
+                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
+                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
+                    return None
+                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
+                time.sleep(entity.testFor_sleep)
+            result = None
+            time.sleep(entity.pre_sleep)
+            if entity.context_get:
+                exists = entity.context_get in self._context
+                if exists:
+                    value = self._context[entity.context_get]
+                else:
+                    value = self._convert_value(entity.context_default, entity.context_default_type)
+                self.log.debug(f"上下文读取 {entity.context_get} = {value} (存在: {exists}, 类型: {type(value).__name__})")
+                actions = self.task_manage.resolve_placeholders(entity.action, entity.only_key)
+                actions = self._resolve_exec_placeholders(actions)
+                self.log.debug(f"上下文运算链: {entity.action} → {actions}")
+                for op in actions:
+                    prev = value
+                    value = self._apply_context_op(value, op)
+                    self.log.debug(f"上下文运算: {prev} {op} → {value}")
+                result = value
+                if entity.context_key:
+                    match entity.context_type:
+                        case "int":
+                            self.context_set(entity.context_key, int(result))
+                        case "float":
+                            self.context_set(entity.context_key, float(result))
+                        case _:
+                            self.context_set(entity.context_key, str(result))
+            time.sleep(entity.sleep)
+            if test_after_img is not None:
+                if not self.in_location(entity.testFor_after):
+                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
+                    continue
+                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
+        return result
+
+    def exec_condition(self, section: Union[JczxSectionEntity, str]):
+        """执行 condition 类型实体：评估 condition / condition_not，按结果执行 then / else 分支。"""
+        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+        test_before_img = None
+        test_after_img = None
+        if entity.testFor_before:
+            test_before_img = self.task_manage.get_img(entity.testFor_before)
+        if entity.testFor_after:
+            test_after_img = self.task_manage.get_img(entity.testFor_after)
+        for _ in range(entity.times):
+            if self.stop_event.is_set():
+                return None
+            if test_before_img is not None:
+                time.sleep(entity.testFor_pre_sleep)
+                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else 0
+                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
+                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
+                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
+                    return None
+                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
+                time.sleep(entity.testFor_sleep)
+            result = None
+            time.sleep(entity.pre_sleep)
+            if entity.condition_not:
+                if not self._eval_condition(entity.condition_not):
+                    self.log.debug(f"条件 {entity.condition_not} 满足 condition_not，执行 condition_then {entity.condition_then}")
+                    for s in entity.condition_then:
+                        result = self.exec(s)
+                else:
+                    self.log.debug(f"条件 {entity.condition_not} 不满足 condition_not，执行 condition_else {entity.condition_else}")
+                    for s in entity.condition_else:
+                        result = self.exec(s)
+            elif entity.condition:
+                if self._eval_condition(entity.condition):
+                    self.log.debug(f"条件 {entity.condition} 满足 condition，执行 condition_then {entity.condition_then}")
+                    for s in entity.condition_then:
+                        result = self.exec(s)
+                else:
+                    self.log.debug(f"条件 {entity.condition} 不满足 condition，执行 condition_else {entity.condition_else}")
+                    for s in entity.condition_else:
+                        result = self.exec(s)
+            time.sleep(entity.sleep)
+            for i in self.task_manage.get_next(entity):
+                result = self.exec(i)
+            if test_after_img is not None:
+                if not self.in_location(entity.testFor_after):
+                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
+                    continue
+                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
+        return result
+
+    @staticmethod
+    def _convert_value(raw: str, value_type: str):
+        if value_type == "int":
+            try:
+                return int(float(raw))
+            except (ValueError, TypeError):
+                return 0
+        elif value_type == "float":
+            try:
+                return float(raw)
+            except (ValueError, TypeError):
+                return 0.0
+        return raw
+
+    @staticmethod
+    def _apply_context_op(value, action: str):
+        parts = action.split("|", 1)
+        if len(parts) != 2:
+            return value
+        op, rhs = parts
+        if isinstance(value, str):
+            if op == "+":
+                return value + rhs
+            elif op == "=":
+                return rhs
+            elif op == "==":
+                return value == rhs
+            elif op == "contains":
+                return rhs in value
+            return value
+        rhs_num = float(rhs) if rhs else 0.0
+        rhs_is_int = "." not in rhs and rhs != ""
+        if op == "=":
+            return int(rhs_num) if rhs_is_int and rhs_num == int(rhs_num) else rhs_num
+        if op == "==":
+            return value == rhs_num
+        if op == ">":
+            return value > rhs_num
+        if op == "<":
+            return value < rhs_num
+        if op == ">=":
+            return value >= rhs_num
+        if op == "<=":
+            return value <= rhs_num
+        if op == "/":
+            return value / rhs_num
+        if isinstance(value, int) and rhs_is_int:
+            rhs_int = int(rhs_num)
+            if op == "+":
+                return value + rhs_int
+            if op == "-":
+                return value - rhs_int
+            if op == "x":
+                return value * rhs_int
+        else:
+            if op == "+":
+                return value + rhs_num
+            if op == "-":
+                return value - rhs_num
+            if op == "x":
+                return value * rhs_num
+        return value
+
     def exec(self, section: Union[JczxSectionEntity, str]):
+        """统一调度入口：根据 type 分发到对应执行方法，执行后自动将返回值存入上下文变量（若设置了 context_key）。"""
         if not section:
             return None
         if self.stop_event.is_set():
@@ -163,13 +497,27 @@ class JCZXGaming(Device):
                 result = self.exec_dynamic(entity)
             case SectionType.MATCH.value:
                 result = self.exec_match(entity)
+            case SectionType.OCR.value:
+                result = self.exec_ocr(entity)
+            case SectionType.CONTEXT.value:
+                result = self.exec_context(entity)
+            case SectionType.CONDITION.value:
+                result = self.exec_condition(entity)
             case _:
                 return None
-        if entity.context_key and result is not None:
-            self.context_set(entity.context_key, str(result))
+        if entity.context_key and result is not None and entity.type != SectionType.CONTEXT.value and entity.type != SectionType.CONDITION.value:
+            match entity.context_type:
+                case "int":
+                    self.context_set(entity.context_key, int(float(result)))
+                case "float":
+                    self.context_set(entity.context_key, float(result))
+                case _:
+                    self.context_set(entity.context_key, str(result))
         return result
 
     def exec_dynamic(self, section: Union[JczxSectionEntity, str]):
+        """执行 dynamic 类型实体：依次执行 action 中的 entity key，并将每个返回值（转 str）再次作为 entity key 执行。
+        不支持 action 链（get_next 不会被调用）。"""
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         for _ in range(entity.times):
             if self.stop_event.is_set():
@@ -188,6 +536,8 @@ class JCZXGaming(Device):
         return None
 
     def exec_click(self, section: Union[JczxSectionEntity, str]):
+        """执行 click 类型实体：testFor_before 门控 → pos/match/target 点击 → action 链 → testFor_after 复检。
+        点击优先级：pos > match > target（模板匹配循环）。"""
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         test_before_img = None
         test_after_img = None
@@ -201,9 +551,11 @@ class JCZXGaming(Device):
             if test_before_img is not None:
                 time.sleep(entity.testFor_pre_sleep)
                 test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else entity.max_wait
-                if not self._wait_for_image(test_before_img, test_wait):
+                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
+                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
                     self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
                     return None
+                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
                 time.sleep(entity.testFor_sleep)
             startTime = datetime.now()
             result = None
@@ -226,7 +578,7 @@ class JCZXGaming(Device):
                     if self.stop_event.is_set():
                         return None
                     if entity.condition_not:
-                        if not self.exec(entity.condition_not):
+                        if not self._eval_condition(entity.condition_not):
                             self.log.debug(f"条件 {entity.condition_not} 满足 condition_not，执行 condition_then {entity.condition_then}")
                             for section in entity.condition_then:
                                 result = self.exec(section)
@@ -236,7 +588,7 @@ class JCZXGaming(Device):
                                 result = self.exec(section)
                         break
                     elif entity.condition:
-                        if self.exec(entity.condition):
+                        if self._eval_condition(entity.condition):
                             self.log.debug(f"条件 {entity.condition} 满足 condition，执行 condition_then {entity.condition_then}")
                             for section in entity.condition_then:
                                 result = self.exec(section)
@@ -270,12 +622,15 @@ class JCZXGaming(Device):
                 self.log.debug(f"获取下一执行链 {entities}")
             for i in entities:
                 result = self.exec(i)
-            if test_after_img is not None and not self.in_location(entity.testFor_after):
-                self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
-                continue
+            if test_after_img is not None:
+                if not self.in_location(entity.testFor_after):
+                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
+                    continue
+                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
         return result
 
     def _wait_for_image(self, img, max_wait: int, per: float = 0.8) -> bool:
+        """轮询检测图片是否出现在屏幕上，每 0.3s 检测一次，超时返回 False。仅检测不点击。"""
         start = time.monotonic()
         while not self.stop_event.is_set():
             if self.findImageCenterLocations(img, per=per):
@@ -296,6 +651,7 @@ class JCZXGaming(Device):
         return str(self.fm.get_obj_relative_path(rel_path, self))
 
     def exec_task_raw(self, section: Union[JczxSectionEntity, str]):
+        """顶层任务执行入口：执行前后清空上下文变量，确保每个顶层任务上下文隔离。"""
         self._context.clear()
         try:
             return self.exec_task(section)
@@ -303,6 +659,7 @@ class JCZXGaming(Device):
             self._context.clear()
 
     def exec_task(self, section: Union[JczxSectionEntity, str]):
+        """执行 task 类型实体：遍历 action 链，依次执行子实体。"""
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         for _ in range(entity.times):
             if self.stop_event.is_set():
@@ -322,6 +679,7 @@ class JCZXGaming(Device):
         return result
     
     def in_location(self, target: str, per: float = 0.8):
+        """检测指定图片是否在当前屏幕上可见，返回 bool。"""
         list_pos = self.findImageCenterLocations(self.task_manage.get_img(target), per = float(per))
         self.log.debug(f"查找资源 {target} 位置 {list_pos}")
         return bool(list_pos)
@@ -352,21 +710,35 @@ class JCZXGaming(Device):
         return "".join(args)
 
 class RichLogHandler(Handler):
-    """StreamHandler that only auto-scrolls to bottom when the RichLog is already at the end."""
+    """仅当 RichLog 已在底部时自动滚动；高频日志写入合并到一个定时回调中处理。"""
 
     def __init__(self, rich_log):
         super().__init__()
         self.rich_log = rich_log
         self.terminator = ""
+        self._buffer: list[str] = []
 
     def emit(self, record):
         try:
             msg = self.format(record)
-            at_bottom = getattr(self.rich_log, 'scroll_y', 0) >= getattr(self.rich_log, 'max_scroll_y', 0)
-            self.rich_log.auto_scroll = at_bottom
-            self.rich_log.write(msg)
+            self._buffer.append(msg)
+            try:
+                app = self.rich_log.app
+                app.call_from_thread(self._flush_buffer)
+            except Exception:
+                self._flush_buffer()
         except Exception:
             self.handleError(record)
+
+    def _flush_buffer(self):
+        if not self._buffer:
+            return
+        msgs = self._buffer[:]
+        self._buffer.clear()
+        at_bottom = self.rich_log.max_scroll_y is None or getattr(self.rich_log, 'scroll_y', 0) >= self.rich_log.max_scroll_y
+        self.rich_log.auto_scroll = at_bottom
+        for msg in msgs:
+            self.rich_log.write(msg)
 
 
 class JczxCli:
@@ -474,14 +846,11 @@ class JczxCli:
         self.logger.info("初始化OCR...")
         from .CommoneBuilder.CommonBuilder.Ocr.Ocr import OCR
         self.ocr = OCR(
-            use_angle_cls = False,
+            use_textline_orientation = False,
+            use_doc_orientation_classify = False,
             lang = 'ch',
-            use_gpu = False,
-            enable_mkldnn = True,
-            show_log = False,
-            det_model_dir = self.fm.get_obj_relative_path('OCR\ch_PP-OCRv4_det_infer', self).__str__(),
-            rec_model_dir = self.fm.get_obj_relative_path('OCR\ch_PP-OCRv4_rec_infer', self).__str__(),
-            cls_model_dir = self.fm.get_obj_relative_path('OCR\ch_ppocr_mobile_v2.0_cls_infer', self).__str__()
+            device = 'cpu',
+            engine = 'onnxruntime',
         )
         self.logger.info("OCR初始化完成")
 
@@ -490,7 +859,7 @@ class JczxTUI(App, JczxCli):
         Binding("q", "quit", translate("退出程序", LANGUAGE)),
         Binding("ctrl+l", "clear_log", translate("清空日志", LANGUAGE)),
     ]
-    CSS_PATH = "Css\main.tcss"
+    CSS_PATH = "Css\\main.tcss"
 
     def __init__(self):
         super().__init__()
@@ -624,7 +993,7 @@ class JczxTUI(App, JczxCli):
             return False
         self.device.stop_event.clear()
         self._running_task_id = task_id
-        self.logger.info("任务启动: %s", task_id)
+        self.logger.info("任务启动: %s", entity.get_task_name())
         self._running_future = self.executor.submit(self._run_task, entity, task_id)
         return True
 
