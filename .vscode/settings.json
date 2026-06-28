@@ -1,0 +1,146 @@
+{
+  "highlight.regexes": {
+    // 配置头
+    "\\[(.*)\\]": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#4EBB84", "fontWeight": "bold" }
+      ]
+    },
+    // 配置项
+    "(.*): ": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#9BDBFD", "fontWeight": "bold" }
+      ]
+    },
+    // 上下文变量
+    "(%{)(.*)(})": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#DCDCAA", "fontWeight": "bold" },
+        { "color": "#e9669e", "fontWeight": "bold" },
+        { "color": "#DCDCAA", "fontWeight": "bold" }
+      ]
+    },
+    // 条件表达式
+    "(&{)(.*)(})": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#DCDCAA", "fontWeight": "bold" },
+        { "color": "#317CD6", "fontWeight": "bold" },
+        { "color": "#DCDCAA", "fontWeight": "bold" }
+      ]
+    },
+    // 执行占位符
+    "(@{)(.*)(})": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#DCDCAA", "fontWeight": "bold" },
+        { "color": "#4EBB84", "fontWeight": "bold" },
+        { "color": "#DCDCAA", "fontWeight": "bold" }
+      ]
+    },
+    // 配置索引
+    "(\\${)(.*):(.*)(})": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#DCDCAA", "fontWeight": "bold" },
+        { "color": "#4EBB84", "fontWeight": "bold" },
+        { "color": "#9BDBFD", "fontWeight": "bold" },
+        { "color": "#DCDCAA", "fontWeight": "bold" }
+      ]
+    },
+    // extend
+    "extend: (.*)": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#4EBB84", "fontWeight": "bold" }
+      ]
+    },
+    // func
+    "func: (.*)": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#DCDCAA", "fontWeight": "bold" }
+      ]
+    },
+    // 执行链
+    "((?<=action:\\s)([^,\\n]+)|(?<=action: .*)([^,\\n]+))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#4EBB84", "fontWeight": "bold" }
+      ]
+    },
+    // 备注
+    "(/\\s.*)|(//\\s.*)": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#6A8A39", "fontWeight": "bold" }
+      ]
+    },
+    // type
+    "((?<=type: )(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#36A3FF", "fontWeight": "bold" }
+      ]
+    },
+    // name
+    "((?<=name:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#C39178", "fontWeight": "bold" }
+      ]
+    },
+    // match
+    "((?<=match:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#4EBB84", "fontWeight": "bold" }
+      ]
+    },
+    // 条件
+    "((?<=condition:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#4EBB84", "fontWeight": "bold" }
+      ]
+    },
+    // context_key
+    "((?<=context_key:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#e9669e", "fontWeight": "bold" }
+      ]
+    },
+    // context_get
+    "((?<=context_get:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#e9669e", "fontWeight": "bold" }
+      ]
+    },
+    // 目标
+    "((?<=target:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#C39178", "fontWeight": "bold" }
+      ]
+    },
+    // 描述
+    "((?<=desc:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#C39178", "fontWeight": "bold" }
+      ]
+    },
+    // 参数
+    "((?<=args:\\s)([^,\\n]+)|(?<=args: .*)([^,\\n]+))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#9BDBFD", "fontWeight": "bold" }
+      ]
+    },
+  }
+}

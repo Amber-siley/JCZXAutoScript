@@ -611,9 +611,9 @@ options: 模式A-快速,模式B-均衡,模式C-完整
 default: 模式B-均衡
 
 [example-arena-task-values]
-power-threshold:25000
+power-threshold: 25000
 
 [example-order-task-values]
-enable-orders:初级订单
-enable-craft:
-enable-craft__sub:
+enable-orders: 初级订单
+enable-craft: 
+enable-craft__sub: 
