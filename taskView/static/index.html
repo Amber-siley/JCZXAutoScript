@@ -91,9 +91,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="legend-item"><div class="legend-dot" style="background:#66bb6a;border-radius:50%;"></div><span class="legend-tag">func 函数</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#ffa726;border-radius:50%;"></div><span class="legend-tag">click 点击</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#26c6da;border-radius:50%;"></div><span class="legend-tag">match 匹配</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#26a69a;border-radius:50%;"></div><span class="legend-tag">ocr 识别</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#ab47bc;border-radius:50%;"></div><span class="legend-tag">dynamic 动态</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ef5350;transform:rotate(45deg);width:8px;height:8px;"></div><span class="legend-tag">condition 条件</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ffee58;border-radius:50%;"></div><span class="legend-tag">context 上下文</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#78909c;"></div><span class="legend-tag">settings 设置</span></div>
-    <div class="legend-item"><div class="legend-dot" style="background:transparent;border:2px solid #42a5f5;transform:rotate(45deg);width:8px;height:8px;"></div><span class="legend-tag">◇ 判断节点</span></div>
     <div class="legend-item"><span style="width:12px;font-size:10px;text-align:center;">⚡</span><span class="legend-tag">break_point 超时跳出</span></div>
     <div style="margin:6px 0 2px;color:#666;">━━━━━━━━━━━━</div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px solid #888;"></div><span class="legend-tag">action 动作链</span></div>
@@ -101,8 +103,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #66bb6a;"></div><span class="legend-tag">是 命中分支</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px dotted #ef5350;"></div><span class="legend-tag">否 未命中分支</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #555;"></div><span class="legend-tag">继承 extend</span></div>
-    <div class="legend-item"><div class="legend-line" style="border-top:2px solid #ce93d8;"></div><span class="legend-tag">@{..} 执行引用</span></div>
-    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #ffd54f;"></div><span class="legend-tag">${..} 配置引用</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px solid #ce93d8;"></div><span class="legend-tag">@{..} 执行</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #ffd54f;"></div><span class="legend-tag">${..} 配置</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px solid #ef9a9a;"></div><span class="legend-tag">&{..} 表达式</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #ef5350;"></div><span class="legend-tag">⟲ 环路回连</span></div>
   </div>
 </div>
 
@@ -165,6 +169,7 @@ function processLabels(nodes) {
     parts.push(d.label);
     if (d.times > 1) parts.push('×' + d.times);
     if (d.has_test_after) parts.push('↻');
+    if (d.has_test_before) parts.push('⊲');
     return { ...n, data: { ...d, label: parts.join(' ') } };
   });
 }
@@ -219,9 +224,12 @@ function showAll() {
 const NODE_STYLES = {
   'task':     { 'background-color': '#42a5f5', 'border-color': '#1e88e5', 'shape': 'round-rectangle', 'text-outline-color': '#42a5f5' },
   'match':    { 'background-color': '#26c6da', 'border-color': '#00acc1', 'shape': 'ellipse', 'text-outline-color': '#26c6da' },
+  'ocr':      { 'background-color': '#26a69a', 'border-color': '#00897b', 'shape': 'ellipse', 'text-outline-color': '#26a69a' },
   'func':     { 'background-color': '#66bb6a', 'border-color': '#43a047', 'shape': 'ellipse', 'text-outline-color': '#66bb6a' },
   'click':    { 'background-color': '#ffa726', 'border-color': '#fb8c00', 'shape': 'ellipse', 'text-outline-color': '#ffa726' },
   'dynamic':  { 'background-color': '#ab47bc', 'border-color': '#8e24aa', 'shape': 'ellipse', 'text-outline-color': '#ab47bc' },
+  'condition':{ 'background-color': '#ef5350', 'border-color': '#c62828', 'shape': 'diamond', 'text-outline-color': '#ef5350' },
+  'context':  { 'background-color': '#ffee58', 'border-color': '#f9a825', 'shape': 'ellipse', 'text-outline-color': '#ffee58', 'color': '#333' },
   'settings': { 'background-color': '#78909c', 'border-color': '#546e7a', 'shape': 'round-rectangle', 'text-outline-color': '#78909c' },
   'setting':  { 'background-color': '#78909c', 'border-color': '#546e7a', 'shape': 'round-rectangle', 'text-outline-color': '#78909c' },
 };
@@ -236,6 +244,7 @@ const EDGE_STYLES = {
   'settings':        { 'line-style': 'solid',  'line-color': '#555', 'target-arrow-shape': 'none' },
   'execute':         { 'line-style': 'solid',  'line-color': '#ce93d8', 'target-arrow-color': '#ce93d8', 'target-arrow-shape': 'diamond' },
   'config':          { 'line-style': 'dashed', 'line-color': '#ffd54f', 'target-arrow-color': '#ffd54f', 'target-arrow-shape': 'tee' },
+  'expression':      { 'line-style': 'solid',  'line-color': '#ef9a9a', 'target-arrow-color': '#ef9a9a', 'target-arrow-shape': 'diamond' },
   'cycle':           { 'line-style': 'dashed', 'line-color': '#ef5350', 'target-arrow-color': '#ef5350', 'target-arrow-shape': 'triangle', 'width': 1, 'curve-style': 'unbundled-bezier' },
 };
 
@@ -286,19 +295,27 @@ function renderDetail(d) {
     ['描述', esc(d.desc)],
     ['方法', esc(d.func)],
     ['目标', esc(d.target)],
-    ['action', d.action && d.action.length ? d.action.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
-    ['args', d.args && d.args.length ? d.args.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
+    ['action', d.action && d.action.length ? d.action.map(a => `<span class="tag">${esc(a)}</span>`).join('') : ''],
+    ['args', d.args && d.args.length ? d.args.map(a => `<span class="tag">${esc(a)}</span>`).join('') : ''],
     ['condition', esc(d.condition)],
     ['condition_not', esc(d.condition_not)],
-    ['condition_then', d.condition_then && d.condition_then.length ? d.condition_then.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
-    ['condition_else', d.condition_else && d.condition_else.length ? d.condition_else.map(a => `<span class="tag">${esc(a)}</span>`).join('') : '—'],
+    ['condition_then', d.condition_then && d.condition_then.length ? d.condition_then.map(a => `<span class="tag">${esc(a)}</span>`).join('') : ''],
+    ['condition_else', d.condition_else && d.condition_else.length ? d.condition_else.map(a => `<span class="tag">${esc(a)}</span>`).join('') : ''],
     ['extend', esc(d.extend)],
-    ['sleep', d.sleep != null ? `${d.sleep}s` : '—'],
-    ['pre_sleep', d.pre_sleep != null ? `${d.pre_sleep}s` : '—'],
-    ['per', d.per != null ? d.per : '—'],
-    ['max_wait', d.max_wait != null ? `${d.max_wait}s` : '—'],
+    ['context_key', esc(d.context_key)],
+    ['context_type', esc(d.context_type)],
+    ['sleep', d.sleep != null ? `${d.sleep}s` : ''],
+    ['pre_sleep', d.pre_sleep != null ? `${d.pre_sleep}s` : ''],
+    ['per', d.per != null ? d.per : ''],
+    ['max_wait', d.max_wait != null ? `${d.max_wait}s` : ''],
     ['break_point', esc(d.break_point)],
     ['times', d.times],
+    ['testFor_before', esc(d.testFor_before)],
+    ['testFor_after', esc(d.testFor_after)],
+    ['testFor_max_wait', d.testFor_max_wait ? `${d.testFor_max_wait}s` : ''],
+    ['testFor_per', d.testFor_per != null ? d.testFor_per : ''],
+    ['log', esc(d.log)],
+    ['log_level', esc(d.log_level)],
   ];
   let html = `<div style="margin-bottom:8px;font-weight:bold;color:#e94560;">${esc(d.key)}</div>`;
   for (const [label, val] of fields) {

@@ -13,6 +13,7 @@ CONFIG_DIR = os.path.join(
 
 _RE_EXEC = re.compile(r"@\{([^}]+)\}")
 _RE_CFG = re.compile(r"\$\{([^}:]+)(?::[^}]*)?}")
+_RE_EXPR = re.compile(r"&\{([^}]+)\}")
 
 
 def list_config_files() -> list[str]:
@@ -76,11 +77,12 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
             return nid
         seen_node_ids.add(nid)
         classes = entity.type or ""
-        if nid in condition_keys:
+        if nid in condition_keys or entity.type == "condition":
             classes = (classes + " condition-entity").strip()
         if entity.break_point == "on":
             classes = (classes + " breakpoint").strip()
         has_test_after = bool(getattr(entity, "testFor_after", ""))
+        has_test_before = bool(getattr(entity, "testFor_before", ""))
         nodes.append({
             "data": {
                 "id": nid,
@@ -95,6 +97,9 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 "max_wait": entity.max_wait,
                 "break_point": entity.break_point,
                 "has_test_after": has_test_after,
+                "has_test_before": has_test_before,
+                "testFor_max_wait": getattr(entity, "testFor_max_wait", 0) or 0,
+                "context_key": getattr(entity, "context_key", "") or "",
             },
             "classes": classes,
         })
@@ -182,6 +187,11 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 if m in configs:
                     _add_node(configs[m])
                     _add_edge(src, m, f"${{{m}}}", "config")
+            for m in _RE_EXPR.findall(text):
+                for word in re.findall(r'\b([a-zA-Z][\w-]+)\b', m):
+                    if word in configs:
+                        _add_node(configs[word])
+                        _add_edge(src, word, f"&{{{word}}}", "expression")
 
     return {"nodes": nodes, "edges": edges}
 
@@ -222,11 +232,13 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
 
     def _node(entity: JczxSectionEntity, uid: str) -> dict[str, Any]:
         classes = entity.type or ""
-        if uid.split("#")[0] in condition_keys:
+        base = uid.split("#")[0]
+        if base in condition_keys or entity.type == "condition":
             classes = (classes + " condition-entity").strip()
         if entity.break_point == "on":
             classes = (classes + " breakpoint").strip()
         has_test_after = bool(getattr(entity, "testFor_after", ""))
+        has_test_before = bool(getattr(entity, "testFor_before", ""))
         return {
             "data": {
                 "id": uid, "label": entity.name or entity.desc or uid,
@@ -235,6 +247,9 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                 "sleep": entity.sleep, "per": entity.per, "times": entity.times,
                 "max_wait": entity.max_wait, "break_point": entity.break_point,
                 "has_test_after": has_test_after,
+                "has_test_before": has_test_before,
+                "testFor_max_wait": getattr(entity, "testFor_max_wait", 0) or 0,
+                "context_key": getattr(entity, "context_key", "") or "",
             },
             "classes": classes,
         }
@@ -260,17 +275,16 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
 
         cond_key = entity.condition or entity.condition_not
         is_not = bool(entity.condition_not)
+        then_list = entity.condition_then
+        else_list = entity.condition_else
+
         if cond_key and cond_key in configs:
-            if cond_key in path:
-                cycles.append({"from": uid, "to": _first_uid(cond_key), "label": "⟲"})
-            else:
+            if cond_key not in path:
                 cond_uid = _expand(cond_key, path + [key])
                 if cond_uid:
                     edges.append({"data": {"id": f"{uid}→{cond_uid}::condition", "source": uid, "target": cond_uid, "label": ""}, "classes": "condition_not" if is_not else "condition"})
                     then_label = "否" if is_not else "是"
                     else_label = "是" if is_not else "否"
-                    then_list = entity.condition_then
-                    else_list = entity.condition_else
                     for t in (then_list or []):
                         if t in path:
                             cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
@@ -285,6 +299,36 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                         tuid = _expand(t, path + [key, cond_key])
                         if tuid:
                             edges.append({"data": {"id": f"{cond_uid}→{tuid}::else", "source": cond_uid, "target": tuid, "label": else_label}, "classes": "condition_else"})
+            elif cond_key in path:
+                cycles.append({"from": uid, "to": _first_uid(cond_key), "label": "⟲"})
+
+        elif cond_key and cond_key.startswith("&{") and (then_list or else_list):
+            synth_key = f"__expr__{uid}"
+            cond_uid = _uid(synth_key)
+            nodes.append({"data": {"id": cond_uid, "label": cond_key[:40], "type": "condition", "times": 1, "desc": "", "func": "", "target": "", "sleep": 0, "per": 0.8, "max_wait": 0, "break_point": "off", "has_test_after": False, "has_test_before": False, "testFor_max_wait": 0, "context_key": ""}, "classes": "condition condition-entity"})
+            edges.append({"data": {"id": f"{uid}→{cond_uid}::condition", "source": uid, "target": cond_uid, "label": ""}, "classes": "condition_not" if is_not else "condition"})
+            for word in re.findall(r'\b([a-zA-Z][\w-]+)\b', cond_key[2:-1]):
+                if word in configs:
+                    e_label = "&{" + word + "}"
+                    e_target = _first_uid(word) or f"{word}_1"
+                    edges.append({"data": {"id": f"{cond_uid}_expr_{word}", "source": cond_uid, "target": e_target, "label": e_label}, "classes": "expression"})
+            then_label = "否" if is_not else "是"
+            else_label = "是" if is_not else "否"
+            for t in (then_list or []):
+                if t in path:
+                    cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
+                    continue
+                tuid = _expand(t, path + [key])
+                if tuid:
+                    edges.append({"data": {"id": f"{cond_uid}→{tuid}::then", "source": cond_uid, "target": tuid, "label": then_label}, "classes": "condition_then"})
+            for t in (else_list or []):
+                if t in path:
+                    cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
+                    continue
+                tuid = _expand(t, path + [key])
+                if tuid:
+                    edges.append({"data": {"id": f"{cond_uid}→{tuid}::else", "source": cond_uid, "target": tuid, "label": else_label}, "classes": "condition_else"})
+
         return uid
 
     _expand(task_key, [])
@@ -327,4 +371,14 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
         "break_point": entity.break_point,
         "extend": entity.extend or "",
         "times": entity.times,
+        "context_key": getattr(entity, "context_key", "") or "",
+        "context_type": getattr(entity, "context_type", "") or "",
+        "testFor_before": getattr(entity, "testFor_before", "") or "",
+        "testFor_after": getattr(entity, "testFor_after", "") or "",
+        "testFor_max_wait": getattr(entity, "testFor_max_wait", 0) or 0,
+        "testFor_pre_sleep": getattr(entity, "testFor_pre_sleep", 0) or 0,
+        "testFor_sleep": getattr(entity, "testFor_sleep", 0) or 0,
+        "testFor_per": getattr(entity, "testFor_per", 0.8) or 0.8,
+        "log": getattr(entity, "log", "") or "",
+        "log_level": getattr(entity, "log_level", "") or "",
     }
