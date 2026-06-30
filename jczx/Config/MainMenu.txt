@@ -9,6 +9,10 @@ type: func
 func: click_proportion
 args: 2,2
 
+[click-upcenter]
+extend: click-center
+args: 2,4
+
 [drop-center-up]
 type: func
 func: drag_drop_proportion
@@ -525,7 +529,7 @@ condition_else: condition-to-back
 type: click
 condition: condition-in_location-back
 condition_then: click-back
-condition_else: click-center
+condition_else: lick-upcenter
 action: goto-home-click-home
 
 [condition-in_location-home]

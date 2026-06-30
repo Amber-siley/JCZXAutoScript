@@ -210,6 +210,7 @@ class JCZXGaming(Device):
                 else:
                     result = method()
                 time.sleep(entity.sleep)
+                self._log_message(entity)
                 if next_entities := self.task_manage.get_next(entity):
                     for next_entity in next_entities:
                         result = self.exec(next_entity)
@@ -237,6 +238,7 @@ class JCZXGaming(Device):
             return None
         for action in entity.action:
             result = self._transform_match(result, action)
+        self._log_message(entity)
         return result
 
     @staticmethod
@@ -281,6 +283,7 @@ class JCZXGaming(Device):
                         result = self._ocr_match_region(mt)
                         self.log.info(f"OCR 识别 {entity.get_task_name()}: {result}") if entity.get_task_name() else None
             time.sleep(entity.sleep)
+            self._log_message(entity)
             for i in self.task_manage.get_next(entity):
                 result = self.exec(i)
             if test_after_img is not None:
@@ -358,6 +361,7 @@ class JCZXGaming(Device):
                         case _:
                             self.context_set(entity.context_key, str(result))
             time.sleep(entity.sleep)
+            self._log_message(entity)
             if test_after_img is not None:
                 if not self.in_location(entity.testFor_after):
                     self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
@@ -407,6 +411,7 @@ class JCZXGaming(Device):
                     for s in entity.condition_else:
                         result = self.exec(s)
             time.sleep(entity.sleep)
+            self._log_message(entity)
             for i in self.task_manage.get_next(entity):
                 result = self.exec(i)
             if test_after_img is not None:
@@ -479,6 +484,19 @@ class JCZXGaming(Device):
                 return value * rhs_num
         return value
 
+    def _log_message(self, entity: JczxSectionEntity) -> None:
+        """解析实体 log 字段中的占位符并输出日志。"""
+        if not entity.log:
+            return
+        msg = entity.log
+        msg = self.task_manage.resolve_placeholders([msg], entity.only_key)[0]
+        msg = self._resolve_exec_placeholder(msg) if msg else ""
+        for match in self._CONDITION_EXPR_PATTERN.findall(msg):
+            result = self._eval_condition_expr(match)
+            msg = msg.replace("&{" + match + "}", str(result))
+        log_fn = getattr(self.log, entity.log_level, self.log.info)
+        log_fn(f"[{entity.get_task_name() or entity.only_key}] {msg}")
+
     def exec(self, section: Union[JczxSectionEntity, str]):
         """统一调度入口：根据 type 分发到对应执行方法，执行后自动将返回值存入上下文变量（若设置了 context_key）。"""
         if not section:
@@ -532,6 +550,7 @@ class JCZXGaming(Device):
                 if result_str:
                     self.exec(result_str)
             time.sleep(entity.sleep)
+            self._log_message(entity)
             self.log.debug(f"动态执行完成 {entity.get_task_name()}") if entity.get_task_name() else None
         return None
 
@@ -617,6 +636,7 @@ class JCZXGaming(Device):
                             return None
                         break
             time.sleep(entity.sleep)
+            self._log_message(entity)
             entities = self.task_manage.get_next(entity)
             if entities:
                 self.log.debug(f"获取下一执行链 {entities}")
@@ -675,6 +695,7 @@ class JCZXGaming(Device):
                 self.log.debug(f"开始执行实体 {i.get_task_name()} {i}")
                 result = self.exec(i)
             time.sleep(entity.sleep)
+            self._log_message(entity)
             self.log.info(f"任务执行完毕 {entity.get_task_name()}") if entity.get_task_name() else None
         return result
     

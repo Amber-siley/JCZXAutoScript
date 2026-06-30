@@ -2,8 +2,6 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import get_type_hints, get_origin, get_args
 
-LIST_STR_ATTRS = ["list_targets", "action", "list_actions", "choose_tasks", "args", "pos", "condition_then", "condition_else"]
-
 class SectionType(Enum):
     TASK = "task"
     FUNC = "func"
@@ -92,6 +90,8 @@ class JczxSectionEntity(BaseEntity):
     testFor_per: float = 0.8
     testFor_pre_sleep: float = 0
     testFor_sleep: float = 0
+    log: str = None
+    log_level: str = "info"
     
     def get_task_name(self):
         return self.name or self.desc

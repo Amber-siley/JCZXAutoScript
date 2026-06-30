@@ -126,6 +126,30 @@ adb.path : platform-tools/adb.exe
 | `testFor_pre_sleep` | float | `0` | testFor_before 门控检查前的等待秒数 |
 | `testFor_sleep` | float | `0` | testFor_before 门控检查通过后的等待秒数 |
 | `testFor_per` | float | `0.8` | testFor_before 图片匹配阈值 |
+| `log` | str | — | 实体执行时打印的自定义日志消息，支持 `${}` `@{}` `%{}` `&{}` 四种占位符 |
+| `log_level` | str | `info` | log 消息的日志等级：`debug` / `info` / `warning` / `error` |
+
+**log 占位符示例：**
+
+```ini
+[debug-click]
+type: click
+name: 测试点击
+target: buttons\login.png
+log: 战力值=%{combat_power}, 阈值=${arena-values:threshold}, 执行结果 @{check-status}
+log_level: debug
+
+[conditional-log]
+type: click
+name: 有条件日志
+target: buttons\buy.png
+log: 余额是否足够: &{get-balance >= ${shop-values:price}}
+log_level: info
+```
+
+输出：`[debug-click] 战力值=3693, 阈值=50000, 执行结果 True`
+
+
 
 #### dynamic 类型专用
 
