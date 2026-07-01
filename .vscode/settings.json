@@ -135,6 +135,13 @@
         { "color": "#C39178", "fontWeight": "bold" }
       ]
     },
+    // 消息
+    "((?<=log:\\s)(.*))": {
+      "filterLanguageRegex": "plaintext",
+      "decorations": [
+        { "color": "#C39178", "fontWeight": "bold" }
+      ]
+    },
     // 参数
     "((?<=args:\\s)([^,\\n]+)|(?<=args: .*)([^,\\n]+))": {
       "filterLanguageRegex": "plaintext",

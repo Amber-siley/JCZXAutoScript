@@ -75,6 +75,7 @@ class JczxSectionEntity(BaseEntity):
     break_point: str = "off"
     extend: str = None
     else_target: list[str] = field(default_factory=list)
+    settings: str = None
     view: str = "off"
     only_key: str = None
     times: int = 1
@@ -94,7 +95,7 @@ class JczxSectionEntity(BaseEntity):
     log_level: str = "info"
     
     def get_task_name(self):
-        return self.name or self.desc
+        return self.name or self.only_key
 
 @dataclass
 class JczxConfigFileEntity(BaseEntity):

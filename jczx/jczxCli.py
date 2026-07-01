@@ -55,6 +55,15 @@ class JCZXGaming(Device):
         self._context[key] = value
         self.log.debug(f"上下文设置 {key} = {value}")
 
+    def context_print(self):
+        """打印当前全部上下文变量。"""
+        if not self._context:
+            self.log.info("上下文为空")
+            return
+        self.log.info(f"上下文变量 ({len(self._context)})：")
+        for k, v in self._context.items():
+            self.log.info(f"  {k} = {v} ({type(v).__name__})")
+
     def _get_method(self, method_name: str) -> Callable[..., Any]:
         if method_name not in self.__dir__():
             return None
@@ -63,6 +72,8 @@ class JCZXGaming(Device):
     _EXEC_PLACEHOLDER_PATTERN = re.compile(r"@\{(.+?)\}")
     _CTX_PLACEHOLDER_PATTERN = re.compile(r"%\{(.+?)\}")
     _CONDITION_EXPR_PATTERN = re.compile(r"^&\{(.+)\}$")
+    _LOG_CONDITION_PATTERN = re.compile(r"&\{(.+?)\}")
+    _CONFIG_PLACEHOLDER_PATTERN = re.compile(r"\$\{(.+?)\}")
 
     def _eval_condition(self, condition: str) -> bool:
         """评估条件表达式：&{...} 表达式或单实体执行。"""
@@ -132,10 +143,81 @@ class JCZXGaming(Device):
                 return int(token)
             except (ValueError, TypeError):
                 pass
+            ctx_match = self._CTX_PLACEHOLDER_PATTERN.match(token)
+            if ctx_match:
+                return self._context.get(ctx_match.group(1), "")
+            exec_match = self._EXEC_PLACEHOLDER_PATTERN.match(token)
+            if exec_match:
+                return self.exec(exec_match.group(1))
+            config_match = self._CONFIG_PLACEHOLDER_PATTERN.match(token)
+            if config_match:
+                return self._resolve_placeholder(token)
             return self.exec(token)
 
         result = parse_or()
         return bool(result) if result is not None else False
+
+    def _eval_context_expr(self, expr: str):
+        """解析 %{...} 内的表达式，标识符从上下文读取（而非执行实体）。"""
+        tokens = self._tokenize_condition(expr)
+        pos = 0
+
+        def parse_or():
+            nonlocal pos
+            left = parse_and()
+            while pos < len(tokens) and tokens[pos] == "|":
+                pos += 1
+                left = bool(left) or bool(parse_and())
+            return left
+
+        def parse_and():
+            nonlocal pos
+            left = parse_cmp()
+            while pos < len(tokens) and tokens[pos] == "&":
+                pos += 1
+                left = bool(left) and bool(parse_cmp())
+            return left
+
+        def parse_cmp():
+            nonlocal pos
+            left = parse_primary()
+            if pos < len(tokens) and tokens[pos] in (">=", "<=", ">", "<", "==", "!="):
+                op_token = tokens[pos]
+                pos += 1
+                right = parse_primary()
+                if op_token == ">=": return float(left) >= float(right)
+                if op_token == "<=": return float(left) <= float(right)
+                if op_token == ">":  return float(left) > float(right)
+                if op_token == "<":  return float(left) < float(right)
+                if op_token == "==": return str(left) == str(right)
+                if op_token == "!=": return str(left) != str(right)
+            return left
+
+        def parse_primary():
+            nonlocal pos
+            if pos >= len(tokens):
+                return False
+            token = tokens[pos]
+            pos += 1
+            if token == "(":
+                result = parse_or()
+                if pos < len(tokens) and tokens[pos] == ")":
+                    pos += 1
+                return result
+            try:
+                if "." in token: return float(token)
+                return int(token)
+            except (ValueError, TypeError):
+                pass
+            return self._context.get(token, "")
+
+        result = parse_or()
+        return result
+
+    @staticmethod
+    def _is_context_expr(expr: str) -> bool:
+        """判断 %{...} 内容是否为表达式（含运算符），而非简单变量名。"""
+        return any(op in expr for op in ("&", "|", ">=", "<=", ">", "<", "==", "!="))
 
     @staticmethod
     def _tokenize_condition(expr: str) -> list:
@@ -186,43 +268,30 @@ class JCZXGaming(Device):
             result = result.replace("@{" + match + "}", str(exec_result) if exec_result is not None else "")
             self.log.debug(f"解析 执行占位符 {match}，值 {exec_result}，原字符串 {arg}")
         for match in self._CTX_PLACEHOLDER_PATTERN.findall(arg):
-            val = self.context_get(match)
+            if self._is_context_expr(match):
+                val = self._eval_context_expr(match)
+            else:
+                val = self.context_get(match)
             result = result.replace("%{" + match + "}", str(val) if val else "")
             self.log.debug(f"解析 上下文占位符 {match}，值 {val}，原字符串 {arg}")
         return result
 
     def exec_func(self, section: Union[JczxSectionEntity, str]):
         """执行 func 类型实体：调用 JCZXGaming 上的方法，支持 times / pre_sleep / sleep / action 链"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        for _ in range(entity.times):
-            if self.stop_event.is_set():
-                return None
-            time.sleep(entity.pre_sleep)
-            method_name = entity.func
-            self.log.debug(f"计划预执行 section {section}")
-            if method := self._get_method(method_name):
-                raw_args = ([entity.target] if entity.target else []) + entity.args
-                args = self.task_manage.resolve_placeholders(raw_args, entity.only_key)
+        entity = self._get_entity(section)
+        def _on_exec(e: JczxSectionEntity):
+            if method := self._get_method(e.func):
+                raw_args = ([e.target] if e.target else []) + e.args
+                args = self.task_manage.resolve_placeholders(raw_args, e.only_key)
                 args = self._resolve_exec_placeholders(args)
-                self.log.debug(f"开始执行方法 {method.__name__} 参数 {args}")
-                if args:
-                    result = method(*args)
-                else:
-                    result = method()
-                time.sleep(entity.sleep)
-                self._log_message(entity)
-                if next_entities := self.task_manage.get_next(entity):
-                    for next_entity in next_entities:
-                        result = self.exec(next_entity)
-            else:
-                self.log.debug(f"方法未查询到 {method_name}")
-                raise AttributeError(f"方法未查询到 {method_name}")
-        return result
+                return method(*args) if args else method()
+            raise AttributeError(f"方法未查询到 {e.func}")
+        return self._exec_entity(entity, _on_exec)
 
     def exec_match(self, section: Union[JczxSectionEntity, str]):
         """执行 match 类型实体：纯模板匹配不点击，返回 MatchTemplete 对象供其他实体使用。
         action 字段为变换操作列表（非执行链），如 down-0.5、reW-1.0 等。"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+        entity = self._get_entity(section)
         target = entity.target
         if not target:
             self.log.debug("match 类型缺少 target")
@@ -231,8 +300,7 @@ class JCZXGaming(Device):
         if img is None:
             self.log.debug(f"match 图片未找到: {target}")
             return None
-        per = entity.per
-        result = self.findImageDetail(img, per=per)
+        result = self.findImageDetail(img, per=entity.per)
         if not result or not result.matched:
             self.log.debug(f"match 未匹配到: {target}")
             return None
@@ -242,51 +310,205 @@ class JCZXGaming(Device):
         return result
 
     @staticmethod
-    def _transform_match(mt, action: str):
+    def _transform_match(mt: MatchTemplete, action: str):
         """对 MatchTemplete 结果应用变换操作（如 down-1.5、reW-2.0 等）。"""
         return mt.transform(action)
 
     def exec_ocr(self, section: Union[JczxSectionEntity, str]):
         """执行 ocr 类型实体：匹配图像区域 → 裁剪 → OCR 识别 → 返回文本。"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        test_before_img = None
-        test_after_img = None
-        if entity.testFor_before:
-            test_before_img = self.task_manage.get_img(entity.testFor_before)
-        if entity.testFor_after:
-            test_after_img = self.task_manage.get_img(entity.testFor_after)
+        entity = self._get_entity(section)
+        def _on_exec(e: JczxSectionEntity):
+            if e.match:
+                mt = self.exec(e.match)
+                if mt is not None and getattr(mt, "matched", False):
+                    return self._ocr_match_region(mt)
+            elif e.target:
+                target = self._resolve_placeholder(e.target)
+                target = self._resolve_exec_placeholder(target) if target else None
+                img = self.task_manage.get_img(target) if target else None
+                if img is not None:
+                    mt = self.findImageDetail(img, per=e.per)
+                    if mt and mt.matched and mt.matchTempletePointRange:
+                        result = self._ocr_match_region(mt)
+                        self.log.info(f"OCR 识别 {e.get_task_name()}: {result}") if e.get_task_name() else None
+                        return result
+            return ""
+        return self._exec_entity(entity, _on_exec, testFor=True)
+
+    def exec_dynamic(self, section: Union[JczxSectionEntity, str]):
+        """执行 dynamic 类型实体：依次执行 action 中的 entity key，并将每个返回值（转 str）再次作为 entity key 执行。
+        不支持 action 链（get_next 不会被调用）。"""
+        entity = self._get_entity(section)
+        def _on_exec(e: JczxSectionEntity):
+            self.log.debug(f"开始动态执行 {e.get_task_name()} {e}")
+            for key in e.action:
+                if self.stop_event.is_set(): return None
+                result = self.exec(key)
+                result_str = str(result) if result is not None else ""
+                if result_str:
+                    self.exec(result_str)
+            self.log.debug(f"动态执行完成 {e.get_task_name()}") if e.get_task_name() else None
+            return None
+        return self._exec_entity(entity, _on_exec, action_chain=False)
+
+    def exec_context(self, section: Union[JczxSectionEntity, str]):
+        """执行 context 类型实体：读取上下文变量 → 按 action 链运算 → 输出结果。"""
+        entity = self._get_entity(section)
+        def _on_exec(e: JczxSectionEntity):
+            result = None
+            if e.context_get:
+                exists = e.context_get in self._context
+                value = self._context[e.context_get] if exists else self._convert_value(e.context_default, e.context_default_type)
+                self.log.debug(f"上下文读取 {e.context_get} = {value} (存在: {exists}, 类型: {type(value).__name__})")
+                actions = self.task_manage.resolve_placeholders(e.action, e.only_key)
+                actions = self._resolve_exec_placeholders(actions)
+                self.log.debug(f"上下文运算链: {e.action} → {actions}")
+                for op in actions:
+                    prev = value
+                    value = self._apply_context_op(value, op)
+                    self.log.debug(f"上下文运算: {prev} {op} → {value}")
+                result = value
+                if e.context_key:
+                    out = self._convert_output(result, e.context_type)
+                    self.context_set(e.context_key, out)
+            return result
+        return self._exec_entity(entity, _on_exec, testFor=True, action_chain=False)
+
+    def exec_condition(self, section: Union[JczxSectionEntity, str]):
+        """执行 condition 类型实体：评估 condition / condition_not，按结果执行 then / else 分支。"""
+        entity = self._get_entity(section)
+        def _on_exec(e: JczxSectionEntity):
+            result = None
+            if e.condition_not:
+                if not self._eval_condition(e.condition_not):
+                    self.log.debug(f"条件 {self._format_condition(e.condition_not)} 满足 condition_not，执行 condition_then {e.condition_then}")
+                    for s in e.condition_then:
+                        result = self.exec(s)
+                else:
+                    self.log.debug(f"条件 {self._format_condition(e.condition_not)} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                    for s in e.condition_else:
+                        result = self.exec(s)
+            elif e.condition:
+                if self._eval_condition(e.condition):
+                    self.log.debug(f"条件 {self._format_condition(e.condition)} 满足 condition，执行 condition_then {e.condition_then}")
+                    for s in e.condition_then:
+                        result = self.exec(s)
+                else:
+                    self.log.debug(f"条件 {self._format_condition(e.condition)} 不满足 condition，执行 condition_else {e.condition_else}")
+                    for s in e.condition_else:
+                        result = self.exec(s)
+            return result
+        return self._exec_entity(entity, _on_exec, testFor=True)
+
+    def exec_click(self, section: Union[JczxSectionEntity, str]):
+        """执行 click 类型实体：testFor_before 门控 → pos/match/target 点击 → action 链 → testFor_after 复检。
+        点击优先级：pos > match > target（模板匹配循环）。"""
+        entity = self._get_entity(section)
+        def _on_exec(e: JczxSectionEntity):
+            startTime = datetime.now()
+            result = None
+            if e.pos:
+                self.click(*e.pos)
+            elif e.match:
+                mt = self.exec(e.match)
+                if mt is not None and getattr(mt, 'matchTempleteCenterPoints', None):
+                    idx = e.target_index
+                    pt = mt.matchTempleteCenterPoints[idx] if idx < len(mt.matchTempleteCenterPoints) else mt.matchTempleteCenterPoints[0]
+                    self.click(*pt)
+                    result = mt
+            else:
+                target = self._resolve_placeholder(e.target)
+                target = self._resolve_exec_placeholder(target) if target else None
+                img = self.task_manage.get_img(target) if target else None
+                while True:
+                    if self.stop_event.is_set(): return None
+                    if e.condition_not:
+                        if not self._eval_condition(e.condition_not):
+                            self.log.debug(f"条件 {self._format_condition(e.condition_not)} 满足 condition_not，执行 condition_then {e.condition_then}")
+                            for s in entity.condition_then: result = self.exec(s)
+                        else:
+                            self.log.debug(f"条件 {self._format_condition(e.condition_not)} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                            for s in entity.condition_else: result = self.exec(s)
+                        break
+                    elif e.condition:
+                        if self._eval_condition(e.condition):
+                            self.log.debug(f"条件 {self._format_condition(e.condition)} 满足 condition，执行 condition_then {e.condition_then}")
+                            for s in entity.condition_then: result = self.exec(s)
+                        else:
+                            self.log.debug(f"条件 {self._format_condition(e.condition)} 不满足 condition，执行 condition_else {e.condition_else}")
+                            for s in entity.condition_else: result = self.exec(s)
+                        break
+                    result = self.exec(e.wait_sec)
+                    self.log.debug(f"匹配资源 {target}")
+                    if img is not None and (result := self.clickResource(img, per=e.per, index=e.index)):
+                        self.log.debug(f"匹配并点击资源 {target}")
+                        self.log.info(f"执行点击 {e.get_task_name()}") if e.get_task_name() else None
+                        break
+                    runTime = (datetime.now() - startTime).seconds
+                    if runTime >= e.max_wait:
+                        self.log.debug(f"最大等待时间 {e.max_wait}s 结束, 未匹配到资源 {target}")
+                        if e.break_point == "on":
+                            time.sleep(e.sleep)
+                            return None
+                        break
+            return result
+        return self._exec_entity(entity, _on_exec, testFor=True, default_max_wait=entity.max_wait)
+
+    def exec_task(self, section: Union[JczxSectionEntity, str]):
+        """执行 task 类型实体：遍历 action 链，依次执行子实体。"""
+        entity = self._get_entity(section)
+        is_task = entity.view == "on"
+        prefix = "任务" if is_task else "过程"
+        log_fn = self.log.info if is_task else self.log.debug
+        def _on_exec(e: JczxSectionEntity):
+            result = None
+            next_entities = self.task_manage.get_next(e)
+            log_fn(f"开始执行{prefix} {e.get_task_name()}") if e.get_task_name() else None
+            for i in next_entities:
+                if self.stop_event.is_set():
+                    log_fn(f"{prefix}已被用户停止")
+                    return None
+                result = self.exec(i)
+            log_fn(f"{prefix}执行完毕 {e.get_task_name()}") if e.get_task_name() else None
+            return result
+        return self._exec_entity(entity, _on_exec, action_chain=False)
+
+    def _get_entity(self, section: Union[JczxSectionEntity, str]) -> JczxSectionEntity:
+        return section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
+
+    def _exec_entity(self, entity: JczxSectionEntity, on_exec: Callable, *, testFor=False, action_chain=True, default_max_wait=0):
+        """Template Method：封装实体执行的通用流程（times / testFor / sleep / log / action 链）。"""
+        test_before = test_after = None
+        if testFor:
+            if entity.testFor_before:
+                test_before = self.task_manage.get_img(entity.testFor_before)
+            if entity.testFor_after:
+                test_after = self.task_manage.get_img(entity.testFor_after)
         for _ in range(entity.times):
             if self.stop_event.is_set():
                 return None
-            if test_before_img is not None:
+            if test_before is not None:
                 time.sleep(entity.testFor_pre_sleep)
-                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else 0
+                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else default_max_wait
                 self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
-                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
+                if not self._wait_for_image(test_before, test_wait, per=entity.testFor_per):
                     self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
                     return None
                 self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
                 time.sleep(entity.testFor_sleep)
-            result = ""
             time.sleep(entity.pre_sleep)
-            if entity.match:
-                mt = self.exec(entity.match)
-                if mt is not None and getattr(mt, "matched", False):
-                    result = self._ocr_match_region(mt)
-            elif entity.target:
-                target = self._resolve_placeholder(entity.target)
-                target = self._resolve_exec_placeholder(target) if target else None
-                img = self.task_manage.get_img(target) if target else None
-                if img is not None:
-                    mt = self.findImageDetail(img, per=entity.per)
-                    if mt and mt.matched and mt.matchTempletePointRange:
-                        result = self._ocr_match_region(mt)
-                        self.log.info(f"OCR 识别 {entity.get_task_name()}: {result}") if entity.get_task_name() else None
+            self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
+            result = on_exec(entity)
+            self.log.debug(f"实体执行结果 {entity.get_task_name()}: {result}")
             time.sleep(entity.sleep)
             self._log_message(entity)
-            for i in self.task_manage.get_next(entity):
-                result = self.exec(i)
-            if test_after_img is not None:
+            if action_chain:
+                next_entities = self.task_manage.get_next(entity)
+                if next_entities:
+                    self.log.debug(f"获取下一执行链 {[i.only_key for i in next_entities]}")
+                for i in next_entities:
+                    result = self.exec(i)
+            if test_after is not None:
                 if not self.in_location(entity.testFor_after):
                     self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
                     continue
@@ -314,112 +536,13 @@ class JCZXGaming(Device):
         self.log.debug(f"OCR 识别结果: {result}")
         return result
 
-    def exec_context(self, section: Union[JczxSectionEntity, str]):
-        """执行 context 类型实体：读取上下文变量 → 按 action 链运算 → 输出结果。"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        test_before_img = None
-        test_after_img = None
-        if entity.testFor_before:
-            test_before_img = self.task_manage.get_img(entity.testFor_before)
-        if entity.testFor_after:
-            test_after_img = self.task_manage.get_img(entity.testFor_after)
-        for _ in range(entity.times):
-            if self.stop_event.is_set():
-                return None
-            if test_before_img is not None:
-                time.sleep(entity.testFor_pre_sleep)
-                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else 0
-                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
-                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
-                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
-                    return None
-                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
-                time.sleep(entity.testFor_sleep)
-            result = None
-            time.sleep(entity.pre_sleep)
-            if entity.context_get:
-                exists = entity.context_get in self._context
-                if exists:
-                    value = self._context[entity.context_get]
-                else:
-                    value = self._convert_value(entity.context_default, entity.context_default_type)
-                self.log.debug(f"上下文读取 {entity.context_get} = {value} (存在: {exists}, 类型: {type(value).__name__})")
-                actions = self.task_manage.resolve_placeholders(entity.action, entity.only_key)
-                actions = self._resolve_exec_placeholders(actions)
-                self.log.debug(f"上下文运算链: {entity.action} → {actions}")
-                for op in actions:
-                    prev = value
-                    value = self._apply_context_op(value, op)
-                    self.log.debug(f"上下文运算: {prev} {op} → {value}")
-                result = value
-                if entity.context_key:
-                    match entity.context_type:
-                        case "int":
-                            self.context_set(entity.context_key, int(result))
-                        case "float":
-                            self.context_set(entity.context_key, float(result))
-                        case _:
-                            self.context_set(entity.context_key, str(result))
-            time.sleep(entity.sleep)
-            self._log_message(entity)
-            if test_after_img is not None:
-                if not self.in_location(entity.testFor_after):
-                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
-                    continue
-                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
-        return result
-
-    def exec_condition(self, section: Union[JczxSectionEntity, str]):
-        """执行 condition 类型实体：评估 condition / condition_not，按结果执行 then / else 分支。"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        test_before_img = None
-        test_after_img = None
-        if entity.testFor_before:
-            test_before_img = self.task_manage.get_img(entity.testFor_before)
-        if entity.testFor_after:
-            test_after_img = self.task_manage.get_img(entity.testFor_after)
-        for _ in range(entity.times):
-            if self.stop_event.is_set():
-                return None
-            if test_before_img is not None:
-                time.sleep(entity.testFor_pre_sleep)
-                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else 0
-                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
-                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
-                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
-                    return None
-                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
-                time.sleep(entity.testFor_sleep)
-            result = None
-            time.sleep(entity.pre_sleep)
-            if entity.condition_not:
-                if not self._eval_condition(entity.condition_not):
-                    self.log.debug(f"条件 {entity.condition_not} 满足 condition_not，执行 condition_then {entity.condition_then}")
-                    for s in entity.condition_then:
-                        result = self.exec(s)
-                else:
-                    self.log.debug(f"条件 {entity.condition_not} 不满足 condition_not，执行 condition_else {entity.condition_else}")
-                    for s in entity.condition_else:
-                        result = self.exec(s)
-            elif entity.condition:
-                if self._eval_condition(entity.condition):
-                    self.log.debug(f"条件 {entity.condition} 满足 condition，执行 condition_then {entity.condition_then}")
-                    for s in entity.condition_then:
-                        result = self.exec(s)
-                else:
-                    self.log.debug(f"条件 {entity.condition} 不满足 condition，执行 condition_else {entity.condition_else}")
-                    for s in entity.condition_else:
-                        result = self.exec(s)
-            time.sleep(entity.sleep)
-            self._log_message(entity)
-            for i in self.task_manage.get_next(entity):
-                result = self.exec(i)
-            if test_after_img is not None:
-                if not self.in_location(entity.testFor_after):
-                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
-                    continue
-                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
-        return result
+    @staticmethod
+    def _convert_output(result, context_type: str):
+        match context_type:
+            case "int": return int(result)
+            case "float": return float(result)
+            case "bool": return bool(result)
+            case _: return str(result)
 
     @staticmethod
     def _convert_value(raw: str, value_type: str):
@@ -433,6 +556,8 @@ class JCZXGaming(Device):
                 return float(raw)
             except (ValueError, TypeError):
                 return 0.0
+        elif value_type == "bool":
+            return str(raw).lower() in ("true", "1", "yes")
         return raw
 
     @staticmethod
@@ -491,11 +616,40 @@ class JCZXGaming(Device):
         msg = entity.log
         msg = self.task_manage.resolve_placeholders([msg], entity.only_key)[0]
         msg = self._resolve_exec_placeholder(msg) if msg else ""
-        for match in self._CONDITION_EXPR_PATTERN.findall(msg):
+        for match in self._LOG_CONDITION_PATTERN.findall(msg):
+            expr_text = self._resolve_log_condition_placeholders(match)
             result = self._eval_condition_expr(match)
-            msg = msg.replace("&{" + match + "}", str(result))
+            msg = msg.replace("&{" + match + "}", f"&{{{expr_text}}} → {result}")
         log_fn = getattr(self.log, entity.log_level, self.log.info)
         log_fn(f"[{entity.get_task_name() or entity.only_key}] {msg}")
+
+    def _format_condition(self, condition: str) -> str:
+        """解析条件字符串中的占位符并求值，返回可展示的格式化文本。"""
+        if not condition:
+            return "None"
+        resolved = self._CONDITION_EXPR_PATTERN.match(condition)
+        if resolved:
+            resolved_text = self._resolve_log_condition_placeholders(resolved.group(1))
+            result = self._eval_condition(condition)
+            return f"{condition} → &{{{resolved_text}}} → {result}"
+        result = self._eval_condition(condition)
+        return f"{condition} → {result}"
+
+    def _resolve_log_condition_placeholders(self, expr: str) -> str:
+        """解析 &{...} 表达式内的占位符，返回可供展示的已解析文本。"""
+        result = expr
+        for m in self._CONFIG_PLACEHOLDER_PATTERN.findall(expr):
+            val = self._resolve_placeholder("${" + m + "}")
+            result = result.replace("${" + m + "}", str(val) if val else "?")
+        for m in self._EXEC_PLACEHOLDER_PATTERN.findall(result):
+            val = self.exec(m)
+            result = result.replace("@{" + m + "}", str(val) if val is not None else "?")
+        for m in self._CTX_PLACEHOLDER_PATTERN.findall(result):
+            val = self._context.get(m, "?")
+            if self._is_context_expr(m):
+                val = self._eval_context_expr(m)
+            result = result.replace("%{" + m + "}", str(val) if val else "?")
+        return result
 
     def exec(self, section: Union[JczxSectionEntity, str]):
         """统一调度入口：根据 type 分发到对应执行方法，执行后自动将返回值存入上下文变量（若设置了 context_key）。"""
@@ -529,124 +683,10 @@ class JCZXGaming(Device):
                     self.context_set(entity.context_key, int(float(result)))
                 case "float":
                     self.context_set(entity.context_key, float(result))
+                case "bool":
+                    self.context_set(entity.context_key, bool(result))
                 case _:
                     self.context_set(entity.context_key, str(result))
-        return result
-
-    def exec_dynamic(self, section: Union[JczxSectionEntity, str]):
-        """执行 dynamic 类型实体：依次执行 action 中的 entity key，并将每个返回值（转 str）再次作为 entity key 执行。
-        不支持 action 链（get_next 不会被调用）。"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        for _ in range(entity.times):
-            if self.stop_event.is_set():
-                return None
-            self.log.debug(f"开始动态执行 {entity.get_task_name()} {entity}")
-            time.sleep(entity.pre_sleep)
-            for key in entity.action:
-                if self.stop_event.is_set():
-                    return None
-                result = self.exec(key)
-                result_str = str(result) if result is not None else ""
-                if result_str:
-                    self.exec(result_str)
-            time.sleep(entity.sleep)
-            self._log_message(entity)
-            self.log.debug(f"动态执行完成 {entity.get_task_name()}") if entity.get_task_name() else None
-        return None
-
-    def exec_click(self, section: Union[JczxSectionEntity, str]):
-        """执行 click 类型实体：testFor_before 门控 → pos/match/target 点击 → action 链 → testFor_after 复检。
-        点击优先级：pos > match > target（模板匹配循环）。"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        test_before_img = None
-        test_after_img = None
-        if entity.testFor_before:
-            test_before_img = self.task_manage.get_img(entity.testFor_before)
-        if entity.testFor_after:
-            test_after_img = self.task_manage.get_img(entity.testFor_after)
-        for _ in range(entity.times):
-            if self.stop_event.is_set():
-                return None
-            if test_before_img is not None:
-                time.sleep(entity.testFor_pre_sleep)
-                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else entity.max_wait
-                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
-                if not self._wait_for_image(test_before_img, test_wait, per=entity.testFor_per):
-                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
-                    return None
-                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
-                time.sleep(entity.testFor_sleep)
-            startTime = datetime.now()
-            result = None
-            time.sleep(entity.pre_sleep)
-            if entity.pos:
-                self.click(*entity.pos)
-            elif entity.match:
-                mt = self.exec(entity.match)
-                if mt is not None and getattr(mt, 'matchTempleteCenterPoints', None):
-                    idx = entity.target_index
-                    pt = mt.matchTempleteCenterPoints[idx] if idx < len(mt.matchTempleteCenterPoints) else mt.matchTempleteCenterPoints[0]
-                    self.click(*pt)
-                    result = mt
-            else:
-                target = entity.target
-                target = self._resolve_placeholder(target)
-                target = self._resolve_exec_placeholder(target) if target else None
-                img = self.task_manage.get_img(target) if target else None
-                while True:
-                    if self.stop_event.is_set():
-                        return None
-                    if entity.condition_not:
-                        if not self._eval_condition(entity.condition_not):
-                            self.log.debug(f"条件 {entity.condition_not} 满足 condition_not，执行 condition_then {entity.condition_then}")
-                            for section in entity.condition_then:
-                                result = self.exec(section)
-                        else:
-                            self.log.debug(f"条件 {entity.condition_not} 不满足 condition_not，执行 condition_else {entity.condition_else}")
-                            for section in entity.condition_else:
-                                result = self.exec(section)
-                        break
-                    elif entity.condition:
-                        if self._eval_condition(entity.condition):
-                            self.log.debug(f"条件 {entity.condition} 满足 condition，执行 condition_then {entity.condition_then}")
-                            for section in entity.condition_then:
-                                result = self.exec(section)
-                        else:
-                            self.log.debug(f"条件 {entity.condition} 不满足 condition，执行 condition_else {entity.condition_else}")
-                            for section in entity.condition_else:
-                                result = self.exec(section)
-                        break
-                    result = self.exec(entity.wait_sec)
-                    start = time.monotonic()
-                    self.log.debug(f"匹配资源 {target}")
-                    if img is not None:
-                        if result := self.clickResource(img, per = entity.per, index = entity.index):
-                            self.log.debug(f"匹配并点击资源 {target} 耗时 {time.monotonic() - start:.2f}")
-                            self.log.info(f"执行点击 {entity.get_task_name()}") if entity.get_task_name() else None
-                            self.log.debug(f"匹配资源耗时 {time.monotonic() - start:.2f}")
-                            break
-                        else: 
-                            self.log.debug(f"未匹配到资源 {target}，耗时 {time.monotonic() - start:.2f}")
-                    runTime = (datetime.now() - startTime).seconds
-                    if runTime >= entity.max_wait:
-                        self.log.debug(f"最大等待时间 {entity.max_wait}s 结束, 未匹配到资源 {target}")
-                        if entity.break_point == "on":
-                            self.log.debug(f"未执行，跳出执行链")
-                            time.sleep(entity.sleep)
-                            return None
-                        break
-            time.sleep(entity.sleep)
-            self._log_message(entity)
-            entities = self.task_manage.get_next(entity)
-            if entities:
-                self.log.debug(f"获取下一执行链 {entities}")
-            for i in entities:
-                result = self.exec(i)
-            if test_after_img is not None:
-                if not self.in_location(entity.testFor_after):
-                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
-                    continue
-                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
         return result
 
     def _wait_for_image(self, img, max_wait: int, per: float = 0.8) -> bool:
@@ -678,27 +718,6 @@ class JCZXGaming(Device):
         finally:
             self._context.clear()
 
-    def exec_task(self, section: Union[JczxSectionEntity, str]):
-        """执行 task 类型实体：遍历 action 链，依次执行子实体。"""
-        entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
-        for _ in range(entity.times):
-            if self.stop_event.is_set():
-                return None
-            result = None
-            next_entities = self.task_manage.get_next(entity)
-            self.log.info(f"开始执行任务 {entity.get_task_name()}") if entity.get_task_name() else None
-            time.sleep(entity.pre_sleep)
-            for i in next_entities:
-                if self.stop_event.is_set():
-                    self.log.info("任务已被用户停止")
-                    return None
-                self.log.debug(f"开始执行实体 {i.get_task_name()} {i}")
-                result = self.exec(i)
-            time.sleep(entity.sleep)
-            self._log_message(entity)
-            self.log.info(f"任务执行完毕 {entity.get_task_name()}") if entity.get_task_name() else None
-        return result
-    
     def in_location(self, target: str, per: float = 0.8):
         """检测指定图片是否在当前屏幕上可见，返回 bool。"""
         list_pos = self.findImageCenterLocations(self.task_manage.get_img(target), per = float(per))

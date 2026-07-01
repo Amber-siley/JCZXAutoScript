@@ -23,6 +23,11 @@ type: func
 func: swipe_proportion
 args: 2,2,3,4
 
+[context-check]
+type: func
+name: 打印上下文
+func: context_print
+
 / -------------
 / func template 执行函数模板
 / -------------
@@ -87,11 +92,57 @@ settings: settings-inllusion
 type: task
 view: on
 name: 竞技场日常
-action: get-simulate-times,get-simulate-refresh-times,get-combat-power,context-simulate-fight-refresh-times,context-simulate-continue-times
+action: goto-jjc,condition-simulate-need-fight
+settings: settings-jjc-simulate
 
 / -------------
 / 杂项
 / -------------
+
+[settings-jjc-simulate]
+type: settings
+fields: setting-power-threshold-jjc
+
+[setting-power-threshold-jjc]
+type: setting
+setting_type: integer
+label: 战力阈值
+default: 50000
+min: 0
+
+[jjc-simulate-values]
+setting-power-threshold-jjc: 25000
+
+[goto-jjc]
+type: task
+name: 前往竞技场
+action: goto-home,click-fight,click-simulate,click-jjc
+
+[click-simulate]
+type: click
+name: 模拟军演
+target: buttons\simulatedMilitaryExercises.png
+sleep: 2
+
+[click-jjc]
+type: click
+name: 竞技场
+target: buttons\competition.png
+sleep: 3
+
+[condition-simulate-need-fight]
+type: condition
+name: 条件-是否挑战
+desc: 条件挑战次数 大于0,
+condition: &{get-simulate-times > 0 & get-simulate-refresh-times > 0}
+condition_then: get-average-refresh-times,condition-to-fight-jjc
+condition_else: goto-home
+
+[get-average-refresh-times]
+type: task
+name: 计算可以平均使用刷新的次数 -> average_times
+action: get-simulate-times,get-simulate-refresh-times,get-combat-power,context-simulate-fight-refresh-times,context-simulate-continue-times,context-simulate-continue-times-max-3
+
 / 竞技场
 /   | 获取(挑战次数,获取第一位的战力值,获取剩余刷新次数,获取是+28/+26)
 / 计算平均使用刷新次数 - times
@@ -100,6 +151,106 @@ action: get-simulate-times,get-simulate-refresh-times,get-combat-power,context-s
 /   | Y             |                                              |
 / 发起挑战           \---------------N-----------> 点击刷新，times-1/
 /
+[condition-to-fight-jjc]
+type: condition
+name: 条件判断是否挑战
+desc: 战力阈值 & （平均刷新次数期望 <= 0 | 是+28）,不满足条件继续刷新
+condition: &{%{combat_power} <= ${jjc-simulate-values:setting-power-threshold-jjc} & (%{average_times} <= 0 | @{condition-jjc-in-28})}
+condition_then: click-jjc-fight,click-jjc-fight-sure,auto-fight,click-get-item,condition-compare-jjc-fight-times,context-check,wait-2,condition-simulate-need-fight
+condition_else: context-average-times-1,click-jjc-fight-refresh,get-combat-power,get-simulate-refresh-times,get-simulate-times,condition-simulate-need-fight-1
+
+[condition-simulate-need-fight-1]
+type: condition
+name: 条件-是否挑战
+desc: 条件挑战次数 大于0,
+condition: &{get-simulate-times > 0 & get-simulate-refresh-times > 0}
+condition_then: condition-to-fight-jjc
+condition_else: goto-home
+
+[click-jjc-fight-refresh]
+type: click
+name: 刷新
+target: buttons\competitionCancel.png
+sleep: 1
+
+[click-jjc-fight]
+type: click
+name: 挑战
+target: buttons\jjcScore.png
+sleep: 2
+
+[condition-compare-jjc-fight-times]
+type: condition
+name: 计算挑战状态
+condition: &{%{win_flag} == 1}
+condition_then: condition-compare-jjc-fight-times-1
+condition_else: context-times_loss-add-1
+
+[condition-compare-jjc-fight-times-1]
+type: condition
+name: 计算挑战状态, 获胜状态下区分 28/26
+condition: &{%{is_28}}
+condition_then: context-times_28-add-1
+condition_else: context-times_26-add-1
+
+[context-times_28-add-1]
+type: context
+name: +28挑战次数
+context_get: times_28
+context_default: 0
+context_type: int
+action: +|1
+context_key: times_28
+
+[context-times_26-add-1]
+type: context
+name: +26挑战次数
+context_get: times_26
+context_default: 0
+context_type: int
+action: +|1
+context_key: times_26
+
+[context-times_loss-add-1]
+type: context
+name: 挑战失败次数
+context_get: times_loss
+context_default: 0
+context_type: int
+action: +|1
+context_key: times_loss
+
+[click-jjc-fight-sure]
+type: click
+name: 确认挑战
+testFor_before: buttons\challenge.png
+target: buttons\challenge.png
+max_wait: 10
+
+[click-get-item]
+type: click
+name: 获取物品
+testFor_before: buttons\getItems1.png
+target: buttons\getItems1.png
+max_wait: 100
+
+[context-average-times-1]
+type: context
+context_get: average_times
+action: -|1
+context_key: average_times
+
+[condition-jjc-in-28]
+extend: in_location
+target: numbers\score28.png
+args: 0.9
+context_key: is_28
+
+[msg-simulate-end]
+type: task
+name: 挑战结束-输出总结
+log: 竞技场任务结束 
+
 [get-simulate-times]
 type: ocr
 name: 获取剩余挑战次数
@@ -144,6 +295,19 @@ name: 计算可以平均使用刷新的次数
 context_get: refresh_times
 context_type: int
 action: /|%{simulate_times}
+context_key: average_times
+
+[context-simulate-continue-times-max-3]
+type: condition
+name: 计算可以平均使用刷新的次数-最大为3
+condition: &{%{average_times} > 3}
+condition_then: context-set-simulate-continue-times-3
+
+[context-set-simulate-continue-times-3]
+type: context
+context_get: average_times
+context_type: int
+action: =|3
 context_key: average_times
 
 [context-simulate-fight-refresh-times]
@@ -268,7 +432,7 @@ default: 宙斯虚影-Inllusion
 
 [goto-inllusion-values]
 setting-inllusion-choose: 宙斯虚影-Inllusion
-setting-team-choose: 队伍-01
+setting-team-choose: 队伍-02
 
 [get-illusion-choose-team-target]
 extend: parse_placeholder
@@ -479,8 +643,16 @@ target: buttons\getItem.png
 [condition-in_location-fight-over-win-click]
 type: click
 condition: condition-in_location-fight-over-win
-condition_then: click-center,wait-1,click-center
+condition_then: click-center,wait-1,click-center,context-fight-is-win
 condition_else: condition-in_location-fight-over-loss1-click
+
+[context-fight-is-win]
+type: context
+context_get: win_flag
+context_type: int
+context_default: 1
+action: =|1
+context_key: win_flag
 
 [condition-in_location-fight-over-win]
 extend: in_location
@@ -490,8 +662,16 @@ args: 0.7
 [condition-in_location-fight-over-loss1-click]
 type: click
 condition: condition-in_location-fight-over-loss1
-condition_then: click-center,wait-5,click-center
+condition_then: click-center,wait-1,click-center,context-fight-is-loss
 condition_else: wait-fight-end
+
+[context-fight-is-loss]
+type: context
+context_get: win_flag
+context_type: int
+context_default: 0
+action: =|0
+context_key: win_flag
 
 [condition-in_location-fight-over-loss1]
 extend: condition-in_location-fight-over-win
@@ -529,7 +709,7 @@ condition_else: condition-to-back
 type: click
 condition: condition-in_location-back
 condition_then: click-back
-condition_else: lick-upcenter
+condition_else: click-upcenter
 action: goto-home-click-home
 
 [condition-in_location-home]
@@ -619,5 +799,5 @@ power-threshold: 25000
 
 [example-order-task-values]
 enable-orders: 初级订单
-enable-craft: 
+setting-power-threshold-jjc:250001
 enable-craft__sub: 
