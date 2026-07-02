@@ -332,6 +332,38 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                 if tuid:
                     edges.append({"data": {"id": f"{cond_uid}→{tuid}::else", "source": cond_uid, "target": tuid, "label": else_label}, "classes": "condition_else"})
 
+        texts = []
+        if entity.target: texts.append(entity.target)
+        if entity.args: texts.extend(entity.args)
+        if entity.condition: texts.append(entity.condition)
+        if entity.condition_not: texts.append(entity.condition_not)
+        for lst in (entity.wait_sec,):
+            if lst: texts.extend(lst)
+        log_v = getattr(entity, "log", "") or ""
+        if log_v: texts.append(log_v)
+
+        for text in texts:
+            if not isinstance(text, str): continue
+            for m in _RE_EXEC.findall(text):
+                if m in configs:
+                    t = _first_uid(m) or _uid(m)
+                    if t not in [n["data"]["id"] for n in nodes]:
+                        nodes.append(_node(configs[m], t))
+                    edges.append({"data": {"id": f"{uid}_exec_{m}", "source": uid, "target": t, "label": "@{" + m + "}"}, "classes": "execute"})
+            for m in _RE_CFG.findall(text):
+                if m in configs:
+                    t = _first_uid(m) or _uid(m)
+                    if t not in [n["data"]["id"] for n in nodes]:
+                        nodes.append(_node(configs[m], t))
+                    edges.append({"data": {"id": f"{uid}_cfg_{m}", "source": uid, "target": t, "label": "${" + m + "}"}, "classes": "config"})
+            for m in _RE_EXPR.findall(text):
+                for word in re.findall(r'\b([a-zA-Z][\w-]+)\b', m):
+                    if word in configs:
+                        t = _first_uid(word) or _uid(word)
+                        if t not in [n["data"]["id"] for n in nodes]:
+                            nodes.append(_node(configs[word], t))
+                        edges.append({"data": {"id": f"{uid}_expr_{word}", "source": uid, "target": t, "label": "&{" + word + "}"}, "classes": "expression"})
+
         return uid
 
     _expand(task_key, [])
