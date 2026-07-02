@@ -309,8 +309,11 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
             edges.append({"data": {"id": f"{uid}→{cond_uid}::condition", "source": uid, "target": cond_uid, "label": ""}, "classes": "condition_not" if is_not else "condition"})
             for word in re.findall(r'\b([a-zA-Z][\w-]+)\b', cond_key[2:-1]):
                 if word in configs:
+                    e_target = _first_uid(word)
+                    if not e_target:
+                        e_target = _uid(word)
+                        nodes.append(_node(configs[word], e_target))
                     e_label = "&{" + word + "}"
-                    e_target = _first_uid(word) or f"{word}_1"
                     edges.append({"data": {"id": f"{cond_uid}_expr_{word}", "source": cond_uid, "target": e_target, "label": e_label}, "classes": "expression"})
             then_label = "否" if is_not else "是"
             else_label = "是" if is_not else "否"

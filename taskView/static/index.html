@@ -194,7 +194,8 @@ async function loadFlowTree(taskId) {
     const res = await fetch(`/api/flow?file=${encodeURIComponent(currentFile)}&task=${encodeURIComponent(taskId)}`);
     const data = await res.json();
     const flowNodes = processLabels(data.nodes);
-    const flowEdges = data.edges;
+    const nodeIds = new Set(flowNodes.map(n => n.data.id));
+    const flowEdges = data.edges.filter(e => nodeIds.has(e.data.source) && nodeIds.has(e.data.target));
     cy.elements().remove();
     cy.add({ nodes: flowNodes, edges: flowEdges });
     cy.layout({ name: 'dagre', rankDir: 'LR', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
