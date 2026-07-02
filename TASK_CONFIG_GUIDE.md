@@ -81,6 +81,7 @@ adb.path : platform-tools/adb.exe
 | `testFor_per` | float | `0.8` | testFor_before 匹配阈值 |
 | `log` | str | — | 自定义日志消息，支持四种占位符（见占位符章节） |
 | `log_level` | str | `info` | log 的等级：`debug` / `info` / `warning` / `error` |
+| `screen_cache_ttl` | float | `-1` | 截图缓存 TTL（毫秒）。`-1`=继承上级，`0`=禁用（息屏/动画场景），`N`=自定义。只在链顶层设置即可，子实体 `-1` 自动继承 |
 
 ### click 类型专用
 
@@ -189,6 +190,8 @@ _exec_entity(entity, on_exec)
     [action 链]              ← get_next() → 递归 exec
     [testFor_after 复检]     ← 不可见 → continue 重试
 ```
+
+**截图缓存：** 同帧内多个实体共享截图，默认 TTL 500ms。click/swipe/drag 后自动失效。链顶层设置 `screen_cache_ttl`，子实体 `-1` 自动继承，无需每个都配置。
 
 | 类型 | 特有逻辑 | testFor | action 链 |
 |------|---------|---------|-----------|

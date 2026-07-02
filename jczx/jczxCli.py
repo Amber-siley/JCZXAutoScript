@@ -34,6 +34,47 @@ from .widgets import (
 
 LANGUAGE = Lang.ZH_CN
 
+class ScreenshotCache:
+    """截图缓存，TTL + 脏标记，避免同帧重复截图。"""
+
+    def __init__(self, screenshot_fn, ttl_ms=200, log=None):
+        self._capture = screenshot_fn
+        self._ttl_ms = ttl_ms
+        self._log = log
+        self._gray: NDArray = None
+        self._color: NDArray = None
+        self._timestamp: float = 0.0
+        self._dirty: bool = True
+
+    def screenshot(self):
+        if self._stale():
+            self._refresh()
+        return self._color
+
+    def gray_screenshot(self):
+        if self._stale():
+            self._refresh()
+        return self._gray
+
+    def invalidate(self):
+        self._dirty = True
+
+    def set_ttl(self, ttl_ms: float):
+        if self._log and self._ttl_ms != ttl_ms:
+            self._log.debug(f"截图缓存 TTL: {self._ttl_ms}ms → {ttl_ms}ms")
+        self._ttl_ms = ttl_ms
+
+    def _refresh(self):
+        self._color = self._capture()
+        self._gray = cv2.cvtColor(self._color, cv2.COLOR_BGR2GRAY)
+        self._timestamp = time.monotonic()
+        self._dirty = False
+        if self._log:
+            self._log.debug(f"截图缓存已刷新")
+
+    def _stale(self):
+        return self._dirty or (self._ttl_ms > 0 and (time.monotonic() - self._timestamp) * 1000 > self._ttl_ms)
+
 class JCZXGaming(Device):
     # 提供一些内置的方法
     def __init__(self, adb_path: str = None, device_id: str = None, connect_port = 7555, max_workers = 10, log = None, config_dir: str = ""):
@@ -44,6 +85,32 @@ class JCZXGaming(Device):
         self.ocr: OCR = None
         self._context: dict[str, str] = {}
         self.stop_event = threading.Event()
+        self._screen_cache = ScreenshotCache(
+            screenshot_fn=lambda: Device.screenshot(self),
+            ttl_ms=500,
+            log=self.log,
+        )
+
+    def screenshot(self):
+        return self._screen_cache.screenshot()
+
+    def grayScreenshot(self, cutPoints=None):
+        gray = self._screen_cache.gray_screenshot()
+        if cutPoints:
+            return self.cutScreenshot(gray, cutPoints)
+        return gray
+
+    def click(self, x, y):
+        super().click(x, y)
+        self._screen_cache.invalidate()
+
+    def swipe(self, x1, y1, x2, y2, duration=200):
+        super().swipe(x1, y1, x2, y2, duration)
+        self._screen_cache.invalidate()
+
+    def dragAndDrop(self, x1, y1, x2, y2, duration=200):
+        super().dragAndDrop(x1, y1, x2, y2, duration)
+        self._screen_cache.invalidate()
     
     def set_ocr(self, ocr):
         self.ocr = ocr
@@ -292,22 +359,23 @@ class JCZXGaming(Device):
         """执行 match 类型实体：纯模板匹配不点击，返回 MatchTemplete 对象供其他实体使用。
         action 字段为变换操作列表（非执行链），如 down-0.5、reW-1.0 等。"""
         entity = self._get_entity(section)
-        target = entity.target
-        if not target:
-            self.log.debug("match 类型缺少 target")
-            return None
-        img = self.task_manage.get_img(target)
-        if img is None:
-            self.log.debug(f"match 图片未找到: {target}")
-            return None
-        result = self.findImageDetail(img, per=entity.per)
-        if not result or not result.matched:
-            self.log.debug(f"match 未匹配到: {target}")
-            return None
-        for action in entity.action:
-            result = self._transform_match(result, action)
-        self._log_message(entity)
-        return result
+        def _on_exec(e: JczxSectionEntity):
+            target = e.target
+            if not target:
+                self.log.debug("match 类型缺少 target")
+                return None
+            img = self.task_manage.get_img(target)
+            if img is None:
+                self.log.debug(f"match 图片未找到: {target}")
+                return None
+            result = self.findImageDetail(img, per=e.per)
+            if not result or not result.matched:
+                self.log.debug(f"match 未匹配到: {target}")
+                return None
+            for action in e.action:
+                result = self._transform_match(result, action)
+            return result
+        return self._exec_entity(entity, _on_exec, testFor=True, action_chain=False)
 
     @staticmethod
     def _transform_match(mt: MatchTemplete, action: str):
@@ -487,45 +555,54 @@ class JCZXGaming(Device):
         for _ in range(entity.times):
             if self.stop_event.is_set():
                 return None
-            if test_before is not None:
-                time.sleep(entity.testFor_pre_sleep)
-                test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else default_max_wait
-                self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
-                if not self._wait_for_image(test_before, test_wait, per=entity.testFor_per):
-                    self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
-                    return None
-                self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
-                time.sleep(entity.testFor_sleep)
-            time.sleep(entity.pre_sleep)
-            self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
-            result = on_exec(entity)
-            self.log.debug(f"实体执行结果 {entity.get_task_name()}: {result}")
-            time.sleep(entity.sleep)
-            self._log_message(entity)
-            if action_chain:
-                next_entities = self.task_manage.get_next(entity)
-                if next_entities:
-                    self.log.debug(f"获取下一执行链 {[i.only_key for i in next_entities]}")
-                for i in next_entities:
-                    result = self.exec(i)
-            if test_after is not None:
-                if not self.in_location(entity.testFor_after):
-                    self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
-                    continue
-                self.log.debug(f"testFor_after {entity.testFor_after} 可见")
+            old_ttl = self._screen_cache._ttl_ms
+            if entity.screen_cache_ttl >= 0:
+                self._screen_cache.set_ttl(entity.screen_cache_ttl)
+            try:
+                if test_before is not None:
+                    time.sleep(entity.testFor_pre_sleep)
+                    test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else default_max_wait
+                    self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
+                    if not self._wait_for_image(test_before, test_wait, per=entity.testFor_per):
+                        self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
+                        return None
+                    self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
+                    time.sleep(entity.testFor_sleep)
+                time.sleep(entity.pre_sleep)
+                self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
+                result = on_exec(entity)
+                time.sleep(entity.sleep)
+                self._log_message(entity)
+                if action_chain:
+                    next_entities = self.task_manage.get_next(entity)
+                    if next_entities:
+                        self.log.debug(f"获取下一执行链 {[i.only_key for i in next_entities]}")
+                    for i in next_entities:
+                        result = self.exec(i)
+                if test_after is not None:
+                    if not self.in_location(entity.testFor_after):
+                        self.log.debug(f"testFor_after {entity.testFor_after} 不可见，重新执行")
+                        continue
+                    self.log.debug(f"testFor_after {entity.testFor_after} 可见")
+            finally:
+                self._screen_cache.set_ttl(old_ttl)
         return result
 
     def _ocr_match_region(self, mt: MatchTemplete) -> str:
         """从 MatchTemplete 结果中裁剪区域并执行 OCR，返回识别文本。"""
         pt_range = mt.matchTempletePointRange
         if pt_range is None:
+            self.log.debug("OCR 裁剪失败: matchTempletePointRange 为 None")
             return ""
         (x0, y0), (x1, y1) = pt_range
         if x0 >= x1 or y0 >= y1:
+            self.log.debug(f"OCR 裁剪失败: 非法范围 ({x0},{y0})-({x1},{y1})")
             return ""
         cropped = mt.baseGrayScreenshot[y0:y1, x0:x1]
         if cropped is None or cropped.size == 0:
+            self.log.debug(f"OCR 裁剪失败: 图片为空, 范围 ({x0},{y0})-({x1},{y1})")
             return ""
+        self.log.debug(f"OCR 裁剪区域: ({x0},{y0})-({x1},{y1}) 尺寸 {cropped.shape[1]}x{cropped.shape[0]}")
         if len(cropped.shape) == 2:
             cropped = cv2.cvtColor(cropped, cv2.COLOR_GRAY2BGR)
         if self.ocr is None:
@@ -533,7 +610,10 @@ class JCZXGaming(Device):
             return ""
         texts = self.ocr.readtext(cropped)
         result = "".join(texts) if texts else ""
-        self.log.debug(f"OCR 识别结果: {result}")
+        if result:
+            self.log.debug(f"OCR 识别结果: {result}")
+        else:
+            self.log.warning(f"OCR 识别为空: 裁剪区域 ({x0},{y0})-({x1},{y1}) 尺寸 {cropped.shape[1]}x{cropped.shape[0]}, 检查 target 坐标和 per 阈值是否正确")
         return result
 
     @staticmethod
@@ -678,15 +758,19 @@ class JCZXGaming(Device):
             case _:
                 return None
         if entity.context_key and result is not None and entity.type != SectionType.CONTEXT.value and entity.type != SectionType.CONDITION.value:
-            match entity.context_type:
-                case "int":
-                    self.context_set(entity.context_key, int(float(result)))
-                case "float":
-                    self.context_set(entity.context_key, float(result))
-                case "bool":
-                    self.context_set(entity.context_key, bool(result))
-                case _:
-                    self.context_set(entity.context_key, str(result))
+            try:
+                match entity.context_type:
+                    case "int":
+                        self.context_set(entity.context_key, int(float(result)))
+                    case "float":
+                        self.context_set(entity.context_key, float(result))
+                    case "bool":
+                        self.context_set(entity.context_key, bool(result))
+                    case _:
+                        self.context_set(entity.context_key, str(result))
+            except (ValueError, TypeError) as e:
+                self.log.warning(f"[{entity.get_task_name() or entity.only_key}] 上下文类型转换失败: context_type={entity.context_type}, result={result!r}, error={e}")
+                self.context_set(entity.context_key, str(result))
         return result
 
     def _wait_for_image(self, img, max_wait: int, per: float = 0.8) -> bool:

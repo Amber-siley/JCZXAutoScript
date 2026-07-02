@@ -72,6 +72,7 @@ type: task
 view: off
 name: 前往主界面
 desc: 判断是否主界面，不是则尝试返回或点击中间
+screen_cache_ttl: 0
 action: goto-home-click-home
 sleep: 4
 
@@ -237,6 +238,7 @@ max_wait: 100
 [context-average-times-1]
 type: context
 context_get: average_times
+context_type: int
 action: -|1
 context_key: average_times
 
@@ -279,12 +281,16 @@ action: right-1
 
 [match-simulate-refresh-times]
 type: match
+testFor_before: locations\cancel15Loc.png
+testFor_per: 0.9
 target: locations\cancel15Loc.png
 per: 0.9
 action: left-1
 
 [match-get-simulate-times]
 type: match
+testFor_before: locations\competitionTimesLoc.png
+testFor_per: 0.9
 target: locations\competitionTimesLoc.png
 per: 0.9
 action: left-1
@@ -316,6 +322,7 @@ name: 挑战花费刷新次数
 context_get: fight_refresh_times
 context_default: 0
 context_default_type: int
+context_type: int
 action: +|1
 context_key: fight_refresh_times
 
@@ -432,7 +439,7 @@ default: 宙斯虚影-Inllusion
 
 [goto-inllusion-values]
 setting-inllusion-choose: 宙斯虚影-Inllusion
-setting-team-choose: 队伍-02
+setting-team-choose: 队伍-01
 
 [get-illusion-choose-team-target]
 extend: parse_placeholder
