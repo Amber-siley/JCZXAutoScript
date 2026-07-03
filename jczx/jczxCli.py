@@ -138,7 +138,7 @@ class JCZXGaming(Device):
         self.task_manage = TaskManage(config_dir, log)
         self.ocr: OCR = None
         self._context: dict[str, str] = {}
-        self.stop_event = threading.Event()
+        self._exec_mgr = TaskExecutionManager()
         self._screen_cache = ScreenshotCache(
             screenshot_fn=lambda: Device.screenshot(self),
             ttl_ms=500,
@@ -464,7 +464,7 @@ class JCZXGaming(Device):
         def _on_exec(e: JczxSectionEntity):
             self.log.debug(f"开始动态执行 {e.get_task_name()} {e}")
             for key in e.action:
-                if self.stop_event.is_set(): return None
+                self._exec_mgr.token.check()
                 result = self.exec(key)
                 result_str = str(result) if result is not None else ""
                 if result_str:
@@ -545,7 +545,7 @@ class JCZXGaming(Device):
                 target = self._resolve_exec_placeholder(target) if target else None
                 img = self.task_manage.get_img(target) if target else None
                 while True:
-                    if self.stop_event.is_set(): return None
+                    self._exec_mgr.token.check()
                     if e.condition_not:
                         if not self._eval_condition(e.condition_not):
                             self.log.debug(f"条件 {self._format_condition(e.condition_not)} 满足 condition_not，执行 condition_then {e.condition_then}")
@@ -572,7 +572,7 @@ class JCZXGaming(Device):
                     if runTime >= e.max_wait:
                         self.log.debug(f"最大等待时间 {e.max_wait}s 结束, 未匹配到资源 {target}")
                         if e.break_point == "on":
-                            time.sleep(e.sleep)
+                            self._exec_mgr.token.sleep(e.sleep)
                             return None
                         break
             return result
@@ -589,9 +589,7 @@ class JCZXGaming(Device):
             next_entities = self.task_manage.get_next(e)
             log_fn(f"开始执行{prefix} {e.get_task_name()}") if e.get_task_name() else None
             for i in next_entities:
-                if self.stop_event.is_set():
-                    log_fn(f"{prefix}已被用户停止")
-                    return None
+                self._exec_mgr.token.check()
                 result = self.exec(i)
             log_fn(f"{prefix}执行完毕 {e.get_task_name()}") if e.get_task_name() else None
             return result
@@ -609,25 +607,24 @@ class JCZXGaming(Device):
             if entity.testFor_after:
                 test_after = self.task_manage.get_img(entity.testFor_after)
         for _ in range(entity.times):
-            if self.stop_event.is_set():
-                return None
+            self._exec_mgr.token.check()
             old_ttl = self._screen_cache._ttl_ms
             if entity.screen_cache_ttl >= 0:
                 self._screen_cache.set_ttl(entity.screen_cache_ttl)
             try:
                 if test_before is not None:
-                    time.sleep(entity.testFor_pre_sleep)
+                    self._exec_mgr.token.sleep(entity.testFor_pre_sleep)
                     test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else default_max_wait
                     self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
                     if not self._wait_for_image(test_before, test_wait, per=entity.testFor_per):
                         self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
                         return None
                     self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
-                    time.sleep(entity.testFor_sleep)
-                time.sleep(entity.pre_sleep)
+                    self._exec_mgr.token.sleep(entity.testFor_sleep)
+                self._exec_mgr.token.sleep(entity.pre_sleep)
                 self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
                 result = on_exec(entity)
-                time.sleep(entity.sleep)
+                self._exec_mgr.token.sleep(entity.sleep)
                 self._log_message(entity)
                 if action_chain:
                     next_entities = self.task_manage.get_next(entity)
@@ -792,8 +789,7 @@ class JCZXGaming(Device):
         """统一调度入口：根据 type 分发到对应执行方法，执行后自动将返回值存入上下文变量（若设置了 context_key）。"""
         if not section:
             return None
-        if self.stop_event.is_set():
-            return None
+        self._exec_mgr.token.check()
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         match entity.type:
             case SectionType.TASK.value:
@@ -831,14 +827,14 @@ class JCZXGaming(Device):
         return result
 
     def _wait_for_image(self, img, max_wait: int, per: float = 0.8) -> bool:
-        """轮询检测图片是否出现在屏幕上，每 0.3s 检测一次，超时返回 False。仅检测不点击。"""
         start = time.monotonic()
-        while not self.stop_event.is_set():
+        while True:
+            self._exec_mgr.token.check()
             if self.findImageCenterLocations(img, per=per):
                 return True
             if max_wait > 0 and time.monotonic() - start >= max_wait:
                 break
-            time.sleep(0.3)
+            self._exec_mgr.token.sleep(0.3)
         return False
 
     def _resolve_placeholder(self, key):
