@@ -210,26 +210,28 @@ _exec_entity(entity, on_exec)
 
 ## 占位符
 
-四种占位符在运行时解析，解析顺序及作用域如下：
+四种占位符由统一的 `PlaceholderResolver` 引擎处理，单一入口 `resolve(text, after_key)` 按固定顺序解析。
 
 ### 总览对比
 
 | 占位符 | 含义 | 解析方式 | 可用字段 | 解析顺序 |
 |--------|------|---------|---------|---------|
-| `${section:option}` | 配置值 | 从 `MainMenu.txt` 读取 | func/click/ocr 的 `target`/`args`、log、context 的 `action` | ① |
-| `@{entity_key}` | 实体返回值 | 执行实体，用返回值替换 | func/click 的 `target`/`args`、log、context 的 `action` | ② |
-| `%{context_key}` | 上下文变量 | 从 `_context` 读取 | func/click 的 `target`/`args`、log、context 的 `action` | ③ |
-| `&{表达式}` | 条件表达式 | 执行表达式内实体 + 逻辑/比较运算 | `condition` / `condition_not`、log | ④ |
+| `${section:option}` | 配置值 | 从 `MainMenu.txt` 读取 | **所有字符串字段**（entity key、target、args、action、log、condition 等） | ① |
+| `@{entity_key}` | 实体返回值 | 执行实体，用返回值替换 | func 的 `args`、click 的 `target`、context 的 `action`、log、condition 的 `&{...}` 内 | ② |
+| `%{context_key}` | 上下文变量 | 从 `_context` 读取 | func 的 `args`、context 的 `action`、log、ocr 的 `target`、condition 的 `&{...}` 内 | ③ |
+| `&{表达式}` | 条件表达式 | 执行表达式内实体 + 逻辑/比较运算 | `condition` / `condition_not`（通过 `evaluate_condition()`）、log | ④ |
+
+**架构说明：** 所有解析通过 `PlaceholderResolver` 统一入口完成，保证 `${}` → `@{}` → `%{}` → `&{...}` 顺序。`condition` 字段通过 `evaluate_condition(condition, after_key)` 求值（返回 `"True"` / `"False"`），同时支持 `&{...}` 表达式和裸实体 key（兼容旧写法）。条件日志通过 `format_condition()` 额外展示解析后的表达式文本。
 
 ### 1. `${...}` — 配置占位符
 
-从配置文件读取值，支持三种格式：
+从配置文件读取值，支持三种格式。**作用于所有字符串字段**，包括但不限于 entity key、target、args、action、log、condition 等。唯一能影响实体键名查找的占位符。
 
 | 形式 | 含义 | 示例 |
 |------|------|------|
 | `${section:option}` | 指定 section 下的 option | `${screenshot-values:name}` |
 | `${section:option:default}` | 带默认值 | `${mine-values:level:5}` |
-| `${option}` | 短格式 → `{entity.only_key}-values:{option}` | `${screenshot-name}` |
+| `${option}` | 短格式 → `{当前实体.only_key}-values:{option}` | `${screenshot-name}` |
 
 ```ini
 [screenshot]
@@ -238,9 +240,17 @@ func: save_screenshot
 args: ${screenshot-task-values:dir},${screenshot-name}
 ```
 
+**实体键中的应用：** action 链、condition_then/condition_else、match 引用等实体名也支持 `${}`。
+
+```ini
+/ 根据配置值决定执行哪个实体
+condition_then: ${fight-strategy:win}
+condition_else: ${fight-strategy:loss}
+```
+
 ### 2. `@{...}` — 执行占位符
 
-运行一个实体，将其返回值替换到字符串中：
+运行一个实体，将其返回值替换到字符串中。作用于：`func` 的 `args`、`click` 的 `target`、`context` 的 `action`、`log`、`condition` 的 `&{...}` 表达式内。（**不能**用于 entity key 引用——action 链中的实体名不支持 `@{...}`。）
 
 ```ini
 [get-device]
@@ -256,7 +266,7 @@ args: @{get-device},${screenshot-name}
 
 ### 3. `%{...}` — 上下文占位符
 
-读取 `context_set` / `context_key` 存入的变量（类型为 `str`/`int`/`float`/`bool`），同时支持表达式求值：
+读取 `context_set` / `context_key` 存入的变量（类型为 `str`/`int`/`float`/`bool`），同时支持表达式求值。作用于：`func` 的 `args`、`context` 的 `action`、`log`、`ocr` 的 `target`、`condition` 的 `&{...}` 表达式内。（**不能**用于 entity key 引用。）
 
 ```ini
 [use-power]
@@ -305,6 +315,10 @@ condition: &{entity_a & (entity_b | entity_c >= 2)}
 
 优先级（低→高）：`|` → `&` → `>=` `<=` `>` `<` `==` `!=` → `()`
 
+**裸实体 key 兼容：** 不带 `&{...}` 时行为不变，`condition: my-entity` 等价于直接执行实体并取其布尔值。
+
+**log 中的 &{...}：** 嵌入式 `&{...}` 会被替换为最终布尔结果（`True` / `False`），不再保留中间表达式文本。
+
 ```ini
 [complex-check]
 type: click
@@ -318,7 +332,7 @@ condition_then: do-purchase
 condition: &{check-power & %{combat_power} >= 50000}
 ```
 
-不带 `&{...}` 时行为不变：`condition: my-entity` ≡ `condition: &{my-entity}`。
+**条件日志格式：** 满足/不满足时打印 `条件 &{原始表达式} → &{${}和%{}已替换} → 结果`，便于调试。
 
 ### log 字段中的多占位符混用
 
