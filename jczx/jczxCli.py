@@ -316,6 +316,7 @@ class JCZXGaming(Device):
         self.ocr: OCR = None
         self._context: dict[str, str] = {}
         self._exec_mgr = TaskExecutionManager()
+        self._resolver = PlaceholderResolver(self)
         self._screen_cache = ScreenshotCache(
             screenshot_fn=lambda: Device.screenshot(self),
             ttl_ms=500,
@@ -580,8 +581,7 @@ class JCZXGaming(Device):
         def _on_exec(e: JczxSectionEntity):
             if method := self._get_method(e.func):
                 raw_args = ([e.target] if e.target else []) + e.args
-                args = self.task_manage.resolve_placeholders(raw_args, e.only_key)
-                args = self._resolve_exec_placeholders(args)
+                args = self._resolver.resolve_list(raw_args, e.only_key)
                 return method(*args) if args else method()
             raise AttributeError(f"方法未查询到 {e.func}")
         return self._exec_entity(entity, _on_exec)
@@ -622,8 +622,7 @@ class JCZXGaming(Device):
                 if mt is not None and getattr(mt, "matched", False):
                     return self._ocr_match_region(mt)
             elif e.target:
-                target = self._resolve_placeholder(e.target)
-                target = self._resolve_exec_placeholder(target) if target else None
+                target = self._resolver.resolve(e.target, e.only_key)
                 img = self.task_manage.get_img(target) if target else None
                 if img is not None:
                     mt = self.findImageDetail(img, per=e.per)
@@ -659,8 +658,7 @@ class JCZXGaming(Device):
                 exists = e.context_get in self._context
                 value = self._context[e.context_get] if exists else self._convert_value(e.context_default, e.context_default_type)
                 self.log.debug(f"上下文读取 {e.context_get} = {value} (存在: {exists}, 类型: {type(value).__name__})")
-                actions = self.task_manage.resolve_placeholders(e.action, e.only_key)
-                actions = self._resolve_exec_placeholders(actions)
+                actions = self._resolver.resolve_list(e.action, e.only_key)
                 self.log.debug(f"上下文运算链: {e.action} → {actions}")
                 for op in actions:
                     prev = value
@@ -679,23 +677,21 @@ class JCZXGaming(Device):
         def _on_exec(e: JczxSectionEntity):
             result = None
             if e.condition_not:
-                cond_result = self._eval_condition(e.condition_not)
-                if not cond_result:
-                    self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 满足 condition_not，执行 condition_then {e.condition_then}")
+                if self._resolver.evaluate_condition(e.condition_not, e.only_key) != "True":
+                    self.log.debug(f"条件 {e.condition_not} 满足 condition_not，执行 condition_then {e.condition_then}")
                     for s in e.condition_then:
                         result = self.exec(s)
                 else:
-                    self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                    self.log.debug(f"条件 {e.condition_not} 不满足 condition_not，执行 condition_else {e.condition_else}")
                     for s in e.condition_else:
                         result = self.exec(s)
             elif e.condition:
-                cond_result = self._eval_condition(e.condition)
-                if cond_result:
-                    self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 满足 condition，执行 condition_then {e.condition_then}")
+                if self._resolver.evaluate_condition(e.condition, e.only_key) == "True":
+                    self.log.debug(f"条件 {e.condition} 满足 condition，执行 condition_then {e.condition_then}")
                     for s in e.condition_then:
                         result = self.exec(s)
                 else:
-                    self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 不满足 condition，执行 condition_else {e.condition_else}")
+                    self.log.debug(f"条件 {e.condition} 不满足 condition，执行 condition_else {e.condition_else}")
                     for s in e.condition_else:
                         result = self.exec(s)
             return result
@@ -718,27 +714,24 @@ class JCZXGaming(Device):
                     self.click(*pt)
                     result = mt
             else:
-                target = self._resolve_placeholder(e.target)
-                target = self._resolve_exec_placeholder(target) if target else None
+                target = self._resolver.resolve(e.target, e.only_key) if e.target else None
                 img = self.task_manage.get_img(target) if target else None
                 while True:
                     self._exec_mgr.token.check()
                     if e.condition_not:
-                        cond_result = self._eval_condition(e.condition_not)
-                        if not cond_result:
-                            self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 满足 condition_not，执行 condition_then {e.condition_then}")
+                        if self._resolver.evaluate_condition(e.condition_not, e.only_key) != "True":
+                            self.log.debug(f"条件 {e.condition_not} 满足 condition_not，执行 condition_then {e.condition_then}")
                             for s in entity.condition_then: result = self.exec(s)
                         else:
-                            self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                            self.log.debug(f"条件 {e.condition_not} 不满足 condition_not，执行 condition_else {e.condition_else}")
                             for s in entity.condition_else: result = self.exec(s)
                         break
                     elif e.condition:
-                        cond_result = self._eval_condition(e.condition)
-                        if cond_result:
-                            self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 满足 condition，执行 condition_then {e.condition_then}")
+                        if self._resolver.evaluate_condition(e.condition, e.only_key) == "True":
+                            self.log.debug(f"条件 {e.condition} 满足 condition，执行 condition_then {e.condition_then}")
                             for s in entity.condition_then: result = self.exec(s)
                         else:
-                            self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 不满足 condition，执行 condition_else {e.condition_else}")
+                            self.log.debug(f"条件 {e.condition} 不满足 condition，执行 condition_else {e.condition_else}")
                             for s in entity.condition_else: result = self.exec(s)
                         break
                     result = self.exec(e.wait_sec)
@@ -922,16 +915,9 @@ class JCZXGaming(Device):
         return value
 
     def _log_message(self, entity: JczxSectionEntity) -> None:
-        """解析实体 log 字段中的占位符并输出日志。"""
         if not entity.log:
             return
-        msg = entity.log
-        msg = self.task_manage.resolve_placeholders([msg], entity.only_key)[0]
-        msg = self._resolve_exec_placeholder(msg) if msg else ""
-        for match in self._LOG_CONDITION_PATTERN.findall(msg):
-            expr_text = self._resolve_log_condition_placeholders(match)
-            result = self._eval_condition_expr(match)
-            msg = msg.replace("&{" + match + "}", f"&{{{expr_text}}} → {result}")
+        msg = self._resolver.resolve(entity.log, entity.only_key)
         log_fn = getattr(self.log, entity.log_level, self.log.info)
         log_fn(f"[{entity.get_task_name() or entity.only_key}] {msg}")
 
