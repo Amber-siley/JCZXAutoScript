@@ -934,7 +934,6 @@ class JczxCli:
         self.ocr = None
         self.rich_log = RichLog(id="console", highlight=True, auto_scroll=False)
         self._running_future: Optional[Future] = None
-        self._running_task_id: Optional[str] = None
         self._settings_task_id: Optional[str] = None
         self._init_logger()
 
@@ -988,6 +987,10 @@ class JczxCli:
         self.logger.addHandler(console_hander)
         self.logger.info("===========日志初始化完成===========")
         self.logger.info(f"日志等级 {getLevelName(self.logger.level)}")
+
+    @property
+    def _running_task_id(self) -> str | None:
+        return self.device._exec_mgr.task_id if self.device else None
 
     def _init_device(self):
         adb_path = self.config.get_config(opt="adb.path")
@@ -1168,38 +1171,36 @@ class JczxTUI(App, JczxCli):
         if not entity:
             self.logger.error("任务实体不存在: %s", task_id)
             return False
-        self.device.stop_event.clear()
-        self._running_task_id = task_id
+        self.device._exec_mgr.start(task_id)
         self.logger.info("任务启动: %s", entity.get_task_name())
         self._running_future = self.executor.submit(self._run_task, entity, task_id)
         return True
 
     def _stop_running_task(self) -> None:
         if self.device:
-            self.device.stop_event.set()
-        if self._running_future:
-            self._running_future.cancel()
-            self._running_future = None
-        self._running_task_id = None
+            self.device._exec_mgr.stop()
         self.logger.info("任务已停止")
 
     def _run_task(self, entity: JczxSectionEntity, task_id: str) -> None:
         try:
             self.device.exec_task_raw(entity)
+        except TaskCancelledError:
+            self.logger.info("任务已取消: %s", entity.get_task_name())
         except Exception as e:
             self.logger.error("任务执行异常: %s", e)
         finally:
             self.call_from_thread(self._on_task_finished, task_id)
 
     def _on_task_finished(self, task_id: str) -> None:
-        if self._running_task_id != task_id:
+        if self.device and self.device._exec_mgr.task_id != task_id:
             return
+        if self.device:
+            self.device._exec_mgr.reset()
         panel = self.query_one("#task-list-panel", TaskListPanel)
         for card in panel.body.query(TaskCard):
             if card._task_id == task_id:
                 card.reset_toggle()
         self._running_future = None
-        self._running_task_id = None
 
     def on_task_card_settings_pressed(self, event: TaskCard.SettingsPressed) -> None:
         task_id = event.task_id
