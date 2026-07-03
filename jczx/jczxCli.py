@@ -75,6 +75,60 @@ class ScreenshotCache:
     def _stale(self):
         return self._dirty or (self._ttl_ms > 0 and (time.monotonic() - self._timestamp) * 1000 > self._ttl_ms)
 
+class TaskCancelledError(Exception):
+    pass
+
+
+class CancellationToken:
+    def __init__(self):
+        self._event = threading.Event()
+
+    def sleep(self, seconds: float) -> None:
+        if self._event.wait(timeout=seconds):
+            raise TaskCancelledError()
+
+    def cancel(self) -> None:
+        self._event.set()
+
+    def reset(self) -> None:
+        self._event.clear()
+
+    def is_cancelled(self) -> bool:
+        return self._event.is_set()
+
+    def check(self) -> None:
+        if self._event.is_set():
+            raise TaskCancelledError()
+
+
+class TaskExecutionManager:
+    def __init__(self):
+        self._token = CancellationToken()
+        self._task_id: str | None = None
+
+    @property
+    def token(self) -> CancellationToken:
+        return self._token
+
+    @property
+    def task_id(self) -> str | None:
+        return self._task_id
+
+    def is_running(self) -> bool:
+        return self._task_id is not None and not self._token.is_cancelled()
+
+    def start(self, task_id: str) -> None:
+        self._token.reset()
+        self._task_id = task_id
+
+    def stop(self) -> None:
+        if not self._token.is_cancelled():
+            self._token.cancel()
+
+    def reset(self) -> None:
+        self._token.reset()
+        self._task_id = None
+
 class JCZXGaming(Device):
     # 提供一些内置的方法
     def __init__(self, adb_path: str = None, device_id: str = None, connect_port = 7555, max_workers = 10, log = None, config_dir: str = ""):
