@@ -193,6 +193,19 @@ class PlaceholderResolver:
             return str(self._eval_condition_expr(match.group(1), after_key))
         return str(bool(self._gaming.exec(condition)))
 
+    def format_condition(self, condition: str, after_key: str) -> str:
+        if not condition:
+            return "None → False"
+        match = self._CONDITION_PATTERN.match(condition)
+        if match:
+            expr = match.group(1)
+            resolved = self._resolve_config(expr, after_key)
+            resolved = self._resolve_context(resolved)
+            result = str(self._eval_condition_expr(expr, after_key))
+            return f"{condition} → &{{{resolved}}} → {result}"
+        result = str(bool(self._gaming.exec(condition)))
+        return f"{condition} → {result}"
+
     def _eval_condition_expr(self, expr: str, after_key: str) -> bool:
         tokens = self._tokenize(expr)
         return self._parse_expression(tokens, condition_mode=True, after_key=after_key)
@@ -471,20 +484,20 @@ class JCZXGaming(Device):
             result = None
             if e.condition_not:
                 if self._resolver.evaluate_condition(e.condition_not, e.only_key) != "True":
-                    self.log.debug(f"条件 {e.condition_not} 满足 condition_not，执行 condition_then {e.condition_then}")
+                    self.log.debug(f"条件 {self._resolver.format_condition(e.condition_not, e.only_key)} 满足 condition_not，执行 condition_then {e.condition_then}")
                     for s in e.condition_then:
                         result = self.exec(s)
                 else:
-                    self.log.debug(f"条件 {e.condition_not} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                    self.log.debug(f"条件 {self._resolver.format_condition(e.condition_not, e.only_key)} 不满足 condition_not，执行 condition_else {e.condition_else}")
                     for s in e.condition_else:
                         result = self.exec(s)
             elif e.condition:
                 if self._resolver.evaluate_condition(e.condition, e.only_key) == "True":
-                    self.log.debug(f"条件 {e.condition} 满足 condition，执行 condition_then {e.condition_then}")
+                    self.log.debug(f"条件 {self._resolver.format_condition(e.condition, e.only_key)} 满足 condition，执行 condition_then {e.condition_then}")
                     for s in e.condition_then:
                         result = self.exec(s)
                 else:
-                    self.log.debug(f"条件 {e.condition} 不满足 condition，执行 condition_else {e.condition_else}")
+                    self.log.debug(f"条件 {self._resolver.format_condition(e.condition, e.only_key)} 不满足 condition，执行 condition_else {e.condition_else}")
                     for s in e.condition_else:
                         result = self.exec(s)
             return result
@@ -513,18 +526,18 @@ class JCZXGaming(Device):
                     self._exec_mgr.token.check()
                     if e.condition_not:
                         if self._resolver.evaluate_condition(e.condition_not, e.only_key) != "True":
-                            self.log.debug(f"条件 {e.condition_not} 满足 condition_not，执行 condition_then {e.condition_then}")
+                            self.log.debug(f"条件 {self._resolver.format_condition(e.condition_not, e.only_key)} 满足 condition_not，执行 condition_then {e.condition_then}")
                             for s in entity.condition_then: result = self.exec(s)
                         else:
-                            self.log.debug(f"条件 {e.condition_not} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                            self.log.debug(f"条件 {self._resolver.format_condition(e.condition_not, e.only_key)} 不满足 condition_not，执行 condition_else {e.condition_else}")
                             for s in entity.condition_else: result = self.exec(s)
                         break
                     elif e.condition:
                         if self._resolver.evaluate_condition(e.condition, e.only_key) == "True":
-                            self.log.debug(f"条件 {e.condition} 满足 condition，执行 condition_then {e.condition_then}")
+                            self.log.debug(f"条件 {self._resolver.format_condition(e.condition, e.only_key)} 满足 condition，执行 condition_then {e.condition_then}")
                             for s in entity.condition_then: result = self.exec(s)
                         else:
-                            self.log.debug(f"条件 {e.condition} 不满足 condition，执行 condition_else {e.condition_else}")
+                            self.log.debug(f"条件 {self._resolver.format_condition(e.condition, e.only_key)} 不满足 condition，执行 condition_else {e.condition_else}")
                             for s in entity.condition_else: result = self.exec(s)
                         break
                     result = self.exec(e.wait_sec)
