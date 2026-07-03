@@ -129,6 +129,175 @@ class TaskExecutionManager:
         self._token.reset()
         self._task_id = None
 
+class PlaceholderResolver:
+    _CONFIG_PATTERN = re.compile(r"\$\{(.+?)\}")
+    _EXEC_PATTERN = re.compile(r"@\{(.+?)\}")
+    _CTX_PATTERN = re.compile(r"%\{(.+?)\}")
+    _CONDITION_PATTERN = re.compile(r"^&\{(.+)\}$")
+    _LOG_CONDITION_PATTERN = re.compile(r"&\{(.+?)\}")
+
+    def __init__(self, gaming):
+        self._gaming = gaming
+
+    def resolve(self, text: str, after_key: str) -> str:
+        if not text or not isinstance(text, str):
+            return text
+        result = self._resolve_config(text, after_key)
+        result = self._resolve_exec(result)
+        result = self._resolve_context(result)
+        result = self._resolve_condition(result, after_key)
+        return result
+
+    def resolve_list(self, items: list, after_key: str) -> list:
+        return [self.resolve(i, after_key) if isinstance(i, str) else i for i in items]
+
+    def _resolve_config(self, text: str, after_key: str) -> str:
+        result = text
+        for m in self._CONFIG_PATTERN.findall(text):
+            val = self._gaming.task_manage._resolve_placeholder("${" + m + "}", after_key)
+            result = result.replace("${" + m + "}", str(val) if val else "")
+        return result
+
+    def _resolve_exec(self, text: str) -> str:
+        result = text
+        for m in self._EXEC_PATTERN.findall(result):
+            val = self._gaming.exec(m)
+            result = result.replace("@{" + m + "}", str(val) if val is not None else "")
+        return result
+
+    def _resolve_context(self, text: str) -> str:
+        result = text
+        for m in self._CTX_PATTERN.findall(result):
+            if self._is_context_expr(m):
+                val = self._eval_context_expr(m)
+            else:
+                val = self._gaming._context.get(m, "")
+            result = result.replace("%{" + m + "}", str(val) if val else "")
+        return result
+
+    def _resolve_condition(self, text: str, after_key: str) -> str:
+        if self._CONDITION_PATTERN.match(text):
+            return str(self._eval_condition_expr(
+                self._CONDITION_PATTERN.match(text).group(1)))
+        result = text
+        for m in self._LOG_CONDITION_PATTERN.findall(text):
+            val = self._eval_condition_expr(m)
+            result = result.replace("&{" + m + "}", str(val))
+        return result
+
+    def _eval_condition_expr(self, expr: str) -> bool:
+        tokens = self._tokenize(expr)
+        return self._parse_expression(tokens, condition_mode=True)
+
+    def _eval_context_expr(self, expr: str):
+        tokens = self._tokenize(expr)
+        return self._parse_expression(tokens, condition_mode=False)
+
+    def _parse_expression(self, tokens: list, *, condition_mode: bool):
+        pos = [0]
+
+        def parse_or():
+            left = parse_and()
+            while pos[0] < len(tokens) and tokens[pos[0]] == "|":
+                pos[0] += 1
+                left = bool(left) or bool(parse_and())
+            return left
+
+        def parse_and():
+            left = parse_cmp()
+            while pos[0] < len(tokens) and tokens[pos[0]] == "&":
+                pos[0] += 1
+                left = bool(left) and bool(parse_cmp())
+            return left
+
+        def parse_cmp():
+            left = parse_primary()
+            if pos[0] < len(tokens) and tokens[pos[0]] in (">=", "<=", ">", "<", "==", "!="):
+                op_token = tokens[pos[0]]
+                pos[0] += 1
+                right = parse_primary()
+                if op_token == ">=": return float(left) >= float(right)
+                if op_token == "<=": return float(left) <= float(right)
+                if op_token == ">":  return float(left) > float(right)
+                if op_token == "<":  return float(left) < float(right)
+                if op_token == "==": return str(left) == str(right)
+                if op_token == "!=": return str(left) != str(right)
+            return left
+
+        def parse_primary():
+            if pos[0] >= len(tokens):
+                return False
+            token = tokens[pos[0]]
+            pos[0] += 1
+            if token == "(":
+                result = parse_or()
+                if pos[0] < len(tokens) and tokens[pos[0]] == ")":
+                    pos[0] += 1
+                return result
+            try:
+                if "." in token:
+                    return float(token)
+                return int(token)
+            except (ValueError, TypeError):
+                pass
+            if condition_mode:
+                if self._CTX_PATTERN.match(token):
+                    return self._gaming._context.get(
+                        self._CTX_PATTERN.match(token).group(1), "")
+                if self._EXEC_PATTERN.match(token):
+                    return self._gaming.exec(
+                        self._EXEC_PATTERN.match(token).group(1))
+                if self._CONFIG_PATTERN.match(token):
+                    return self._gaming.task_manage._resolve_placeholder(token)
+                return self._gaming.exec(token)
+            else:
+                if self._CTX_PATTERN.match(token):
+                    return self._gaming._context.get(
+                        self._CTX_PATTERN.match(token).group(1), "")
+                return self._gaming._context.get(token, token)
+
+        result = parse_or()
+        return bool(result) if result is not None else False
+
+    @staticmethod
+    def _tokenize(expr: str) -> list:
+        tokens = []
+        i = 0
+        n = len(expr)
+        while i < n:
+            c = expr[i]
+            if c.isspace():
+                i += 1
+                continue
+            if c in "()":
+                tokens.append(c)
+                i += 1
+            elif c == "&":
+                tokens.append("&")
+                i += 1
+            elif c == "|":
+                tokens.append("|")
+                i += 1
+            elif expr[i : i + 2] in (">=", "<=", "!=", "=="):
+                tokens.append(expr[i : i + 2])
+                i += 2
+            elif c in "><":
+                tokens.append(c)
+                i += 1
+            else:
+                j = i
+                while j < n and not expr[j].isspace() and expr[j] not in "()&|><=!":
+                    j += 1
+                tokens.append(expr[i:j])
+                i = j
+        return tokens
+
+    @staticmethod
+    def _is_context_expr(expr: str) -> bool:
+        if not expr:
+            return False
+        return any(op in expr for op in ("&", "|", ">=", "<=", ">", "<", "==", "!="))
+
 class JCZXGaming(Device):
     # 提供一些内置的方法
     def __init__(self, adb_path: str = None, device_id: str = None, connect_port = 7555, max_workers = 10, log = None, config_dir: str = ""):
