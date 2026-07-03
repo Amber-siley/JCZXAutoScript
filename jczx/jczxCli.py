@@ -178,22 +178,30 @@ class PlaceholderResolver:
     def _resolve_condition(self, text: str, after_key: str) -> str:
         if self._CONDITION_PATTERN.match(text):
             return str(self._eval_condition_expr(
-                self._CONDITION_PATTERN.match(text).group(1)))
+                self._CONDITION_PATTERN.match(text).group(1), after_key))
         result = text
         for m in self._LOG_CONDITION_PATTERN.findall(text):
-            val = self._eval_condition_expr(m)
+            val = self._eval_condition_expr(m, after_key)
             result = result.replace("&{" + m + "}", str(val))
         return result
 
-    def _eval_condition_expr(self, expr: str) -> bool:
+    def evaluate_condition(self, condition: str, after_key: str) -> str:
+        if not condition:
+            return "False"
+        match = self._CONDITION_PATTERN.match(condition)
+        if match:
+            return str(self._eval_condition_expr(match.group(1), after_key))
+        return str(bool(self._gaming.exec(condition)))
+
+    def _eval_condition_expr(self, expr: str, after_key: str) -> bool:
         tokens = self._tokenize(expr)
-        return self._parse_expression(tokens, condition_mode=True)
+        return self._parse_expression(tokens, condition_mode=True, after_key=after_key)
 
     def _eval_context_expr(self, expr: str):
         tokens = self._tokenize(expr)
         return self._parse_expression(tokens, condition_mode=False)
 
-    def _parse_expression(self, tokens: list, *, condition_mode: bool):
+    def _parse_expression(self, tokens: list, *, condition_mode: bool, after_key: str = ""):
         pos = [0]
 
         def parse_or():
@@ -248,13 +256,13 @@ class PlaceholderResolver:
                     return self._gaming.exec(
                         self._EXEC_PATTERN.match(token).group(1))
                 if self._CONFIG_PATTERN.match(token):
-                    return self._gaming.task_manage._resolve_placeholder(token)
+                    return self._gaming.task_manage._resolve_placeholder(token, after_key)
                 return self._gaming.exec(token)
             else:
                 if self._CTX_PATTERN.match(token):
                     return self._gaming._context.get(
                         self._CTX_PATTERN.match(token).group(1), "")
-                return self._gaming._context.get(token, token)
+                return self._gaming._context.get(token, "")
 
         result = parse_or()
         return bool(result) if result is not None else False
