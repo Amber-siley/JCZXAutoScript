@@ -547,19 +547,21 @@ class JCZXGaming(Device):
                 while True:
                     self._exec_mgr.token.check()
                     if e.condition_not:
-                        if not self._eval_condition(e.condition_not):
-                            self.log.debug(f"条件 {self._format_condition(e.condition_not)} 满足 condition_not，执行 condition_then {e.condition_then}")
+                        cond_result = self._eval_condition(e.condition_not)
+                        if not cond_result:
+                            self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 满足 condition_not，执行 condition_then {e.condition_then}")
                             for s in entity.condition_then: result = self.exec(s)
                         else:
-                            self.log.debug(f"条件 {self._format_condition(e.condition_not)} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                            self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 不满足 condition_not，执行 condition_else {e.condition_else}")
                             for s in entity.condition_else: result = self.exec(s)
                         break
                     elif e.condition:
-                        if self._eval_condition(e.condition):
-                            self.log.debug(f"条件 {self._format_condition(e.condition)} 满足 condition，执行 condition_then {e.condition_then}")
+                        cond_result = self._eval_condition(e.condition)
+                        if cond_result:
+                            self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 满足 condition，执行 condition_then {e.condition_then}")
                             for s in entity.condition_then: result = self.exec(s)
                         else:
-                            self.log.debug(f"条件 {self._format_condition(e.condition)} 不满足 condition，执行 condition_else {e.condition_else}")
+                            self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 不满足 condition，执行 condition_else {e.condition_else}")
                             for s in entity.condition_else: result = self.exec(s)
                         break
                     result = self.exec(e.wait_sec)
@@ -761,7 +763,7 @@ class JCZXGaming(Device):
             return "None"
         resolved = self._CONDITION_EXPR_PATTERN.match(condition)
         if resolved:
-            resolved_text = self._resolve_log_condition_placeholders(resolved.group(1))
+            resolved_text = self._resolve_log_condition_placeholders(resolved.group(1), resolve_exec=False)
             if result is None:
                 result = self._eval_condition(condition)
             return f"{condition} → &{{{resolved_text}}} → {result}"
@@ -769,15 +771,15 @@ class JCZXGaming(Device):
             result = self._eval_condition(condition)
         return f"{condition} → {result}"
 
-    def _resolve_log_condition_placeholders(self, expr: str) -> str:
-        """解析 &{...} 表达式内的占位符，返回可供展示的已解析文本。"""
+    def _resolve_log_condition_placeholders(self, expr: str, *, resolve_exec: bool = True) -> str:
         result = expr
         for m in self._CONFIG_PLACEHOLDER_PATTERN.findall(expr):
             val = self._resolve_placeholder("${" + m + "}")
             result = result.replace("${" + m + "}", str(val) if val else "?")
-        for m in self._EXEC_PLACEHOLDER_PATTERN.findall(result):
-            val = self.exec(m)
-            result = result.replace("@{" + m + "}", str(val) if val is not None else "?")
+        if resolve_exec:
+            for m in self._EXEC_PLACEHOLDER_PATTERN.findall(result):
+                val = self.exec(m)
+                result = result.replace("@{" + m + "}", str(val) if val is not None else "?")
         for m in self._CTX_PLACEHOLDER_PATTERN.findall(result):
             val = self._context.get(m, "?")
             if self._is_context_expr(m):
