@@ -448,21 +448,23 @@ class JCZXGaming(Device):
         def _on_exec(e: JczxSectionEntity):
             result = None
             if e.condition_not:
-                if not self._eval_condition(e.condition_not):
-                    self.log.debug(f"条件 {self._format_condition(e.condition_not)} 满足 condition_not，执行 condition_then {e.condition_then}")
+                cond_result = self._eval_condition(e.condition_not)
+                if not cond_result:
+                    self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 满足 condition_not，执行 condition_then {e.condition_then}")
                     for s in e.condition_then:
                         result = self.exec(s)
                 else:
-                    self.log.debug(f"条件 {self._format_condition(e.condition_not)} 不满足 condition_not，执行 condition_else {e.condition_else}")
+                    self.log.debug(f"条件 {self._format_condition(e.condition_not, cond_result)} 不满足 condition_not，执行 condition_else {e.condition_else}")
                     for s in e.condition_else:
                         result = self.exec(s)
             elif e.condition:
-                if self._eval_condition(e.condition):
-                    self.log.debug(f"条件 {self._format_condition(e.condition)} 满足 condition，执行 condition_then {e.condition_then}")
+                cond_result = self._eval_condition(e.condition)
+                if cond_result:
+                    self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 满足 condition，执行 condition_then {e.condition_then}")
                     for s in e.condition_then:
                         result = self.exec(s)
                 else:
-                    self.log.debug(f"条件 {self._format_condition(e.condition)} 不满足 condition，执行 condition_else {e.condition_else}")
+                    self.log.debug(f"条件 {self._format_condition(e.condition, cond_result)} 不满足 condition，执行 condition_else {e.condition_else}")
                     for s in e.condition_else:
                         result = self.exec(s)
             return result
@@ -703,16 +705,17 @@ class JCZXGaming(Device):
         log_fn = getattr(self.log, entity.log_level, self.log.info)
         log_fn(f"[{entity.get_task_name() or entity.only_key}] {msg}")
 
-    def _format_condition(self, condition: str) -> str:
-        """解析条件字符串中的占位符并求值，返回可展示的格式化文本。"""
+    def _format_condition(self, condition: str, result: bool | None = None) -> str:
         if not condition:
             return "None"
         resolved = self._CONDITION_EXPR_PATTERN.match(condition)
         if resolved:
             resolved_text = self._resolve_log_condition_placeholders(resolved.group(1))
-            result = self._eval_condition(condition)
+            if result is None:
+                result = self._eval_condition(condition)
             return f"{condition} → &{{{resolved_text}}} → {result}"
-        result = self._eval_condition(condition)
+        if result is None:
+            result = self._eval_condition(condition)
         return f"{condition} → {result}"
 
     def _resolve_log_condition_placeholders(self, expr: str) -> str:
