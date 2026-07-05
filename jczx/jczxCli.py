@@ -577,6 +577,8 @@ class JCZXGaming(Device):
         return self._exec_entity(entity, _on_exec, action_chain=False)
 
     def _get_entity(self, section: Union[JczxSectionEntity, str]) -> JczxSectionEntity:
+        if isinstance(section, str):
+            section = self._resolver.resolve(section, section)
         return section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
 
     def _resolve_scalar(self, entity: JczxSectionEntity, name: str):
@@ -622,8 +624,9 @@ class JCZXGaming(Device):
                 result = on_exec(entity)
                 self._exec_mgr.token.sleep(self._resolve_scalar(entity, "sleep"))
                 self._log_message(entity)
-                if action_chain:
-                    next_entities = self.task_manage.get_next(entity)
+                if action_chain and entity.action:
+                    resolved = self._resolver.resolve_list(entity.action, entity.only_key)
+                    next_entities = [self.task_manage.get_entity(i) for i in resolved]
                     if next_entities:
                         self.log.debug(f"获取下一执行链 {[i.only_key for i in next_entities]}")
                     for i in next_entities:
@@ -750,6 +753,8 @@ class JCZXGaming(Device):
         if not section:
             return None
         self._exec_mgr.token.check()
+        if isinstance(section, str):
+            section = self._resolver.resolve(section, section)
         entity = section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
         match entity.type:
             case SectionType.TASK.value:
