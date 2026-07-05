@@ -135,6 +135,7 @@ class TaskManage:
                 self._entity_source[e_key] = external_path
             task_configs.update(external_configs)
             self.menu_config.merge(external_config)
+            external_config.init_configs()
             self.log.debug(f"已加载外部配置 {target}，{len(external_configs)} 个实体")
 
         for key in task_configs:
