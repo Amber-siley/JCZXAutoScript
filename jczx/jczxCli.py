@@ -5,7 +5,7 @@ import re
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from logging import Logger, Formatter, Handler, getLevelName
 from logging.handlers import RotatingFileHandler
-from typing import Callable, Any, Optional, Union
+from typing import Callable, Any, Optional, Union, get_type_hints
 from datetime import datetime
 
 import cv2
@@ -579,6 +579,17 @@ class JCZXGaming(Device):
     def _get_entity(self, section: Union[JczxSectionEntity, str]) -> JczxSectionEntity:
         return section if isinstance(section, JczxSectionEntity) else self.task_manage.get_entity(section)
 
+    def _resolve_scalar(self, entity: JczxSectionEntity, name: str):
+        val = getattr(entity, name)
+        if isinstance(val, str) and ("${" in val or "@{" in val or "%{" in val):
+            val = self._resolver.resolve(val, entity.only_key)
+            hints = get_type_hints(JczxSectionEntity)
+            try:
+                val = hints[name](val)
+            except (ValueError, TypeError):
+                pass
+        return val
+
     def _exec_entity(self, entity: JczxSectionEntity, on_exec: Callable, *, testFor=False, action_chain=True, default_max_wait=0):
         """Template Method：封装实体执行的通用流程（times / testFor / sleep / log / action 链）。"""
         test_before = test_after = None
@@ -587,28 +598,29 @@ class JCZXGaming(Device):
                 test_before = self.task_manage.get_img(entity.testFor_before)
             if entity.testFor_after:
                 test_after = self.task_manage.get_img(entity.testFor_after)
-        times = entity.times
-        if isinstance(times, str):
-            times = int(self._resolver.resolve(times, entity.only_key))
+        times = self._resolve_scalar(entity, "times")
         for _ in range(times):
             self._exec_mgr.token.check()
             old_ttl = self._screen_cache._ttl_ms
-            if entity.screen_cache_ttl >= 0:
-                self._screen_cache.set_ttl(entity.screen_cache_ttl)
+            screen_ttl = self._resolve_scalar(entity, "screen_cache_ttl")
+            if screen_ttl >= 0:
+                self._screen_cache.set_ttl(screen_ttl)
             try:
                 if test_before is not None:
-                    self._exec_mgr.token.sleep(entity.testFor_pre_sleep)
-                    test_wait = entity.testFor_max_wait if entity.testFor_max_wait > 0 else default_max_wait
+                    self._exec_mgr.token.sleep(self._resolve_scalar(entity, "testFor_pre_sleep"))
+                    test_wait = self._resolve_scalar(entity, "testFor_max_wait")
+                    if test_wait <= 0:
+                        test_wait = default_max_wait
                     self.log.debug(f"开始等待 testFor_before {entity.testFor_before}")
-                    if not self._wait_for_image(test_before, test_wait, per=entity.testFor_per):
+                    if not self._wait_for_image(test_before, test_wait, per=self._resolve_scalar(entity, "testFor_per")):
                         self.log.debug(f"testFor_before 未匹配到 {entity.testFor_before}")
                         return None
                     self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
-                    self._exec_mgr.token.sleep(entity.testFor_sleep)
-                self._exec_mgr.token.sleep(entity.pre_sleep)
+                    self._exec_mgr.token.sleep(self._resolve_scalar(entity, "testFor_sleep"))
+                self._exec_mgr.token.sleep(self._resolve_scalar(entity, "pre_sleep"))
                 self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
                 result = on_exec(entity)
-                self._exec_mgr.token.sleep(entity.sleep)
+                self._exec_mgr.token.sleep(self._resolve_scalar(entity, "sleep"))
                 self._log_message(entity)
                 if action_chain:
                     next_entities = self.task_manage.get_next(entity)
