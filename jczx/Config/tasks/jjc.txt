@@ -1,0 +1,229 @@
+/ 竞技场日常 - 模拟军演
+/ 依赖: MainMenu 中的 goto-home, auto-fight, click-get-item, click-center, wait-*, in_location 等公共实体
+
+[jjc-simulate]
+type: task
+view: on
+name: 竞技场日常
+action: goto-jjc,condition-simulate-need-fight
+settings: settings-jjc-simulate
+
+[settings-jjc-simulate]
+type: settings
+fields: setting-power-threshold-jjc
+
+[setting-power-threshold-jjc]
+type: setting
+setting_type: integer
+label: 战力阈值
+default: 50000
+min: 0
+
+[jjc-simulate-values]
+setting-power-threshold-jjc: 25000
+
+[goto-jjc]
+type: task
+name: 前往竞技场
+action: goto-home,click-fight,click-simulate,click-jjc
+
+[click-simulate]
+type: click
+name: 模拟军演
+target: buttons\simulatedMilitaryExercises.png
+sleep: 2
+
+[click-jjc]
+type: click
+name: 竞技场
+target: buttons\competition.png
+sleep: 3
+
+[condition-simulate-need-fight]
+type: condition
+name: 条件-是否挑战
+desc: 条件挑战次数 大于0,
+condition: &{get-simulate-times > 0 & get-simulate-refresh-times > 0}
+condition_then: get-average-refresh-times,condition-to-fight-jjc
+condition_else: goto-home
+
+[get-average-refresh-times]
+type: task
+name: 计算可以平均使用刷新的次数 -> average_times
+action: get-simulate-times,get-simulate-refresh-times,get-combat-power,context-simulate-fight-refresh-times,context-simulate-continue-times,context-simulate-continue-times-max-3
+
+/ 竞技场流程:
+/   | 获取(挑战次数,获取第一位的战力值,获取剩余刷新次数,获取是+28/+26)
+/ 计算平均使用刷新次数 - times
+/   | 
+/ 判断是否小于战力阈值 & (times是否<=0 | 是+28挑战)  <----------------\
+/   | Y             |                                              |
+/ 发起挑战           \---------------N-----------> 点击刷新，times-1/
+/
+[condition-to-fight-jjc]
+type: condition
+name: 条件判断是否挑战
+desc: 战力阈值 & （平均刷新次数期望 <= 0 | 是+28）,不满足条件继续刷新
+condition: &{%{combat_power} <= ${jjc-simulate-values:setting-power-threshold-jjc} & (%{average_times} <= 0 | @{condition-jjc-in-28})}
+condition_then: click-jjc-fight,click-jjc-fight-sure,auto-fight,click-get-item,condition-compare-jjc-fight-times,context-check,wait-2,condition-simulate-need-fight
+condition_else: context-average-times-1,click-jjc-fight-refresh,get-combat-power,get-simulate-refresh-times,get-simulate-times,condition-simulate-need-fight-1
+
+[condition-simulate-need-fight-1]
+type: condition
+name: 条件-是否挑战
+desc: 条件挑战次数 大于0,
+condition: &{get-simulate-times > 0 & get-simulate-refresh-times > 0}
+condition_then: condition-to-fight-jjc
+condition_else: goto-home
+
+[click-jjc-fight-refresh]
+type: click
+name: 刷新
+target: buttons\competitionCancel.png
+sleep: 1
+
+[click-jjc-fight]
+type: click
+name: 挑战
+target: buttons\jjcScore.png
+sleep: 2
+
+[condition-compare-jjc-fight-times]
+type: condition
+name: 计算挑战状态
+condition: &{%{win_flag} == 1}
+condition_then: condition-compare-jjc-fight-times-1
+condition_else: context-times_loss-add-1
+
+[condition-compare-jjc-fight-times-1]
+type: condition
+name: 计算挑战状态, 获胜状态下区分 28/26
+condition: &{%{is_28}}
+condition_then: context-times_28-add-1
+condition_else: context-times_26-add-1
+
+[context-times_28-add-1]
+type: context
+name: +28挑战次数
+context_get: times_28
+context_default: 0
+context_type: int
+action: +|1
+context_key: times_28
+
+[context-times_26-add-1]
+type: context
+name: +26挑战次数
+context_get: times_26
+context_default: 0
+context_type: int
+action: +|1
+context_key: times_26
+
+[context-times_loss-add-1]
+type: context
+name: 挑战失败次数
+context_get: times_loss
+context_default: 0
+context_type: int
+action: +|1
+context_key: times_loss
+
+[click-jjc-fight-sure]
+type: click
+name: 确认挑战
+testFor_before: buttons\challenge.png
+target: buttons\challenge.png
+max_wait: 10
+
+[context-average-times-1]
+type: context
+context_get: average_times
+context_type: int
+action: -|1
+context_key: average_times
+
+[condition-jjc-in-28]
+extend: in_location
+target: numbers\score28.png
+args: 0.9
+context_key: is_28
+context_type: bool
+
+[msg-simulate-end]
+type: task
+name: 挑战结束-输出总结
+log: 竞技场任务结束 
+
+[get-simulate-times]
+type: ocr
+name: 获取剩余挑战次数
+match: match-get-simulate-times
+context_key: simulate_times
+context_type: int
+
+[get-simulate-refresh-times]
+type: ocr
+name: 获取剩余刷新次数
+match: match-simulate-refresh-times
+context_key: refresh_times
+context_type: int
+
+[get-combat-power]
+type: ocr
+name: 获取第一位的战力值
+match: match-combat-power
+context_key: combat_power
+context_type: int
+
+[match-combat-power]
+type: match
+target: locations\firstScoreLoc.png
+action: right-1
+
+[match-simulate-refresh-times]
+type: match
+testFor_before: locations\cancel15Loc.png
+testFor_per: 0.9
+target: locations\cancel15Loc.png
+per: 0.9
+action: left-1
+
+[match-get-simulate-times]
+type: match
+testFor_before: locations\competitionTimesLoc.png
+testFor_per: 0.9
+target: locations\competitionTimesLoc.png
+per: 0.9
+action: left-1
+
+[context-simulate-continue-times]
+type: context
+name: 计算可以平均使用刷新的次数
+context_get: refresh_times
+context_type: int
+action: /|%{simulate_times}
+context_key: average_times
+
+[context-simulate-continue-times-max-3]
+type: condition
+name: 计算可以平均使用刷新的次数-最大为3
+condition: &{%{average_times} > 3}
+condition_then: context-set-simulate-continue-times-3
+
+[context-set-simulate-continue-times-3]
+type: context
+context_get: average_times
+context_type: int
+action: =|3
+context_key: average_times
+
+[context-simulate-fight-refresh-times]
+type: context
+name: 挑战花费刷新次数
+context_get: fight_refresh_times
+context_default: 0
+context_default_type: int
+context_type: int
+action: +|1
+context_key: fight_refresh_times
