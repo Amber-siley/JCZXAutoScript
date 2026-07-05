@@ -265,20 +265,31 @@ class TaskManage:
         return {opt: entry.value for opt, entry in sec_data.items()}
 
     def save_task_values(self, task_key: str, values: dict[str, object]) -> None:
-        """保存任务的设置值到配置文件。"""
         section = f"{task_key}-values"
+        source = self._entity_source.get(task_key, self.menu_config_path)
+        target_config = self.menu_config
+        for path, ext_config in self._external_configs:
+            if path == source:
+                target_config = ext_config
+                break
         for field_name, val in values.items():
-            self.menu_config.set_config(section, field_name, str(val))
-        self.menu_config.save()
-        self.log.debug(f"任务 {task_key} 设置已保存: {values}")
+            target_config.set_config(section, field_name, str(val))
+        target_config.save()
+        self.log.debug(f"任务 {task_key} 设置已保存到 {source}: {values}")
         self._update_entities_after_save(task_key)
 
     def _update_entities_after_save(self, task_key: str) -> None:
         entity = self.get_task(task_key)
         if not entity or not entity.settings:
             return
+        source = self._entity_source.get(task_key, self.menu_config_path)
+        target_config = self.menu_config
+        for path, ext_config in self._external_configs:
+            if path == source:
+                target_config = ext_config
+                break
         try:
-            settings_section = self.menu_config.get_config(task_key, "settings")
+            settings_section = target_config.get_config(task_key, "settings")
         except KeyError:
             return
         if not settings_section:
