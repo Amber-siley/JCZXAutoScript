@@ -14,6 +14,10 @@ CONFIG_DIR = os.path.join(
 _RE_EXEC = re.compile(r"@\{([^}]+)\}")
 _RE_CFG = re.compile(r"\$\{([^}:]+)(?::[^}]*)?}")
 _RE_EXPR = re.compile(r"&\{([^}]+)\}")
+_RE_CTX = re.compile(r"%\{([^}]+)\}")
+
+
+TASKS_DIR = os.path.join(CONFIG_DIR, "tasks")
 
 
 def list_config_files() -> list[str]:
@@ -22,8 +26,39 @@ def list_config_files() -> list[str]:
         for name in os.listdir(CONFIG_DIR):
             if name.endswith(".txt"):
                 files.append(name)
+    if os.path.isdir(TASKS_DIR):
+        for name in os.listdir(TASKS_DIR):
+            if name.endswith(".txt"):
+                files.append("tasks/" + name)
     files.sort()
     return files
+
+
+def _load_all_entities(filename: str) -> dict[str, JczxSectionEntity]:
+    filepath = os.path.join(CONFIG_DIR, filename.replace("/", os.sep))
+    all_configs: dict[str, JczxSectionEntity] = {}
+    _load_one(filepath, all_configs, set())
+    _resolve_extends(all_configs)
+    for key, entity in all_configs.items():
+        entity.only_key = key
+    return all_configs
+
+
+def _load_one(path: str, all_configs: dict[str, JczxSectionEntity], seen: set[str]) -> None:
+    if not os.path.isfile(path) or path in seen:
+        return
+    seen.add(path)
+    config = TxtConfig(path)
+    configs = config.trans_entity_dict(JczxSectionEntity)
+    for key, entity in list(configs.items()):
+        if key in all_configs:
+            raise ValueError(f"Duplicate section '{key}' in {path}")
+        all_configs[key] = entity
+        if entity.type == "file":
+            sub_path = os.path.join(os.path.dirname(path),
+                                    (getattr(entity, "target", "") or "").replace("/", os.sep))
+            if sub_path:
+                _load_one(sub_path, all_configs, seen)
 
 
 def _resolve_extends(configs: dict[str, JczxSectionEntity]) -> None:
@@ -53,16 +88,10 @@ def _find_condition_entities(configs: dict[str, JczxSectionEntity]) -> set[str]:
 
 
 def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
-    filepath = os.path.join(CONFIG_DIR, filename)
-    if not os.path.isfile(filepath):
+    try:
+        configs = _load_all_entities(filename)
+    except (ValueError, FileNotFoundError):
         return {"nodes": [], "edges": []}
-
-    config = TxtConfig(filepath)
-    configs = config.trans_entity_dict(JczxSectionEntity)
-    _resolve_extends(configs)
-
-    for key, entity in configs.items():
-        entity.only_key = key
 
     condition_keys = _find_condition_entities(configs)
 
@@ -81,6 +110,8 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
             classes = (classes + " condition-entity").strip()
         if entity.break_point == "on":
             classes = (classes + " breakpoint").strip()
+        if entity.type == "file":
+            classes = (classes + " file-entity").strip()
         has_test_after = bool(getattr(entity, "testFor_after", ""))
         has_test_before = bool(getattr(entity, "testFor_before", ""))
         nodes.append({
@@ -100,6 +131,8 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 "has_test_before": has_test_before,
                 "testFor_max_wait": getattr(entity, "testFor_max_wait", 0) or 0,
                 "context_key": getattr(entity, "context_key", "") or "",
+                "wait_target": getattr(entity, "wait_target", "") or "",
+                "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
             },
             "classes": classes,
         })
@@ -165,20 +198,19 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
     for key, entity in configs.items():
         src = entity.only_key
         texts = []
-        if entity.target:
-            texts.append(entity.target)
+        if entity.target: texts.append(entity.target)
         for lst in (entity.args, entity.action, entity.condition_then,
                      entity.condition_else, entity.wait_sec):
-            if lst:
-                texts.extend(lst)
-        if entity.condition:
-            texts.append(entity.condition)
-        if entity.condition_not:
-            texts.append(entity.condition_not)
+            if lst: texts.extend(lst)
+        if entity.condition: texts.append(entity.condition)
+        if entity.condition_not: texts.append(entity.condition_not)
+        log_v = getattr(entity, "log", "") or ""
+        if log_v: texts.append(log_v)
+        wt = getattr(entity, "wait_target", "") or ""
+        if wt: texts.append(wt)
 
         for text in texts:
-            if not isinstance(text, str):
-                continue
+            if not isinstance(text, str): continue
             for m in _RE_EXEC.findall(text):
                 if m in configs:
                     _add_node(configs[m])
@@ -187,6 +219,12 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 if m in configs:
                     _add_node(configs[m])
                     _add_edge(src, m, f"${{{m}}}", "config")
+            for m in _RE_CTX.findall(text):
+                ref_key = m.split()[0].rstrip(">")
+                for ck in configs:
+                    if getattr(configs[ck], "context_key", "") == ref_key:
+                        _add_node(configs[ck])
+                        _add_edge(src, ck, f"%{{{m}}}", "context")
             for m in _RE_EXPR.findall(text):
                 for word in re.findall(r'\b([a-zA-Z][\w-]+)\b', m):
                     if word in configs:
@@ -197,15 +235,11 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
 
 
 def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[str, Any]:
-    filepath = os.path.join(CONFIG_DIR, filename)
-    if not os.path.isfile(filepath):
+    try:
+        configs = _load_all_entities(filename)
+    except (ValueError, FileNotFoundError):
         return {"nodes": [], "edges": [], "cycles": []}
 
-    config = TxtConfig(filepath)
-    configs = config.trans_entity_dict(JczxSectionEntity)
-    _resolve_extends(configs)
-    for key, entity in configs.items():
-        entity.only_key = key
     condition_keys = _find_condition_entities(configs)
 
     if task_key not in configs:
@@ -237,6 +271,8 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
             classes = (classes + " condition-entity").strip()
         if entity.break_point == "on":
             classes = (classes + " breakpoint").strip()
+        if entity.type == "file":
+            classes = (classes + " file-entity").strip()
         has_test_after = bool(getattr(entity, "testFor_after", ""))
         has_test_before = bool(getattr(entity, "testFor_before", ""))
         return {
@@ -250,6 +286,8 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                 "has_test_before": has_test_before,
                 "testFor_max_wait": getattr(entity, "testFor_max_wait", 0) or 0,
                 "context_key": getattr(entity, "context_key", "") or "",
+                "wait_target": getattr(entity, "wait_target", "") or "",
+                "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
             },
             "classes": classes,
         }
@@ -341,6 +379,8 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
             if lst: texts.extend(lst)
         log_v = getattr(entity, "log", "") or ""
         if log_v: texts.append(log_v)
+        wt = getattr(entity, "wait_target", "") or ""
+        if wt: texts.append(wt)
 
         for text in texts:
             if not isinstance(text, str): continue
@@ -356,6 +396,11 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                     if t not in [n["data"]["id"] for n in nodes]:
                         nodes.append(_node(configs[m], t))
                     edges.append({"data": {"id": f"{uid}_cfg_{m}", "source": uid, "target": t, "label": "${" + m + "}"}, "classes": "config"})
+            for m in _RE_CTX.findall(text):
+                ref_key = m.split()[0].rstrip(">")
+                for ck in configs:
+                    if getattr(configs[ck], "context_key", "") == ref_key:
+                        edges.append({"data": {"id": f"{uid}_ctx_{ck}", "source": uid, "target": ck + "#1", "label": "%{" + m + "}"}, "classes": "context"})
             for m in _RE_EXPR.findall(text):
                 for word in re.findall(r'\b([a-zA-Z][\w-]+)\b', m):
                     if word in configs:
@@ -371,13 +416,10 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
 
 
 def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
-    filepath = os.path.join(CONFIG_DIR, filename)
-    if not os.path.isfile(filepath):
+    try:
+        configs = _load_all_entities(filename)
+    except (ValueError, FileNotFoundError):
         return None
-
-    config = TxtConfig(filepath)
-    configs = config.trans_entity_dict(JczxSectionEntity)
-    _resolve_extends(configs)
 
     if entity_name not in configs:
         return None
@@ -416,4 +458,6 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
         "testFor_per": getattr(entity, "testFor_per", 0.8) or 0.8,
         "log": getattr(entity, "log", "") or "",
         "log_level": getattr(entity, "log_level", "") or "",
+        "wait_target": getattr(entity, "wait_target", "") or "",
+        "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
     }

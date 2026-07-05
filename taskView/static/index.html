@@ -96,6 +96,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="legend-item"><div class="legend-dot" style="background:#ef5350;transform:rotate(45deg);width:8px;height:8px;"></div><span class="legend-tag">condition 条件</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#ffee58;border-radius:50%;"></div><span class="legend-tag">context 上下文</span></div>
     <div class="legend-item"><div class="legend-dot" style="background:#78909c;"></div><span class="legend-tag">settings 设置</span></div>
+    <div class="legend-item"><div class="legend-dot" style="background:#5c6bc0;border:1px dashed #3f51b5;"></div><span class="legend-tag">file 子文件</span></div>
     <div class="legend-item"><span style="width:12px;font-size:10px;text-align:center;">⚡</span><span class="legend-tag">break_point 超时跳出</span></div>
     <div style="margin:6px 0 2px;color:#666;">━━━━━━━━━━━━</div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px solid #888;"></div><span class="legend-tag">action 动作链</span></div>
@@ -106,6 +107,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     <div class="legend-item"><div class="legend-line" style="border-top:2px solid #ce93d8;"></div><span class="legend-tag">@{..} 执行</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #ffd54f;"></div><span class="legend-tag">${..} 配置</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px solid #ef9a9a;"></div><span class="legend-tag">&{..} 表达式</span></div>
+    <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #b0bec5;"></div><span class="legend-tag">%{..} 上下文</span></div>
     <div class="legend-item"><div class="legend-line" style="border-top:2px dashed #ef5350;"></div><span class="legend-tag">⟲ 环路回连</span></div>
   </div>
 </div>
@@ -233,6 +235,7 @@ const NODE_STYLES = {
   'context':  { 'background-color': '#ffee58', 'border-color': '#f9a825', 'shape': 'ellipse', 'text-outline-color': '#ffee58', 'color': '#333' },
   'settings': { 'background-color': '#78909c', 'border-color': '#546e7a', 'shape': 'round-rectangle', 'text-outline-color': '#78909c' },
   'setting':  { 'background-color': '#78909c', 'border-color': '#546e7a', 'shape': 'round-rectangle', 'text-outline-color': '#78909c' },
+  'file':     { 'background-color': '#5c6bc0', 'border-color': '#3f51b5', 'shape': 'round-rectangle', 'text-outline-color': '#5c6bc0', 'border-style': 'dashed' },
 };
 
 const EDGE_STYLES = {
@@ -246,6 +249,7 @@ const EDGE_STYLES = {
   'execute':         { 'line-style': 'solid',  'line-color': '#ce93d8', 'target-arrow-color': '#ce93d8', 'target-arrow-shape': 'diamond' },
   'config':          { 'line-style': 'dashed', 'line-color': '#ffd54f', 'target-arrow-color': '#ffd54f', 'target-arrow-shape': 'tee' },
   'expression':      { 'line-style': 'solid',  'line-color': '#ef9a9a', 'target-arrow-color': '#ef9a9a', 'target-arrow-shape': 'diamond' },
+  'context':         { 'line-style': 'dashed', 'line-color': '#b0bec5', 'target-arrow-color': '#b0bec5', 'target-arrow-shape': 'tee' },
   'cycle':           { 'line-style': 'dashed', 'line-color': '#ef5350', 'target-arrow-color': '#ef5350', 'target-arrow-shape': 'triangle', 'width': 1, 'curve-style': 'unbundled-bezier' },
 };
 
@@ -315,6 +319,8 @@ function renderDetail(d) {
     ['testFor_after', esc(d.testFor_after)],
     ['testFor_max_wait', d.testFor_max_wait ? `${d.testFor_max_wait}s` : ''],
     ['testFor_per', d.testFor_per != null ? d.testFor_per : ''],
+    ['wait_target', esc(d.wait_target)],
+    ['wait_target_per', d.wait_target_per != null ? d.wait_target_per : ''],
     ['log', esc(d.log)],
     ['log_level', esc(d.log_level)],
   ];
