@@ -1,0 +1,47 @@
+desc: 刷好感
+
+[task-favor]
+type: task
+name: 虚影刷好感
+view: on
+action: goto-inllusion-1,context-set-team-head-favor,task-favor-times,goto-home
+settings: favor-settings
+log: 虚影刷好感，次数%{fight_times}次
+
+[favor-settings]
+type: settings
+fields: setting-inllusion-choose,setting-team-choose,setting-favor-times
+
+[setting-favor-times]
+type: setting
+setting_type: integer
+label: 挑战次数
+default: 45
+
+[task-favor-values]
+setting-team-choose: 队伍-01
+setting-inllusion-choose: 宙斯虚影-Inllusion
+setting-favor-times:45
+
+[task-favor-times]
+type: task
+name: 竞技场刷好感-循环次数
+action: ${task-favor-values:setting-inllusion-choose},context-favor-fight-times
+times: ${task-favor-values:setting-favor-times}
+
+[context-favor-fight-times]
+type: context
+name: 挑战cis
+context_get: fight_times
+context_default: 0
+context_default_type: int
+action: +|1
+context_key: fight_times
+context_type: int
+
+[context-set-team-head-favor]
+type: context
+name: 设置选中队伍的设置实体头
+context_get: choose_team_setting_name
+context_default: task-favor-values
+context_key: choose_team_setting_name

@@ -5,14 +5,21 @@
 type: task
 view: on
 name: 虚影周本
-action: goto-inllusion-1,condition-inllusion-to-action
+action: goto-inllusion-1,context-set-team-head-inllusion,condition-inllusion-to-action
 settings: settings-inllusion
 
 [condition-inllusion-to-action]
 type: click
 condition_not: condition-inllusion-enough
-condition_then: ${goto-inllusion-values:setting-inllusion-choose}
+condition_then: ${goto-inllusion-values:setting-inllusion-choose},condition-inllusion-to-action
 condition_else: goto-home
+
+[context-set-team-head-inllusion]
+type: context
+name: 设置选中队伍的设置实体头
+context_get: choose_team_setting_name
+context_default: goto-inllusion-values
+context_key: choose_team_setting_name
 
 [condition-inllusion-enough]
 extend: in_location
@@ -55,7 +62,17 @@ args: @{get-illusion-choose-team-target-string-key}
 [get-illusion-choose-team-target-string-key]
 extend: string_concat
 name: 拼接配置队伍资源的key
-args: ${goto-inllusion-values:setting-team-choose},-condition,:,target
+args: @{get-illusion-choose-team-haad-target},-condition,:,target
+
+[get-illusion-choose-team-haad-target]
+extend: parse_placeholder
+name: 动态获取选中任务的配置队伍头
+args: @{get-illusion-choose-team-target-string-head}
+
+[get-illusion-choose-team-target-string-head]
+extend: string_concat
+name: 拼接配置队伍资源的头key
+args: %{choose_team_setting_name},:,setting-team-choose
 
 [队伍-01]
 type: click
@@ -102,6 +119,7 @@ type: click
 name: 动态获取选择队伍
 target: %{team_target}
 per: 0.9
+max_wait: 2
 
 [宙斯虚影-Inllusion]
 type: task
@@ -111,7 +129,16 @@ action: swipe-center-up,wait-1,宙斯虚影-Inllusion-step
 
 [宙斯虚影-Inllusion-step]
 type: click
-action: ZhouSi-step-1-click,click-close-team-2,context-set-illusion-choose-team,${goto-inllusion-values:setting-team-choose},click-start-act,ZhouSi-step,auto-fight,condition-inllusion-to-action
+action: ZhouSi-step-1-click,click-close-team-2,context-set-illusion-choose-team,@{get-any-task-setting-choose-team},click-start-act,ZhouSi-step,auto-fight
+
+[get-any-task-setting-choose-team]
+extend: parse_placeholder
+name: 获取选中任务的队伍实体,解析$占位符
+args: @{get-any-task-setting-choose-team-string}
+
+[get-any-task-setting-choose-team-string]
+extend: string_concat
+args: %{choose_team_setting_name},:,setting-team-choose
 
 [click-close-team-2]
 type: click
@@ -143,7 +170,8 @@ testFor_before: locations\ZhouSi_c_1.png
 testFor_per: 0.9
 target: locations\ZhouSi_c_1.png
 per: 0.9
-max_wait: 10
+sleep: 2
+max_wait: 20
 
 [ZhouSi-step-2]
 type: click
@@ -176,6 +204,7 @@ sleep: 5
 type: click
 testFor_before: locations\ZhouSi_c_5.png
 testFor_per: 0.9
+testFor_sleep: 1
 target: locations\ZhouSi_c_5.png
 per: 0.9
 max_wait: 10

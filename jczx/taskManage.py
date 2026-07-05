@@ -275,6 +275,8 @@ class TaskManage:
                 break
         for field_name, val in values.items():
             target_config.set_config(section, field_name, str(val))
+            if target_config is not self.menu_config:
+                self.menu_config.set_config(section, field_name, str(val))
         target_config.save()
         self.log.debug(f"任务 {task_key} 设置已保存到 {source}: {values}")
         self._update_entities_after_save(task_key)

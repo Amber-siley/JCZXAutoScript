@@ -73,6 +73,8 @@ sleep: 5
 type: click
 name: 出击
 target: buttons\fight.png
+wait_target: buttons\activities.png
+max_wait: 10
 sleep: 2
 
 [click-activity-fight]
@@ -119,7 +121,7 @@ sleep: 10
 type: task
 view: off
 name: 自动战斗
-action: click-skip-animation,click-auto-fight,wait-fight-end,wait-5
+action: click-skip-animation,click-auto-fight,auto-fight-end,wait-5
 
 [click-skip-animation]
 type: click
@@ -131,62 +133,65 @@ max_wait: 20
 type: click
 name: 自动战斗
 target: buttons\fightAuto.png
-max_wait: 10
+max_wait: 5
 
-/ 判断是否有获取物品  <----------------------\
-/   |Y          \--------N                  |
-/ 点击获取物品       判断是否获胜             |
-/   |                 |Y   |N               |
-/ 双击 <--------------/    判断是否失败      |
-/   |                         |Y    |N      |
-/   \-------------------------/     \-------/
-[wait-fight-end]
-type: click
-desc: 战斗结束
-condition: condition-in_location-getItem
-condition_then: click-center,wait-1,click-center,wait-1,click-center
-condition_else: condition-in_location-fight-over-win-click
-max_wait: 1000
+[auto-fight-end]
+type: condition
+name: 战斗结束 战斗胜利 或者 失败
+condition: &{condition-in_location-fight-over-win | condition-in_location-fight-over-loss1 | in_location-get-item}
+condition_then: click-center,wait-1,click-center,wait-1,click-center,condition-set-win-flag,condition-get-item-win
+condition_else: auto-fight-end
 
-[condition-in_location-getItem]
+[auto-fight-get-item]
+type: condition
+name: 战斗结束获取物品
+testFor_before: buttons\getItem.png
+action: click-center,wait-1,click-center,wait-1,click-center
+max_wait: 20
+
+[in_location-get-item]
 extend: in_location
 target: buttons\getItem.png
+context_key: in_getItem_flag
+context_type: bool
 
-[condition-in_location-fight-over-win-click]
-type: click
-condition: condition-in_location-fight-over-win
-condition_then: click-center,wait-1,click-center,context-fight-is-win
-condition_else: condition-in_location-fight-over-loss1-click
+[condition-get-item-win]
+type: condition
+condition: &{%{in_getItem_flag}}
+condition_then: context-fight-is-win
+
+[condition-set-win-flag]
+type: condition
+name: 条件设置win_flag
+condition: &{%{in_win_flag}}
+condition_then: context-fight-is-win
+condition_else: context-fight-is-loss
 
 [context-fight-is-win]
 type: context
 context_get: win_flag
-context_type: int
-context_default: 1
-action: =|1
+context_type: bool
+context_default: True
 context_key: win_flag
 
 [condition-in_location-fight-over-win]
 extend: in_location
 target: locations\fightWin.png
+context_key: in_win_flag
+context_type: bool
 args: 0.7
-
-[condition-in_location-fight-over-loss1-click]
-type: click
-condition: condition-in_location-fight-over-loss1
-condition_then: click-center,wait-1,click-center,context-fight-is-loss
-condition_else: wait-fight-end
 
 [context-fight-is-loss]
 type: context
 context_get: win_flag
-context_type: int
-context_default: 0
-action: =|0
+context_type: bool
+context_default: False
 context_key: win_flag
 
 [condition-in_location-fight-over-loss1]
 extend: condition-in_location-fight-over-win
+context_key: in_loss_flag
+context_type: bool
 target: locations\fightLoss1.png
 
 / ==================
@@ -240,7 +245,7 @@ action: goto-home-click-home
 type: func
 func: in_location
 target: buttons\supplyStation.png
-args: 0.8
+args: 0.9
 
 [condition-in_location-home-button]
 type: func
@@ -350,4 +355,5 @@ name: 虚影周本
 
 [file-favor-task]
 type: file
-target: task\Favor.txt
+target: tasks\Favor.txt
+name: 竞技场刷好感

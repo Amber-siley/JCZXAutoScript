@@ -5,7 +5,10 @@
 | 文件 | 路径 | 用途 |
 |------|------|------|
 | 主配置 | `jczx/Config/Config.txt` | 日志、线程、ADB 路径等全局设置 |
-| 任务配置 | `jczx/Config/MainMenu.txt` | 所有任务、执行计划、点击操作的定义 |
+| 任务配置 | `jczx/Config/MainMenu.txt` | 公共实体 + 子文件入口引用 |
+| 子配置文件 | `jczx/Config/tasks/*.txt` | 各模块任务定义（通过 `type: file` 引入） |
+
+任务较多时建议拆分子文件，MainMenu.txt 仅保留公共实体和 `type: file` 声明。
 
 ---
 
@@ -51,6 +54,65 @@ adb.path : platform-tools/adb.exe
 | `condition` | 条件分支控制 | ✓ | 评估 `condition`/`condition_not` |
 | `settings` | 设置容器 | — | 引用 `setting` 字段 |
 | `setting` | 设置字段定义 | — | 描述表单控件 |
+| `file` | 外部配置文件引用 | — | 加载子配置文件中的实体合并到同一 `entity_pool` |
+
+---
+
+## 多文件配置
+
+通过 `type: file` 将任务拆分到独立子文件中，MainMenu.txt 仅保留公共实体和入口声明。
+
+### 使用方式
+
+```ini
+/ MainMenu.txt - 入口声明
+[jjc-file]
+type: file
+target: tasks\jjc.txt
+name: 竞技场日常
+```
+
+| 字段 | 说明 |
+|------|------|
+| `type` | `file` |
+| `target` | 子文件路径（相对于 `Config/`），支持 `${}` 占位符 |
+| `name` | 注释用显示名（不影响逻辑） |
+
+### 子文件格式
+
+与 MainMenu.txt 完全相同，可包含任意类型实体。外部实体可通过 `extend` 跨文件继承 MainMenu 中的公共实体，`action` 链也可引用 MainMenu 中的实体。
+
+```ini
+/ tasks/jjc.txt
+[jjc-simulate]
+type: task
+name: 竞技场日常
+action: goto-jjc,condition-need-fight
+settings: settings-jjc
+
+[click-jjc]
+type: click
+target: buttons\competition.png
+```
+
+### 约束
+
+- **冲突检测** — 任意两个文件出现同名 section 时报 `ValueError`，不静默覆盖
+- **不能嵌套** — 子文件中 `type: file` 被忽略
+- **Settings 持久化** — 外部 task 的设置保存到其来源文件，不污染 MainMenu.txt
+- **公共实体** — `in_location`、`click-center`、`goto-home`、`auto-fight` 等跨任务复用的实体保留在 MainMenu 中
+
+### 推荐目录结构
+
+```
+Config/
+  MainMenu.txt          ← 公共实体 + file 入口
+  Config.txt            ← 全局设置
+  tasks/
+    jjc.txt             ← 竞技场日常
+    inllusion.txt       ← 虚影周本
+    Favor.txt           ← 好感任务
+```
 
 ---
 
@@ -79,6 +141,9 @@ adb.path : platform-tools/adb.exe
 | `testFor_pre_sleep` | float | `0` | testFor_before 前的等待 |
 | `testFor_sleep` | float | `0` | testFor_before 通过后的等待 |
 | `testFor_per` | float | `0.8` | testFor_before 匹配阈值 |
+| `wait_target` | str | — | 实体主逻辑完成后等待的图片路径，支持占位符。超时受 `max_wait` 约束 |
+| `wait_target_per` | float | `0.8` | wait_target 匹配阈值 |
+| `max_wait` | float | `0` | wait_target / click 最大等待秒数。`0` 表示不等待
 | `log` | str | — | 自定义日志消息，支持四种占位符（见占位符章节） |
 | `log_level` | str | `info` | log 的等级：`debug` / `info` / `warning` / `error` |
 | `screen_cache_ttl` | float | `-1` | 截图缓存 TTL（毫秒）。`-1`=继承上级，`0`=禁用（息屏/动画场景），`N`=自定义。只在链顶层设置即可，子实体 `-1` 自动继承 |
@@ -186,10 +251,13 @@ _exec_entity(entity, on_exec)
     pre_sleep
     on_exec(entity)          ← 类型特有逻辑
     sleep
+    [wait_target 等待]         ← 等待指定图片出现，受 max_wait 约束
     log 输出                 ← entity.log 解析占位符后打印
     [action 链]              ← get_next() → 递归 exec
     [testFor_after 复检]     ← 不可见 → continue 重试
 ```
+
+`wait_target` vs `testFor_after`：`wait_target` 仅等待不重试，超时后继续执行 action 链；`testFor_after` 不可见时重新执行整个实体（含 pre_sleep/on_exec）。
 
 **截图缓存：** 同帧内多个实体共享截图，默认 TTL 500ms。click/swipe/drag 后自动失效。链顶层设置 `screen_cache_ttl`，子实体 `-1` 自动继承，无需每个都配置。
 
@@ -216,16 +284,18 @@ _exec_entity(entity, on_exec)
 
 | 占位符 | 含义 | 解析方式 | 可用字段 | 解析顺序 |
 |--------|------|---------|---------|---------|
-| `${section:option}` | 配置值 | 从 `MainMenu.txt` 读取 | **所有字符串字段**（entity key、target、args、action、log、condition 等） | ① |
-| `@{entity_key}` | 实体返回值 | 执行实体，用返回值替换 | func 的 `args`、click 的 `target`、context 的 `action`、log、condition 的 `&{...}` 内 | ② |
-| `%{context_key}` | 上下文变量 | 从 `_context` 读取 | func 的 `args`、context 的 `action`、log、ocr 的 `target`、condition 的 `&{...}` 内 | ③ |
+| `${section:option}` | 配置值 | 从 `MainMenu.txt` 读取 | **所有字段**（entity key、target、args、action、log、condition、times、sleep 等） | ① |
+| `@{entity_key}` | 实体返回值 | 执行实体，用返回值替换 | **所有字段**（entity key、args、target、action、log、condition、times 等） | ② |
+| `%{context_key}` | 上下文变量 | 从 `_context` 读取 | **所有字段**（entity key、args、target、action、log、condition、times 等） | ③ |
 | `&{表达式}` | 条件表达式 | 执行表达式内实体 + 逻辑/比较运算 | `condition` / `condition_not`（通过 `evaluate_condition()`）、log | ④ |
+
+三种字符串占位符（`${}` / `@{}` / `%{}`）作用域完全一致，覆盖 entity key、action 链、所有标量字段；`&{...}` 仅用于条件求值和 log 展示。
 
 **架构说明：** 所有解析通过 `PlaceholderResolver` 统一入口完成，保证 `${}` → `@{}` → `%{}` → `&{...}` 顺序。`condition` 字段通过 `evaluate_condition(condition, after_key)` 求值（返回 `"True"` / `"False"`），同时支持 `&{...}` 表达式和裸实体 key（兼容旧写法）。条件日志通过 `format_condition()` 额外展示解析后的表达式文本。
 
 ### 1. `${...}` — 配置占位符
 
-从配置文件读取值，支持三种格式。**作用于所有字符串字段**，包括但不限于 entity key、target、args、action、log、condition 等。唯一能影响实体键名查找的占位符。
+从配置文件读取值，支持三种格式。**作用于所有字段。**
 
 | 形式 | 含义 | 示例 |
 |------|------|------|
@@ -240,17 +310,9 @@ func: save_screenshot
 args: ${screenshot-task-values:dir},${screenshot-name}
 ```
 
-**实体键中的应用：** action 链、condition_then/condition_else、match 引用等实体名也支持 `${}`。
-
-```ini
-/ 根据配置值决定执行哪个实体
-condition_then: ${fight-strategy:win}
-condition_else: ${fight-strategy:loss}
-```
-
 ### 2. `@{...}` — 执行占位符
 
-运行一个实体，将其返回值替换到字符串中。作用于：`func` 的 `args`、`click` 的 `target`、`context` 的 `action`、`log`、`condition` 的 `&{...}` 表达式内。（**不能**用于 entity key 引用——action 链中的实体名不支持 `@{...}`。）
+运行一个实体，将其返回值替换到字符串中。**作用于所有字段**，包括 action 链中的 entity key。
 
 ```ini
 [get-device]
@@ -266,7 +328,7 @@ args: @{get-device},${screenshot-name}
 
 ### 3. `%{...}` — 上下文占位符
 
-读取 `context_set` / `context_key` 存入的变量（类型为 `str`/`int`/`float`/`bool`），同时支持表达式求值。作用于：`func` 的 `args`、`context` 的 `action`、`log`、`ocr` 的 `target`、`condition` 的 `&{...}` 表达式内。（**不能**用于 entity key 引用。）
+读取 `context_set` / `context_key` 存入的变量（类型为 `str`/`int`/`float`/`bool`），同时支持表达式求值。**作用于所有字段**。
 
 ```ini
 [use-power]

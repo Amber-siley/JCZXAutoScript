@@ -7,6 +7,7 @@ view: on
 name: 竞技场日常
 action: goto-jjc,condition-simulate-need-fight
 settings: settings-jjc-simulate
+log: +28挑战%{times_28}次，+26挑战%{times_26}次，挑战失败%{times_loss}次
 
 [settings-jjc-simulate]
 type: settings
@@ -91,7 +92,7 @@ sleep: 2
 [condition-compare-jjc-fight-times]
 type: condition
 name: 计算挑战状态
-condition: &{%{win_flag} == 1}
+condition: &{%{win_flag}}
 condition_then: condition-compare-jjc-fight-times-1
 condition_else: context-times_loss-add-1
 
@@ -159,6 +160,7 @@ log: 竞技场任务结束
 type: ocr
 name: 获取剩余挑战次数
 match: match-get-simulate-times
+raise_value: 1
 context_key: simulate_times
 context_type: int
 
@@ -166,6 +168,7 @@ context_type: int
 type: ocr
 name: 获取剩余刷新次数
 match: match-simulate-refresh-times
+raise_value: 1
 context_key: refresh_times
 context_type: int
 
