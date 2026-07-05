@@ -42,13 +42,12 @@ class TaskManage:
             menu_config_path = self.fm.join_p("Config", "MainMenu.txt")
             self.fm.cp(menu_config_path, self.menu_config_path)
         self.menu_config = Config(self.menu_config_path).Config
-        self.load_img_pool()
         self.load_task_entity_pool()
+        self.load_img_pool()
         
     def refresh_config(self):
         self.log.debug("刷新配置文件")
         self.ready_env()
-        self.load_img_pool()
 
     @staticmethod
     def read_gray_img(img_path: str) -> MatLike:
@@ -67,7 +66,7 @@ class TaskManage:
         """
         self.img_pool.clear()
         self.log.debug("开始加载图片缓冲池")
-        configs = self.menu_config.trans_entity_dict(JczxSectionEntity)
+        configs = self.entity_pool
         put_size, fail_size = 0, 0
         for config_entity in configs.values():
             target = config_entity.target
@@ -126,14 +125,16 @@ class TaskManage:
             external_config = Config(external_path).Config
             self._external_configs.append((external_path, external_config))
             external_configs = external_config.trans_entity_dict(JczxSectionEntity)
+            external_configs = {k: v for k, v in external_configs.items() if v.type != SectionType.FILE.value}
             dup_keys = set(external_configs.keys()) & set(task_configs.keys())
             if dup_keys:
                 dup_detail = ", ".join(f'"{k}"' for k in dup_keys)
                 raise ValueError(
-                    f"实体 key 冲突: {target} 和 MainMenu.txt 中重复定义了 {dup_detail}")
+                    f"实体 key 冲突: {target} 与已加载实体中重复定义了 {dup_detail}")
             for e_key, e_val in external_configs.items():
                 self._entity_source[e_key] = external_path
             task_configs.update(external_configs)
+            self.menu_config.merge(external_config)
             self.log.debug(f"已加载外部配置 {target}，{len(external_configs)} 个实体")
 
         for key in task_configs:
