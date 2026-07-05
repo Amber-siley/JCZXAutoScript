@@ -623,6 +623,12 @@ class JCZXGaming(Device):
                 self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
                 result = on_exec(entity)
                 self._exec_mgr.token.sleep(self._resolve_scalar(entity, "sleep"))
+                if entity.wait_target:
+                    wait_img = self.task_manage.get_img(self._resolver.resolve(entity.wait_target, entity.only_key))
+                    if wait_img is not None:
+                        wait_max = self._resolve_scalar(entity, "max_wait")
+                        self.log.debug(f"等待 wait_target {entity.wait_target}，超时 {wait_max}s")
+                        self._wait_for_image(wait_img, wait_max, per=self._resolve_scalar(entity, "wait_target_per"))
                 self._log_message(entity)
                 if action_chain and entity.action:
                     resolved = self._resolver.resolve_list(entity.action, entity.only_key)
