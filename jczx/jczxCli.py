@@ -1042,12 +1042,14 @@ class JczxTUI(App, JczxCli):
 
     def on_mount(self) -> None:
         self._populate_task_list()
+        self._initialized = False
         self.run_worker(self._init_after_mount, thread=True)
 
     def _init_after_mount(self) -> None:
         """在后台线程执行 初始化，完成后回主线程刷新 UI."""
         self._init_something()
         self.call_from_thread(self._update_device_bar)
+        self.call_from_thread(lambda: setattr(self, '_initialized', True))
 
     def _update_device_bar(self) -> None:
         """主线程回调：用初始化后的设备列表刷新顶部栏."""
@@ -1118,6 +1120,9 @@ class JczxTUI(App, JczxCli):
     # ── TaskCard handlers ────────────────────────────────
 
     def on_task_card_toggle_pressed(self, event: TaskCard.TogglePressed) -> None:
+        if not getattr(self, '_initialized', False):
+            self.logger.debug("初始化未完成，忽略启停操作")
+            return
         if event.running:
             panel = self.query_one("#task-list-panel", TaskListPanel)
             for card in panel.body.query(TaskCard):
@@ -1174,6 +1179,9 @@ class JczxTUI(App, JczxCli):
         self._running_future = None
 
     def on_task_card_settings_pressed(self, event: TaskCard.SettingsPressed) -> None:
+        if not getattr(self, '_initialized', False):
+            self.logger.debug("初始化未完成，忽略设置操作")
+            return
         task_id = event.task_id
         self._settings_task_id = task_id
         self.logger.debug("打开任务设置: %s", task_id)
