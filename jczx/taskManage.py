@@ -22,6 +22,8 @@ class TaskManage:
         self.main_config: TxtConfig = None
         self.menu_config: TxtConfig = None
         # 图片池
+        self._entity_source: dict[str, str] = {}
+        self._external_configs: list = []
         self.img_pool = DictVariable()
         self.entity_pool = DictVariable()
         self.task_pool = DictVariable()
@@ -98,17 +100,54 @@ class TaskManage:
         return True
     
     def load_task_entity_pool(self):
-        """加载任务实体池"""
         self.log.debug("开始加载任务实体池")
+        self._entity_source.clear()
+        self._external_configs.clear()
         configs = self.menu_config.trans_entity_dict(JczxSectionEntity)
-        self._resolve_extends(configs)
+
+        file_entities = []
+        task_configs = {}
         for key, value in configs.items():
+            if value.type == SectionType.FILE.value:
+                file_entities.append((key, value))
+            else:
+                task_configs[key] = value
+
+        for key, file_entity in file_entities:
+            target = file_entity.target
+            if not target:
+                self.log.warning(f"file 实体 {key} 缺少 target，跳过")
+                continue
+            target = self._resolve_placeholder(target, key)
+            external_path = self.fm.join(self.config_dir, target, seq="\\")
+            if not self.fm.isfile(external_path):
+                self.log.error(f"外部配置文件不存在: {external_path}")
+                continue
+            external_config = Config(external_path).Config
+            self._external_configs.append((external_path, external_config))
+            external_configs = external_config.trans_entity_dict(JczxSectionEntity)
+            dup_keys = set(external_configs.keys()) & set(task_configs.keys())
+            if dup_keys:
+                dup_detail = ", ".join(f'"{k}"' for k in dup_keys)
+                raise ValueError(
+                    f"实体 key 冲突: {target} 和 MainMenu.txt 中重复定义了 {dup_detail}")
+            for e_key, e_val in external_configs.items():
+                self._entity_source[e_key] = external_path
+            task_configs.update(external_configs)
+            self.log.debug(f"已加载外部配置 {target}，{len(external_configs)} 个实体")
+
+        for key in task_configs:
+            if key not in self._entity_source:
+                self._entity_source[key] = self.menu_config_path
+
+        self._resolve_extends(task_configs)
+        for key, value in task_configs.items():
             value.only_key = key
             self.entity_pool[key] = value
             self.log.debug(f"加载实体 {key} 到实体池，{value}")
             if value.type == SectionType.TASK.value:
                 self.task_pool[key] = value
-        self.log.debug(f"任务实体池加载完成，成功加载 {len(self.entity_pool)} 个实体，其中任务实体 {len(self.task_pool)} 个")
+        self.log.debug(f"任务实体池加载完成，共 {len(self.entity_pool)} 个实体，其中 {len(self.task_pool)} 个任务")
 
     def _resolve_extends(self, configs: dict[str, JczxSectionEntity]) -> None:
         default_entity = JczxSectionEntity()
