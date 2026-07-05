@@ -84,9 +84,10 @@ class JczxSectionEntity(BaseEntity):
     times: int = 1
     context_key: str = None
     context_type: str = "str"
-    context_default_type: str = "str"
+    context_default_type: str = None
     context_get: str = None
     context_default: str = ""
+    raise_value: str = ""
     match: str = None
     testFor_before: str = None
     testFor_after: str = None

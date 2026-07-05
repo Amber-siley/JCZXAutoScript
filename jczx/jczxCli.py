@@ -373,11 +373,11 @@ class JCZXGaming(Device):
     def context_print(self):
         """打印当前全部上下文变量。"""
         if not self._context:
-            self.log.info("上下文为空")
+            self.log.debug("上下文为空")
             return
-        self.log.info(f"上下文变量 ({len(self._context)})：")
+        self.log.debug(f"上下文变量 ({len(self._context)})：")
         for k, v in self._context.items():
-            self.log.info(f"  {k} = {v} ({type(v).__name__})")
+            self.log.debug(f"  {k} = {v} ({type(v).__name__})")
 
     def _get_method(self, method_name: str) -> Callable[..., Any]:
         if method_name not in self.__dir__():
@@ -426,10 +426,11 @@ class JCZXGaming(Device):
         """执行 ocr 类型实体：匹配图像区域 → 裁剪 → OCR 识别 → 返回文本。"""
         entity = self._get_entity(section)
         def _on_exec(e: JczxSectionEntity):
+            result = ""
             if e.match:
                 mt = self.exec(e.match)
                 if mt is not None and getattr(mt, "matched", False):
-                    return self._ocr_match_region(mt)
+                    result = self._ocr_match_region(mt)
             elif e.target:
                 target = self._resolver.resolve(e.target, e.only_key)
                 img = self.task_manage.get_img(target) if target else None
@@ -438,8 +439,10 @@ class JCZXGaming(Device):
                     if mt and mt.matched and mt.matchTempletePointRange:
                         result = self._ocr_match_region(mt)
                         self.log.info(f"OCR 识别 {e.get_task_name()}: {result}") if e.get_task_name() else None
-                        return result
-            return ""
+            if not result and e.raise_value:
+                result = self._resolver.resolve(e.raise_value, e.only_key)
+                self.log.debug(f"OCR 识别失败，使用 raise_value: {result}")
+            return result
         return self._exec_entity(entity, _on_exec, testFor=True)
 
     def exec_dynamic(self, section: Union[JczxSectionEntity, str]):
@@ -465,7 +468,8 @@ class JCZXGaming(Device):
             result = None
             if e.context_get:
                 exists = e.context_get in self._context
-                value = self._context[e.context_get] if exists else self._convert_value(e.context_default, e.context_default_type)
+                default_type = e.context_default_type or e.context_type
+                value = self._context[e.context_get] if exists else self._convert_value(e.context_default, default_type)
                 self.log.debug(f"上下文读取 {e.context_get} = {value} (存在: {exists}, 类型: {type(value).__name__})")
                 actions = self._resolver.resolve_list(e.action, e.only_key)
                 self.log.debug(f"上下文运算链: {e.action} → {actions}")
