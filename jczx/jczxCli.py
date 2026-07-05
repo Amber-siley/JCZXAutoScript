@@ -1030,7 +1030,7 @@ class JczxTUI(App, JczxCli):
         self.logger.debug("日志控制台已清空")
 
     def action_copy_log(self) -> None:
-        text = self.rich_log.renderable.plain
+        text = str(self.rich_log.render_str)
         self.copy_to_clipboard(text)
         self.logger.debug("日志已复制到剪贴板")
 
