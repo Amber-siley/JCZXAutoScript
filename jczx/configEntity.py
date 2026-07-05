@@ -50,6 +50,9 @@ class BaseEntity:
             values = [value_typ(v) for v in value.split(",")]
             super().__setattr__(name, values)
         else:
+            if isinstance(value, str) and ("${" in value or "@{" in value or "%{" in value):
+                super().__setattr__(name, value)
+                return
             super().__setattr__(name, typ(value))
 
 @dataclass

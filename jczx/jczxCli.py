@@ -367,6 +367,9 @@ class JCZXGaming(Device):
         self._context[key] = value
         self.log.debug(f"上下文设置 {key} = {value}")
 
+    def parse_placeholder(self, key: str):
+        return self._resolver._resolve_config("${" + key + "}", "")
+
     def context_print(self):
         """打印当前全部上下文变量。"""
         if not self._context:
@@ -584,7 +587,10 @@ class JCZXGaming(Device):
                 test_before = self.task_manage.get_img(entity.testFor_before)
             if entity.testFor_after:
                 test_after = self.task_manage.get_img(entity.testFor_after)
-        for _ in range(entity.times):
+        times = entity.times
+        if isinstance(times, str):
+            times = int(self._resolver.resolve(times, entity.only_key))
+        for _ in range(times):
             self._exec_mgr.token.check()
             old_ttl = self._screen_cache._ttl_ms
             if entity.screen_cache_ttl >= 0:
