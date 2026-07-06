@@ -69,8 +69,9 @@ class ToggleButton(Static, can_focus=True):
         label_off: str = "开始",
         label_on: str = "停止",
         id: str | None = None,
+        disabled: bool = False,
     ) -> None:
-        super().__init__(id=id)
+        super().__init__(id=id, disabled=disabled)
         self._label_off = label_off
         self._label_on = label_on
 
@@ -112,8 +113,9 @@ class LabelButton(Static, can_focus=True):
         *,
         style: str = "white on blue",
         id: str | None = None,
+        disabled: bool = False,
     ) -> None:
-        super().__init__(id=id)
+        super().__init__(id=id, disabled=disabled)
         self._label = label
         self._style = style
 
@@ -653,7 +655,7 @@ class QueuePanel(Section):
         self.body.mount(LabelButton("编辑队列", id="queue-edit", disabled=True))
 
     def on_compact_select_changed(self, event: CompactSelect.Changed) -> None:
-        if event.control_id != "queue-select":
+        if event.sender_id != "queue-select":
             return
         has_queue = bool(event.value)
         self.query_one("#queue-toggle", ToggleButton).disabled = not has_queue
@@ -666,9 +668,9 @@ class QueuePanel(Section):
 
     def on_label_button_pressed(self, event: LabelButton.Pressed) -> None:
         event.stop()
-        if event.control_id == "queue-new":
+        if event.sender_id == "queue-new":
             self.post_message(self.EditRequested(None))
-        elif event.control_id == "queue-edit":
+        elif event.sender_id == "queue-edit":
             select = self.query_one("#queue-select", CompactSelect)
             self.post_message(self.EditRequested(select.value or None))
 
