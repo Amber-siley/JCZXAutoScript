@@ -185,19 +185,18 @@ class TaskManage:
                     setattr(entity, field_name, getattr(parent, field_name))
     
     def get_task(self, task_name: str) -> JczxSectionEntity:
-        """获取任务实体
+        """获取任务实体"""
+        try:
+            return self.task_pool[task_name]
+        except Exception:
+            return None
 
-        Args:
-            task_name (str): 任务名称
-
-        Returns:
-            JczxSectionEntity: 任务实体
-        """
-        return self.task_pool.__const__.get(task_name)
-    
     def get_task_names(self) -> list[str]:
         """获取可见任务 key 列表（view != off）"""
-        return [k for k, v in self.task_pool.items() if v.view != "off"]
+        try:
+            return [k for k, v in self.task_pool.items() if v.view != "off"]
+        except Exception:
+            return []
 
     def get_task_display_name(self, task_key: str) -> str:
         """获取任务的中文显示名称"""
@@ -205,30 +204,22 @@ class TaskManage:
         if entity:
             return entity.name or entity.desc or task_key
         return task_key
-    
+
     def get_img(self, img_path: str) -> MatLike:
-        """获取图片
-
-        Args:
-            img_path (str): 图片路径
-
-        Returns:
-            MatLike: 图片
-        """
+        """获取图片"""
         name = self._resolve_placeholder(img_path)
-        return self.img_pool.__const__.get(name)
+        try:
+            return self.img_pool[name]
+        except Exception:
+            return None
 
     def get_entity(self, entity_name: str, after_key: str = None) -> JczxSectionEntity:
-        """获取实体
-
-        Args:
-            entity_name (str): 实体名称
-
-        Returns:
-            JczxSectionEntity: 实体
-        """
+        """获取实体"""
         name = self._resolve_placeholder(entity_name, after_key)
-        return self.entity_pool.__const__.get(name)
+        try:
+            return self.entity_pool[name]
+        except Exception:
+            return None
      
     def get_next(self, section: JczxSectionEntity) -> list[JczxSectionEntity]:
         if section.action:
