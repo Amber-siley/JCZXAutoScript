@@ -1309,12 +1309,12 @@ class JczxTUI(App, JczxCli):
             self.logger.info("队列已删除: %s", queue_id)
             self._refresh_queue_panel()
             return
-        name = result["name"]
-        task_keys = result["tasks"]
-        queue_id = self._editing_queue_id or f"queue-{name}"
-        if self._editing_queue_id and not task_keys:
+        name = result.get("name", "")
+        task_keys = result.get("tasks", [])
+        if not task_keys:
             self.logger.warning("队列任务列表为空，未保存")
             return
+        queue_id = self._editing_queue_id or f"queue-{name}"
         self.task_manage.save_queue(queue_id, name, task_keys)
         self.logger.info("队列已保存: %s (%d 个任务)", name, len(task_keys))
         self._refresh_queue_panel()
