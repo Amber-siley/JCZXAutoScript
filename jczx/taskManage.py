@@ -30,6 +30,7 @@ class TaskManage:
         self.menu_config: TxtConfig = None
         self.queue_config_path = None
         self.queue_config: TxtConfig = None
+        self._queue_cache: dict[str, QueueEntity] = {}
         # 图片池
         self._entity_source: dict[str, str] = {}
         self._external_configs: list = []
@@ -56,7 +57,6 @@ class TaskManage:
             queue_config_path = self.fm.join_p("Config", "Queues.txt")
             self.fm.cp(queue_config_path, self.queue_config_path)
         self.queue_config = Config(self.queue_config_path).Config
-        self._queue_cache: dict[str, QueueEntity] = {}
         self.load_queues()
         self.load_task_entity_pool()
         self.load_img_pool()
@@ -64,7 +64,6 @@ class TaskManage:
     def refresh_config(self):
         self.log.debug("刷新配置文件")
         self.ready_env()
-        self.load_queues()
 
     @staticmethod
     def read_gray_img(img_path: str) -> MatLike:
