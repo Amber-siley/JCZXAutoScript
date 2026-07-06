@@ -622,58 +622,76 @@ class TaskSettingsPanel(Section):
 
 
 # ═══════════════════════════════════════════════════════════
-# TaskEditorPanel
+# QueuePanel
 # ═══════════════════════════════════════════════════════════
 
-class TaskEditorPanel(Section):
-    """Task editor: dropdown to pick a task-list name and a run/stop toggle."""
+class QueuePanel(Section):
+    """Task queue panel: select queue, start/stop, progress, create/edit."""
 
     class RunRequested(Message):
-        """Emitted when the run/stop toggle is pressed."""
-
-        def __init__(self, task_list_name: str, running: bool) -> None:
-            self.task_list_name = task_list_name
+        def __init__(self, queue_id: str, running: bool) -> None:
+            self.queue_id = queue_id
             self.running = running
             super().__init__()
 
-    def __init__(
-        self,
-        task_list_names: list[tuple[str, str]] | None = None,
-        id: str | None = None,
-    ) -> None:
-        super().__init__("任务编辑器", id=id)
-        self._opts: list[tuple[str, str]] = task_list_names or []
+    class EditRequested(Message):
+        def __init__(self, queue_id: str | None) -> None:
+            self.queue_id = queue_id
+            super().__init__()
+
+    def __init__(self, queues: list[tuple[str, str]] | None = None, id: str | None = None):
+        super().__init__("任务队列", id=id)
+        self._opts = [("-- 无队列 --", "")] + (queues or [])
 
     def on_mount(self) -> None:
-        """Mount dynamic children after the section body is in the DOM."""
-        opts = self._opts or [("无任务列表", "__none__")]
-        self.body.mount(Label("任务列表:", classes="field-label"))
-        self.body.mount(CompactSelect(opts, id="editor-task-select"))
+        self.body.mount(Label("队列:", classes="field-label"))
+        self.body.mount(CompactSelect(self._opts, id="queue-select"))
         self.body.mount(
-            ToggleButton(
-                label_off="开始执行",
-                label_on="停止执行",
-                id="editor-toggle",
-            )
+            ToggleButton(label_off="开始执行", label_on="停止执行", id="queue-toggle", disabled=True)
         )
+        self.body.mount(LabelButton("新建队列", id="queue-new"))
+        self.body.mount(LabelButton("编辑队列", id="queue-edit", disabled=True))
+
+    def on_compact_select_changed(self, event: CompactSelect.Changed) -> None:
+        if event.control_id != "queue-select":
+            return
+        has_queue = bool(event.value)
+        self.query_one("#queue-toggle", ToggleButton).disabled = not has_queue
+        self.query_one("#queue-edit", LabelButton).disabled = not has_queue
 
     def on_toggle_button_toggled(self, event: ToggleButton.Toggled) -> None:
-        """Auto-handler: catches ToggleButton.Toggled bubbled from children."""
         event.stop()
-        select = self.query_one("#editor-task-select", CompactSelect)
+        select = self.query_one("#queue-select", CompactSelect)
         self.post_message(self.RunRequested(select.value, event.state))
 
-    def set_task_lists(self, opts: list[tuple[str, str]]) -> None:
-        """Replace the task-list dropdown options."""
-        w = self.query_one("#editor-task-select", CompactSelect)
-        w.set_options(opts or [("无任务列表", "__none__")])
-        w.value = opts[0][1] if opts else "__none__"
+    def on_label_button_pressed(self, event: LabelButton.Pressed) -> None:
+        event.stop()
+        if event.control_id == "queue-new":
+            self.post_message(self.EditRequested(None))
+        elif event.control_id == "queue-edit":
+            select = self.query_one("#queue-select", CompactSelect)
+            self.post_message(self.EditRequested(select.value or None))
+
+    def set_queues(self, queues: list[tuple[str, str]]) -> None:
+        opts = [("-- 无队列 --", "")] + queues
+        w = self.query_one("#queue-select", CompactSelect)
+        w.set_options(opts)
+        w.value = ""
+
+    def select_queue(self, queue_id: str) -> None:
+        w = self.query_one("#queue-select", CompactSelect)
+        w.value = queue_id
+
+    def update_progress(self, name: str, idx: int, total: int, task_name: str) -> None:
+        self.body.query(".queue-progress").remove()
+        self.body.mount(Label(f"{name} → {idx + 1}/{total} {task_name}", classes="queue-progress"))
+
+    def clear_progress(self) -> None:
+        self.body.query(".queue-progress").remove()
 
     @property
     def toggle(self) -> ToggleButton:
-        """The run/stop toggle button."""
-        return self.query_one("#editor-toggle", ToggleButton)
+        return self.query_one("#queue-toggle", ToggleButton)
 
     def reset_toggle(self) -> None:
-        """Reset the toggle to OFF state."""
         self.toggle.reset()
