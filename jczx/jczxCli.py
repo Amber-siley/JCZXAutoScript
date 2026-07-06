@@ -27,7 +27,8 @@ from .widgets import (
     TaskCard,
     TaskListPanel,
     TaskSettingsPanel,
-    TaskEditorPanel,
+    QueuePanel,
+    QueueEditorScreen,
     SettingField,
 )
 
@@ -1035,9 +1036,9 @@ class JczxTUI(App, JczxCli):
             with VerticalScroll(id="right-panels"):
                 yield TaskListPanel(id="task-list-panel")
                 yield TaskSettingsPanel(id="task-settings-panel")
-                yield TaskEditorPanel(
-                    task_list_names=self._get_editor_task_options(),
-                    id="task-editor-panel",
+                yield QueuePanel(
+                    queues=self._get_queue_options(),
+                    id="queue-panel",
                 )
         yield Footer(show_command_palette=False)
 
@@ -1081,6 +1082,9 @@ class JczxTUI(App, JczxCli):
             for k in self._get_editor_task_names()
         ]
 
+    def _get_queue_options(self) -> list[tuple[str, str]]:
+        return [(q.name, q.id) for q in self.task_manage.get_queues()]
+
     def _populate_task_list(self) -> None:
         """Fill the task-list panel from config."""
         panel = self.query_one("#task-list-panel", TaskListPanel)
@@ -1117,8 +1121,8 @@ class JczxTUI(App, JczxCli):
 
     def _refresh_all_panels(self) -> None:
         self._populate_task_list()
-        editor_panel = self.query_one("#task-editor-panel", TaskEditorPanel)
-        editor_panel.set_task_lists(self._get_editor_task_options())
+        queue_panel = self.query_one("#queue-panel", QueuePanel)
+        queue_panel.set_queues(self._get_queue_options())
 
     def _refresh_devices(self) -> None:
         self._init_device()
