@@ -723,3 +723,54 @@ class _ConfirmDialog(Screen):
         if event.sender_id == "confirm-yes":
             self.result = True
         self.dismiss(self.result)
+
+
+class _AvailableTaskRow(Horizontal):
+    class AddRequested(Message):
+        def __init__(self, task_key: str) -> None:
+            self.task_key = task_key
+            super().__init__()
+
+    def __init__(self, task_key: str, task_name: str):
+        super().__init__()
+        self._task_key = task_key
+        self._task_name = task_name
+
+    def compose(self) -> ComposeResult:
+        yield Label(self._task_name, classes="editor-task-name")
+        yield LabelButton("[+]", id=f"add-{self._task_key}")
+
+    def on_label_button_pressed(self, event: LabelButton.Pressed) -> None:
+        event.stop()
+        self.post_message(self.AddRequested(self._task_key))
+
+
+class _QueueTaskRow(Horizontal):
+    class ActionRequested(Message):
+        def __init__(self, index: int, action: str) -> None:
+            self.index = index
+            self.action = action
+            super().__init__()
+
+    def __init__(self, index: int, task_name: str, is_first: bool, is_last: bool):
+        super().__init__()
+        self._index = index
+        self._task_name = task_name
+        self._is_first = is_first
+        self._is_last = is_last
+
+    def compose(self) -> ComposeResult:
+        yield Label(f"{self._index + 1}. {self._task_name}", classes="editor-task-name")
+        yield LabelButton("↑", id=f"up-{self._index}", disabled=self._is_first)
+        yield LabelButton("↓", id=f"down-{self._index}", disabled=self._is_last)
+        yield LabelButton("✕", id=f"del-{self._index}")
+
+    def on_label_button_pressed(self, event: LabelButton.Pressed) -> None:
+        event.stop()
+        cid = event.sender_id or ""
+        if cid.startswith("up-"):
+            self.post_message(self.ActionRequested(self._index, "up"))
+        elif cid.startswith("down-"):
+            self.post_message(self.ActionRequested(self._index, "down"))
+        elif cid.startswith("del-"):
+            self.post_message(self.ActionRequested(self._index, "delete"))
