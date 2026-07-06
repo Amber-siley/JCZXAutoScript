@@ -697,3 +697,29 @@ class QueuePanel(Section):
 
     def reset_toggle(self) -> None:
         self.toggle.reset()
+
+
+# ═══════════════════════════════════════════════════════════
+# _ConfirmDialog — simple yes/no confirmation overlay
+# ═══════════════════════════════════════════════════════════
+
+class _ConfirmDialog(Screen):
+    """Simple yes/no confirmation dialog overlay."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__()
+        self._message = message
+        self.result = False
+
+    def compose(self) -> ComposeResult:
+        with Container(id="confirm-dialog"):
+            yield Label(self._message, id="confirm-message")
+            with Horizontal(id="confirm-buttons"):
+                yield LabelButton("确认", id="confirm-yes")
+                yield LabelButton("取消", id="confirm-no")
+
+    def on_label_button_pressed(self, event: LabelButton.Pressed) -> None:
+        event.stop()
+        if event.sender_id == "confirm-yes":
+            self.result = True
+        self.dismiss(self.result)
