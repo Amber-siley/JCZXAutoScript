@@ -870,7 +870,7 @@ class QueueEditorScreen(Screen):
     def action_cancel(self) -> None:
         self.dismiss(None)
 
-    async def action_save(self) -> None:
+    def action_save(self) -> None:
         name_input = self.query_one("#queue-name-input", Input)
         name = name_input.value.strip()
         if not name:
@@ -892,7 +892,7 @@ class QueueEditorScreen(Screen):
         elif cid == "editor-delete":
             self._confirm_delete()
 
-    async def _confirm_delete(self) -> None:
+    def _confirm_delete(self) -> None:
         def callback(result: bool) -> None:
             if result:
                 self.dismiss({"delete": True})
