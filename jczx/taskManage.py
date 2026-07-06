@@ -193,7 +193,7 @@ class TaskManage:
         Returns:
             JczxSectionEntity: 任务实体
         """
-        return self.task_pool[task_name]
+        return self.task_pool.__const__.get(task_name)
     
     def get_task_names(self) -> list[str]:
         """获取可见任务 key 列表（view != off）"""
@@ -216,7 +216,7 @@ class TaskManage:
             MatLike: 图片
         """
         name = self._resolve_placeholder(img_path)
-        return self.img_pool[name]
+        return self.img_pool.__const__.get(name)
 
     def get_entity(self, entity_name: str, after_key: str = None) -> JczxSectionEntity:
         """获取实体
@@ -228,7 +228,7 @@ class TaskManage:
             JczxSectionEntity: 实体
         """
         name = self._resolve_placeholder(entity_name, after_key)
-        return self.entity_pool[name]
+        return self.entity_pool.__const__.get(name)
      
     def get_next(self, section: JczxSectionEntity) -> list[JczxSectionEntity]:
         if section.action:
