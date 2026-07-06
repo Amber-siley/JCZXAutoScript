@@ -9,6 +9,13 @@ import re
 import cv2
 
 from cv2.typing import MatLike
+from dataclasses import dataclass
+
+@dataclass
+class QueueEntity:
+    id: str
+    name: str
+    tasks: list[str]
 
 class TaskManage:
     def __init__(self, config_dir: str, log: Logger = None):

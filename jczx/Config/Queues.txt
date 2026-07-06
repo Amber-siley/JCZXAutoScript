@@ -1,0 +1,12 @@
+/ 任务队列配置
+/ [队列id]  section 名即队列 ID（建议 queue- 前缀）
+/ name: 显示名称
+/ tasks: 逗号分隔的任务 entity key，按顺序执行，允许重复
+
+[queue-daily]
+name: 日常
+tasks: jjc, inllusion, screenshot-task
+
+[queue-weekly]
+name: 周常
+tasks: jjc, inllusion
