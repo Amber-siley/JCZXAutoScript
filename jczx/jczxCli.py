@@ -831,6 +831,26 @@ class JCZXGaming(Device):
         finally:
             self._context.clear()
 
+    def exec_queue(self, queue_id: str, on_progress=None) -> None:
+        queue = self.task_manage.get_queue(queue_id)
+        if not queue:
+            self.log.warning(f"队列 {queue_id} 不存在")
+            return
+        tasks = queue.tasks
+        n = len(tasks)
+        self.log.info(f"开始执行队列 [{queue.name}]，共 {n} 个任务")
+        for i, task_key in enumerate(tasks):
+            self._exec_mgr.token.check()
+            entity = self.task_manage.get_task(task_key)
+            if entity is None:
+                self.log.warning(f"队列任务 [{task_key}] 不存在，跳过")
+                continue
+            self.log.info(f"队列 [{queue.name}] {i + 1}/{n}: {entity.get_task_name()}")
+            if on_progress:
+                on_progress(queue.name, i, n, entity.get_task_name())
+            self.exec_task_raw(task_key)
+        self.log.info(f"队列 [{queue.name}] 执行完毕")
+
     def in_location(self, target: str, per: float = 0.8):
         """检测指定图片是否在当前屏幕上可见，返回 bool。"""
         list_pos = self.findImageCenterLocations(self.task_manage.get_img(target), per = float(per))
@@ -1021,6 +1041,7 @@ class JczxTUI(App, JczxCli):
     def __init__(self):
         super().__init__()
         JczxCli.__init__(self)
+        self._editing_queue_id: str | None = None
 
     def compose(self) -> ComposeResult:
         devices = self.adb.get_device_names() if self.adb else []
@@ -1157,6 +1178,9 @@ class JczxTUI(App, JczxCli):
         if not self.ocr:
             self.logger.warning("OCR 未初始化完成，无法启动任务")
             return False
+        if self.device._exec_mgr.is_running():
+            self.logger.warning("已有任务/队列正在执行，请先停止")
+            return False
         entity = self.task_manage.get_task(task_id)
         if not entity:
             self.logger.error("任务实体不存在: %s", task_id)
@@ -1170,6 +1194,12 @@ class JczxTUI(App, JczxCli):
         if self.device:
             self.device._exec_mgr.stop()
         self.logger.info("任务已停止")
+        try:
+            panel = self.query_one("#queue-panel", QueuePanel)
+            panel.clear_progress()
+            panel.reset_toggle()
+        except Exception:
+            pass
 
     def _run_task(self, entity: JczxSectionEntity, task_id: str) -> None:
         try:
@@ -1242,10 +1272,103 @@ class JczxTUI(App, JczxCli):
             self.device.task_manage.menu_config = self.task_manage.menu_config
             self.logger.debug("已同步配置到设备端")
 
-    # ── TaskEditorPanel handlers ─────────────────────────
+    # ── QueuePanel handlers ──────────────────────────────
 
-    def on_task_editor_panel_run_requested(self, event: TaskEditorPanel.RunRequested) -> None:
+    def on_queue_panel_run_requested(self, event: QueuePanel.RunRequested) -> None:
+        if not getattr(self, '_initialized', False):
+            self.logger.debug("初始化未完成，忽略队列操作")
+            return
         if event.running:
-            self.logger.info("开始执行任务列表: %s", event.task_list_name)
+            self._start_queue(event.queue_id)
         else:
-            self.logger.info("停止执行任务列表: %s", event.task_list_name)
+            self._stop_running_task()
+
+    def on_queue_panel_edit_requested(self, event: QueuePanel.EditRequested) -> None:
+        if not getattr(self, '_initialized', False):
+            return
+        self._editing_queue_id = event.queue_id
+        if event.queue_id:
+            queue = self.task_manage.get_queue(event.queue_id)
+            name = queue.name if queue else ""
+            tasks = [(k, self.task_manage.get_task_display_name(k)) for k in (queue.tasks if queue else [])]
+        else:
+            name = ""
+            tasks = []
+        available = [(k, self.task_manage.get_task_display_name(k)) for k in self._get_editor_task_names()]
+        self.push_screen(
+            QueueEditorScreen(event.queue_id, name, tasks, available),
+            callback=self._on_queue_editor_closed,
+        )
+
+    def _on_queue_editor_closed(self, result: dict | None) -> None:
+        if result is None:
+            return
+        if result.get("delete"):
+            queue_id = self._editing_queue_id
+            self.task_manage.delete_queue(queue_id)
+            self.logger.info("队列已删除: %s", queue_id)
+            self._refresh_queue_panel()
+            return
+        name = result["name"]
+        task_keys = result["tasks"]
+        queue_id = self._editing_queue_id or f"queue-{name}"
+        if self._editing_queue_id and not task_keys:
+            self.logger.warning("队列任务列表为空，未保存")
+            return
+        self.task_manage.save_queue(queue_id, name, task_keys)
+        self.logger.info("队列已保存: %s (%d 个任务)", name, len(task_keys))
+        self._refresh_queue_panel()
+        self.query_one("#queue-panel", QueuePanel).select_queue(queue_id)
+
+    def _refresh_queue_panel(self) -> None:
+        panel = self.query_one("#queue-panel", QueuePanel)
+        panel.set_queues(self._get_queue_options())
+
+    def _start_queue(self, queue_id: str) -> bool:
+        if not self.device:
+            self.logger.warning("设备未就绪，无法启动队列")
+            return False
+        if not self.ocr:
+            self.logger.warning("OCR 未初始化完成，无法启动队列")
+            return False
+        if self.device._exec_mgr.is_running():
+            self.logger.warning("已有任务/队列正在执行，请先停止")
+            queue_panel = self.query_one("#queue-panel", QueuePanel)
+            queue_panel.reset_toggle()
+            return False
+        queue = self.task_manage.get_queue(queue_id)
+        if not queue:
+            self.logger.error("队列不存在: %s", queue_id)
+            return False
+        self.device._exec_mgr.start(queue_id)
+        self.logger.info("队列启动: %s", queue.name)
+        self._running_future = self.executor.submit(self._run_queue, queue_id)
+        return True
+
+    def _run_queue(self, queue_id: str) -> None:
+        try:
+            self.device.exec_queue(queue_id, on_progress=lambda name, i, n, tn:
+                self.call_from_thread(self._on_queue_progress, name, i, n, tn))
+        except TaskCancelledError:
+            self.logger.info("队列已取消: %s", queue_id)
+        except Exception as e:
+            self.logger.error("队列执行异常: %s", e)
+        finally:
+            self.call_from_thread(self._on_queue_finished, queue_id)
+
+    def _on_queue_finished(self, queue_id: str) -> None:
+        if self.device and self.device._exec_mgr.task_id != queue_id:
+            return
+        if self.device:
+            self.device._exec_mgr.reset()
+        panel = self.query_one("#queue-panel", QueuePanel)
+        panel.reset_toggle()
+        panel.clear_progress()
+        self._running_future = None
+
+    def _on_queue_progress(self, name: str, idx: int, total: int, task_name: str) -> None:
+        try:
+            panel = self.query_one("#queue-panel", QueuePanel)
+            panel.update_progress(name, idx, total, task_name)
+        except Exception:
+            pass
