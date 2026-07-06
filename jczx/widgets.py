@@ -13,7 +13,7 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
 from textual.binding import Binding
-from textual.widgets import Header, Footer, Input, Label, ListItem, ListView, Static
+from textual.widgets import Footer, Input, Label, ListItem, ListView, Static
 from textual.validation import Integer
 
 # ═══════════════════════════════════════════════════════════
@@ -801,7 +801,6 @@ class QueueEditorScreen(Screen):
 
     def compose(self) -> ComposeResult:
         title = f"编辑队列: {self._queue_name}" if self._queue_name else "新建队列"
-        yield Header(show_clock=False)
         yield Label(title, id="editor-title")
         with Horizontal(id="editor-columns"):
             with Section("可用任务", id="available-panel"):
@@ -835,14 +834,14 @@ class QueueEditorScreen(Screen):
             row = _QueueTaskRow(i, name, is_first=(i == 0), is_last=(i == n - 1))
             panel.body.mount(row)
 
-    def on_available_task_row_add_requested(self, event: _AvailableTaskRow.AddRequested) -> None:
+    def on__available_task_row_add_requested(self, event: _AvailableTaskRow.AddRequested) -> None:
         event.stop()
         key = event.task_key
         name = next((n for k, n in self._available if k == key), key)
         self._queue_tasks.append((key, name))
         self._refresh_queue_tasks()
 
-    def on_queue_task_row_action_requested(self, event: _QueueTaskRow.ActionRequested) -> None:
+    def on__queue_task_row_action_requested(self, event: _QueueTaskRow.ActionRequested) -> None:
         event.stop()
         idx = event.index
         if event.action == "up" and idx > 0:

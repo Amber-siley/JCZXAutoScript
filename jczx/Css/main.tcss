@@ -231,6 +231,7 @@ ToggleButton:focus, LabelButton:focus {
 
 QueueEditorScreen {
     align: center middle;
+    background: $panel;
 }
 
 #editor-title {
@@ -290,6 +291,11 @@ _AvailableTaskRow > LabelButton, _QueueTaskRow > LabelButton {
 /* ═══════════════════════════════════════════════════
    ConfirmDialog
    ═══════════════════════════════════════════════════ */
+
+_ConfirmDialog {
+    align: center middle;
+    background: $panel;
+}
 
 #confirm-dialog {
     width: 40;

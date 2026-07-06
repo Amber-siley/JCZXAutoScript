@@ -358,12 +358,17 @@ class TaskManage:
 
     def load_queues(self) -> None:
         self._queue_cache.clear()
-        configs = self.queue_config.trans_entity_dict(JczxSectionEntity)
-        for key, entity in configs.items():
-            tasks_str = getattr(entity, 'tasks', '')
-            task_list = [t.strip() for t in tasks_str.split(",") if t.strip()] if isinstance(tasks_str, str) else []
-            name = getattr(entity, 'name', None) or key
-            self._queue_cache[key] = QueueEntity(id=key, name=name, tasks=task_list)
+        for sec in self.queue_config.sections():
+            try:
+                sec_data = self.queue_config.get_section(sec)
+            except KeyError:
+                continue
+            tasks_entry = sec_data.get('tasks')
+            tasks_str = tasks_entry.value if tasks_entry else ''
+            task_list = [t.strip() for t in tasks_str.split(",") if t.strip()] if tasks_str else []
+            name_entry = sec_data.get('name')
+            name = name_entry.value if name_entry else sec
+            self._queue_cache[sec] = QueueEntity(id=sec, name=name, tasks=task_list)
         self.log.debug(f"加载 {len(self._queue_cache)} 个队列")
 
     def get_queues(self) -> list[QueueEntity]:
