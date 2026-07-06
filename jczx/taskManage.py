@@ -28,6 +28,8 @@ class TaskManage:
         self.menu_config_path = self.fm.join(self.config_dir, "MainMenu.txt", seq="\\")
         self.main_config: TxtConfig = None
         self.menu_config: TxtConfig = None
+        self.queue_config_path = None
+        self.queue_config: TxtConfig = None
         # 图片池
         self._entity_source: dict[str, str] = {}
         self._external_configs: list = []
@@ -49,12 +51,20 @@ class TaskManage:
             menu_config_path = self.fm.join_p("Config", "MainMenu.txt")
             self.fm.cp(menu_config_path, self.menu_config_path)
         self.menu_config = Config(self.menu_config_path).Config
+        self.queue_config_path = self.fm.join(self.config_dir, "Queues.txt", seq="\\")
+        if not self.fm.isfile(self.queue_config_path):
+            queue_config_path = self.fm.join_p("Config", "Queues.txt")
+            self.fm.cp(queue_config_path, self.queue_config_path)
+        self.queue_config = Config(self.queue_config_path).Config
+        self._queue_cache: dict[str, QueueEntity] = {}
+        self.load_queues()
         self.load_task_entity_pool()
         self.load_img_pool()
         
     def refresh_config(self):
         self.log.debug("刷新配置文件")
         self.ready_env()
+        self.load_queues()
 
     @staticmethod
     def read_gray_img(img_path: str) -> MatLike:
@@ -346,3 +356,36 @@ class TaskManage:
                 val = default
             result = result.replace("${" + match + "}", val if val else default)
         return result
+
+    def load_queues(self) -> None:
+        self._queue_cache.clear()
+        configs = self.queue_config.trans_entity_dict(JczxSectionEntity)
+        for key, entity in configs.items():
+            tasks_str = getattr(entity, 'tasks', '')
+            task_list = [t.strip() for t in tasks_str.split(",") if t.strip()] if isinstance(tasks_str, str) else []
+            name = getattr(entity, 'name', None) or key
+            self._queue_cache[key] = QueueEntity(id=key, name=name, tasks=task_list)
+        self.log.debug(f"加载 {len(self._queue_cache)} 个队列")
+
+    def get_queues(self) -> list[QueueEntity]:
+        return list(self._queue_cache.values())
+
+    def get_queue(self, queue_id: str) -> QueueEntity | None:
+        return self._queue_cache.get(queue_id)
+
+    def save_queue(self, queue_id: str, name: str, tasks: list[str]) -> None:
+        self.queue_config.set_config(queue_id, "name", name)
+        self.queue_config.set_config(queue_id, "tasks", ",".join(tasks))
+        self.queue_config.save()
+        self._queue_cache[queue_id] = QueueEntity(id=queue_id, name=name, tasks=tasks)
+        self.log.debug(f"队列 {queue_id} 已保存")
+
+    def delete_queue(self, queue_id: str) -> None:
+        if queue_id not in self._queue_cache:
+            return
+        sec_data = self.queue_config.get_section(queue_id)
+        for opt in list(sec_data.keys()):
+            self.queue_config.remove_config(queue_id, opt)
+        self.queue_config.save()
+        del self._queue_cache[queue_id]
+        self.log.debug(f"队列 {queue_id} 已删除")
