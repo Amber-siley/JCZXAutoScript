@@ -12,7 +12,8 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
-from textual.widgets import Input, Label, ListItem, ListView, Static
+from textual.binding import Binding
+from textual.widgets import Header, Footer, Input, Label, ListItem, ListView, Static
 from textual.validation import Integer
 
 # ═══════════════════════════════════════════════════════════
@@ -774,3 +775,125 @@ class _QueueTaskRow(Horizontal):
             self.post_message(self.ActionRequested(self._index, "down"))
         elif cid.startswith("del-"):
             self.post_message(self.ActionRequested(self._index, "delete"))
+
+
+# ═══════════════════════════════════════════════════════════
+# QueueEditorScreen — full-screen queue editor
+# ═══════════════════════════════════════════════════════════
+
+class QueueEditorScreen(Screen):
+    """Full-screen queue editor."""
+
+    BINDINGS = [
+        Binding("escape", "cancel", "取消"),
+        Binding("ctrl+s", "save", "保存"),
+        Binding("ctrl+up", "move_up", "上移"),
+        Binding("ctrl+down", "move_down", "下移"),
+    ]
+
+    def __init__(self, queue_id: str | None, queue_name: str, tasks: list[tuple[str, str]],
+                 available_tasks: list[tuple[str, str]]):
+        super().__init__()
+        self._queue_id = queue_id
+        self._queue_name = queue_name
+        self._queue_tasks: list[tuple[str, str]] = tasks
+        self._available = available_tasks
+
+    def compose(self) -> ComposeResult:
+        title = f"编辑队列: {self._queue_name}" if self._queue_name else "新建队列"
+        yield Header(show_clock=False)
+        yield Label(title, id="editor-title")
+        with Horizontal(id="editor-columns"):
+            with Section("可用任务", id="available-panel"):
+                pass
+            with Section("队列任务", id="queue-tasks-panel"):
+                pass
+        with Horizontal(id="editor-bottom"):
+            yield Input(placeholder="队列名称", value=self._queue_name, id="queue-name-input")
+            yield LabelButton("保存", id="editor-save")
+            yield LabelButton("取消", id="editor-cancel")
+            if self._queue_id:
+                yield LabelButton("删除队列", id="editor-delete")
+        yield Footer(show_command_palette=False)
+
+    def on_mount(self) -> None:
+        self._refresh_available()
+        self._refresh_queue_tasks()
+
+    def _refresh_available(self) -> None:
+        panel = self.query_one("#available-panel", Section)
+        panel.body.remove_children()
+        for key, name in self._available:
+            row = _AvailableTaskRow(key, name)
+            panel.body.mount(row)
+
+    def _refresh_queue_tasks(self) -> None:
+        panel = self.query_one("#queue-tasks-panel", Section)
+        panel.body.remove_children()
+        n = len(self._queue_tasks)
+        for i, (key, name) in enumerate(self._queue_tasks):
+            row = _QueueTaskRow(i, name, is_first=(i == 0), is_last=(i == n - 1))
+            panel.body.mount(row)
+
+    def on_available_task_row_add_requested(self, event: _AvailableTaskRow.AddRequested) -> None:
+        event.stop()
+        key = event.task_key
+        name = next((n for k, n in self._available if k == key), key)
+        self._queue_tasks.append((key, name))
+        self._refresh_queue_tasks()
+
+    def on_queue_task_row_action_requested(self, event: _QueueTaskRow.ActionRequested) -> None:
+        event.stop()
+        idx = event.index
+        if event.action == "up" and idx > 0:
+            self._queue_tasks[idx], self._queue_tasks[idx - 1] = self._queue_tasks[idx - 1], self._queue_tasks[idx]
+        elif event.action == "down" and idx < len(self._queue_tasks) - 1:
+            self._queue_tasks[idx], self._queue_tasks[idx + 1] = self._queue_tasks[idx + 1], self._queue_tasks[idx]
+        elif event.action == "delete":
+            del self._queue_tasks[idx]
+        self._refresh_queue_tasks()
+
+    def action_move_up(self) -> None:
+        focused = self.focused
+        if isinstance(focused, _QueueTaskRow) and focused._index > 0:
+            idx = focused._index
+            self._queue_tasks[idx], self._queue_tasks[idx - 1] = self._queue_tasks[idx - 1], self._queue_tasks[idx]
+            self._refresh_queue_tasks()
+
+    def action_move_down(self) -> None:
+        focused = self.focused
+        if isinstance(focused, _QueueTaskRow) and focused._index < len(self._queue_tasks) - 1:
+            idx = focused._index
+            self._queue_tasks[idx], self._queue_tasks[idx + 1] = self._queue_tasks[idx + 1], self._queue_tasks[idx]
+            self._refresh_queue_tasks()
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+    async def action_save(self) -> None:
+        name_input = self.query_one("#queue-name-input", Input)
+        name = name_input.value.strip()
+        if not name:
+            self.notify("队列名称不能为空", severity="warning")
+            return
+        result = {
+            "name": name,
+            "tasks": [k for k, _ in self._queue_tasks],
+        }
+        self.dismiss(result)
+
+    def on_label_button_pressed(self, event: LabelButton.Pressed) -> None:
+        event.stop()
+        cid = event.sender_id
+        if cid == "editor-save":
+            self.action_save()
+        elif cid == "editor-cancel":
+            self.action_cancel()
+        elif cid == "editor-delete":
+            self._confirm_delete()
+
+    async def _confirm_delete(self) -> None:
+        def callback(result: bool) -> None:
+            if result:
+                self.dismiss({"delete": True})
+        self.app.push_screen(_ConfirmDialog("确认删除此队列？此操作不可撤销。"), callback=callback)
