@@ -155,7 +155,7 @@ class PlaceholderResolver:
         result = text
         for m in self._CONFIG_PATTERN.findall(text):
             val = self._gaming.task_manage._resolve_placeholder("${" + m + "}", after_key)
-            result = result.replace("${" + m + "}", str(val) if val else "")
+            result = result.replace("${" + m + "}", str(val))
         return result
 
     def _resolve_exec(self, text: str) -> str:
@@ -172,7 +172,7 @@ class PlaceholderResolver:
                 val = self._eval_context_expr(m)
             else:
                 val = self._gaming._context.get(m, "")
-            result = result.replace("%{" + m + "}", str(val) if val else "")
+            result = result.replace("%{" + m + "}", str(val))
         return result
 
     def _resolve_condition(self, text: str, after_key: str) -> str:
