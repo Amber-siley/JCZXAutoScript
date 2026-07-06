@@ -245,7 +245,7 @@ action: goto-home-click-home
 type: func
 func: in_location
 target: buttons\supplyStation.png
-args: 0.9
+args: 0.95
 
 [condition-in_location-home-button]
 type: func

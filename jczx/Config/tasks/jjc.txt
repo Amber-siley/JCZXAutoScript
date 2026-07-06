@@ -5,9 +5,9 @@
 type: task
 view: on
 name: 竞技场日常
-action: goto-jjc,condition-simulate-need-fight
+action: goto-jjc,context-times_28-set-0,context-times_26-set-0,condition-simulate-need-fight
 settings: settings-jjc-simulate
-log: +28挑战%{times_28}次，+26挑战%{times_26}次，挑战失败%{times_loss}次
+log: +28挑战%{times_28}次，+26挑战%{times_26}次
 
 [settings-jjc-simulate]
 type: settings
@@ -102,6 +102,20 @@ name: 计算挑战状态, 获胜状态下区分 28/26
 condition: &{%{is_28}}
 condition_then: context-times_28-add-1
 condition_else: context-times_26-add-1
+
+[context-times_28-set-0]
+type: context
+context_get: times_28
+context_default: 0
+context_type: int
+context_key: times_28
+
+[context-times_26-set-0]
+type: context
+context_get: times_26
+context_default: 0
+context_type: int
+context_key: times_26
 
 [context-times_28-add-1]
 type: context
