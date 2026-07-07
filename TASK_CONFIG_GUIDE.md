@@ -175,11 +175,77 @@ Config/
 
 ### match 类型专用
 
+`match` 类型执行**纯模板匹配**，在屏幕上查找图片并返回坐标信息，**不执行点击**。返回的 `MatchTemplete` 对象可被 `click`、`ocr` 等类型通过 `match` 字段引用。
+
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `target` | str | — | 匹配的图片路径 |
-| `per` | float | `0.8` | 匹配阈值 |
-| `action` | list[str] | `[]` | **变换操作**（非执行链）：`up-N` `down-N` `left-N` `right-N` `reW-N` `reH-N` |
+| `target` | str | — | 匹配的模板图片路径（相对于 `resources/`） |
+| `per` | float | `0.8` | 匹配阈值（`cv2.TM_CCOEFF_NORMED`） |
+| `action` | list[str] | `[]` | **变换操作**（非执行链），见下方 |
+
+**执行流程**：
+
+1. `testFor_before` 门控（若配置）→ 等待前置图片出现
+2. `pre_sleep` 等待
+3. `cv2.matchTemplate` 全屏匹配 → 去重（邻近 10px 内只保留一个）
+4. 按 `action` 列表依次对匹配结果应用变换操作
+5. `sleep` 等待
+6. `wait_target` 等待（若配置）
+7. 输出 `log` 消息（若配置）
+8. `testFor_after` 复检（若配置）→ 不匹配则重试
+
+**变换操作（`action`）**：
+
+`action` 在此类型中**不是执行链**，而是对匹配区域进行位置/尺寸变换的操作序列。多个操作用逗号分隔，依次应用到匹配结果上：
+
+| 操作 | 格式 | 效果 | 计算公式 |
+|------|------|------|----------|
+| 上移 | `up-N` | 匹配区域向上偏移 | `shift_y = -模板高度 × N` |
+| 下移 | `down-N` | 匹配区域向下偏移 | `shift_y = 模板高度 × N` |
+| 左移 | `left-N` | 匹配区域向左偏移 | `shift_x = -模板宽度 × N` |
+| 右移 | `right-N` | 匹配区域向右偏移 | `shift_x = 模板宽度 × N` |
+| 横向缩放 | `reW-N` | 匹配区域宽度缩放 | `新宽度 = 原宽度 × N` |
+| 纵向缩放 | `reH-N` | 匹配区域高度缩放 | `新高度 = 原高度 × N` |
+
+> `N` 为浮点数（如 `1.5`、`0.8`），表示偏移量为模板尺寸的倍数，缩放为倍数因子。变换在匹配结果的四个角点和中心点上同步生效。
+
+**变换示例**：
+
+```ini
+[find-power-icon]
+type: match
+target: buttons\power_icon.png
+action: down-1.5, reW-2.0, reH-1.2
+```
+
+匹配到 `power_icon` 后，匹配区域先向下偏移模板高度的 1.5 倍，再横向扩展为 2 倍宽度、纵向扩展为 1.2 倍高度。最终返回的坐标区域覆盖战力值所在的数字区域。
+
+**如何被其他类型引用**：
+
+```ini
+; click 类型引用 match 结果：点击匹配区域中心
+[click-match-result]
+type: click
+match: find-power-icon          ; 引用 match 实体
+
+; ocr 类型引用 match 结果：对匹配区域进行 OCR
+[ocr-power-value]
+type: ocr
+match: find-power-icon          ; 引用 match 实体（优先于 target）
+context_key: combat_power
+context_type: int
+```
+
+**完整字段支持**：
+
+所有**通用字段**（`times`、`pre_sleep`、`sleep`、`max_wait`、`screen_cache_ttl`、`log`、`log_level`、`context_key`、`context_type` 等）和 `testFor_*` / `wait_target` 系列均对 `match` 类型生效。`action` 在此类型中专用于变换操作，不会执行链。
+
+**返回值**：
+
+- 匹配成功：`MatchTemplete` 对象（`matched=True`，包含 `matchTempleteCenterPoints` 中心点坐标列表）
+- 匹配失败：`None`
+
+**不支持的字段**（对 `match` 无效）：`pos`、`match`、`index`、`func`、`args`、`condition*`、`break_point`、`wait_sec`
 
 ### ocr 类型专用
 
