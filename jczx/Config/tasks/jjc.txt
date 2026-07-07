@@ -204,7 +204,7 @@ testFor_before: locations\cancel15Loc.png
 testFor_per: 0.9
 target: locations\cancel15Loc.png
 per: 0.9
-action: left-1
+action: left|1
 
 [match-get-simulate-times]
 type: match
@@ -212,7 +212,7 @@ testFor_before: locations\competitionTimesLoc.png
 testFor_per: 0.9
 target: locations\competitionTimesLoc.png
 per: 0.9
-action: left-1
+action: left|1
 
 [context-simulate-continue-times]
 type: context
