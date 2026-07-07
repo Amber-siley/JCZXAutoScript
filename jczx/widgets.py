@@ -644,16 +644,21 @@ class QueuePanel(Section):
 
     def __init__(self, queues: list[tuple[str, str]] | None = None, id: str | None = None):
         super().__init__("任务队列", id=id)
-        self._opts = [("-- 无队列 --", "")] + (queues or [])
+        qs = queues or []
+        self._opts = qs if qs else [("-- 无队列 --", "")]
 
     def on_mount(self) -> None:
         self.body.mount(Label("队列:", classes="field-label"))
-        self.body.mount(CompactSelect(self._opts, id="queue-select"))
+        select = CompactSelect(self._opts, id="queue-select")
+        if self._opts and self._opts[0][1]:
+            select.value = self._opts[0][1]
+        self.body.mount(select)
+        has_queue = bool(self._opts[0][1]) if self._opts else False
         self.body.mount(
-            ToggleButton(label_off="开始执行", label_on="停止执行", id="queue-toggle", disabled=True)
+            ToggleButton(label_off="开始执行", label_on="停止执行", id="queue-toggle", disabled=not has_queue)
         )
         self.body.mount(LabelButton("新建队列", id="queue-new"))
-        self.body.mount(LabelButton("编辑队列", id="queue-edit", disabled=True))
+        self.body.mount(LabelButton("编辑队列", id="queue-edit", disabled=not has_queue))
 
     def on_compact_select_changed(self, event: CompactSelect.Changed) -> None:
         if event.sender_id != "queue-select":
@@ -676,10 +681,13 @@ class QueuePanel(Section):
             self.post_message(self.EditRequested(select.value or None))
 
     def set_queues(self, queues: list[tuple[str, str]]) -> None:
-        opts = [("-- 无队列 --", "")] + queues
+        opts = queues if queues else [("-- 无队列 --", "")]
         w = self.query_one("#queue-select", CompactSelect)
         w.set_options(opts)
-        w.value = ""
+        if queues:
+            w.value = queues[0][1]
+        else:
+            w.value = ""
 
     def select_queue(self, queue_id: str) -> None:
         w = self.query_one("#queue-select", CompactSelect)
