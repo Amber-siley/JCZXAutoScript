@@ -211,10 +211,10 @@ Config/
 
 | 操作 | 格式 | 效果 | 计算公式 |
 |------|------|------|----------|
-| 上边移动 | `upM\|N` | 上边向上移动 N px | `y0 = y0 - N`（N < 0 则向内收缩） |
-| 下边移动 | `downM\|N` | 下边向下移动 N px | `y1 = y1 + N`（N < 0 则向内收缩） |
-| 左边移动 | `leftM\|N` | 左边向左移动 N px | `x0 = x0 - N`（N < 0 则向内收缩） |
-| 右边移动 | `rightM\|N` | 右边向右移动 N px | `x1 = x1 + N`（N < 0 则向内收缩） |
+| 上边移动 | `up-M\|N` | 上边向上移动 N px | `y0 = y0 - N`（N < 0 则向内收缩） |
+| 下边移动 | `down-M\|N` | 下边向下移动 N px | `y1 = y1 + N`（N < 0 则向内收缩） |
+| 左边移动 | `left-M\|N` | 左边向左移动 N px | `x0 = x0 - N`（N < 0 则向内收缩） |
+| 右边移动 | `right-M\|N` | 右边向右移动 N px | `x1 = x1 + N`（N < 0 则向内收缩） |
 
 **整体缩放（相对于模板尺寸）**：
 
@@ -236,7 +236,7 @@ action: down|1.5, reW|2.0, reH|1.2
 [match-offset-region]
 type: match
 target: buttons\icon.png
-action: rightM|30, downM|-15
+action: right-M|30, down-M|-15
 ; 右边向右扩展 30px，下边向上收缩 15px
 ```
 
