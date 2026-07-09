@@ -10,6 +10,7 @@ from typing import Callable, Any, Optional, Union, get_type_hints
 from datetime import datetime
 
 import cv2
+from cv2.typing import MatLike
 from textual.app import App, ComposeResult
 from textual.widgets import RichLog, Footer, Header
 from textual.containers import Container, VerticalScroll
@@ -376,6 +377,19 @@ class JCZXGaming(Device):
     
     def set_ocr(self, ocr):
         self.ocr = ocr
+        
+    def findImageDetail(
+            self, 
+            button: str | MatLike,
+            cutPoints=None,
+            per: float = 0.9,
+            grayScreenshot=None
+        ) -> Optional[MatchTemplete]:
+        """在截图中查找模板，返回 MatchTemplete 对象，包含匹配结果和坐标信息。"""
+        matchTemplate = super().findImageDetail(button, cutPoints, per, grayScreenshot)
+        if self._recorder and matchTemplate:
+            self._recorder.on_match(self.screenshot(), matchTemplate)
+        return matchTemplate
 
     def context_get(self, key: str, default = ""):
         return self._context.get(key, default)
@@ -575,6 +589,10 @@ class JCZXGaming(Device):
                         break
                     result = self.exec(e.wait_sec)
                     self.log.debug(f"匹配资源 {target}")
+                    if img is not None:
+                        mt = self.findImageDetail(img, per=e.per)
+                        if mt and mt.matched and self._recorder:
+                            self._recorder.on_match(self.screenshot(), mt)
                     if img is not None and (result := self.clickResource(img, per=e.per, index=e.index)):
                         self.log.debug(f"匹配并点击资源 {target}")
                         self.log.info(f"执行点击 {e.get_task_name()}") if e.get_task_name() else None
