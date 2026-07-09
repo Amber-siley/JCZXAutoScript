@@ -58,6 +58,23 @@ mklink /J resources jczx\resources
 | `jczx/Config/MainMenu.txt` | 任务定义和设置 |
 | `TASK_CONFIG_GUIDE.md` | 任务配置完整文档 |
 
+## 调试截图
+
+在 `jczx/Config/Config.txt` 中设置 `debug.screenshot.mode: simple`，截图输出到 `screenHistory/` 目录。
+
+合成视频（需安装 ffmpeg）：
+
+```powershell
+# PNG 序列 → MP4（10 fps）
+ffmpeg -framerate 10 -i screenHistory/%d.png -c:v libx264 -pix_fmt yuv420p output.mp4
+
+# 指定起始序号
+ffmpeg -start_number 1 -framerate 10 -i screenHistory/%d.png -c:v libx264 -pix_fmt yuv420p output.mp4
+
+# 图片序号不连续时
+ffmpeg -framerate 10 -pattern_type glob -i "screenHistory/*.png" -c:v libx264 -pix_fmt yuv420p output.mp4
+```
+
 ## 快捷键
 
 | 按键 | 功能 |
