@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 import re
@@ -19,6 +20,7 @@ from .CommoneBuilder.CommonBuilder.Android.Adb import Device, MatchTemplete
 from .CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig
 from .CommoneBuilder.CommonBuilder.FileTools.File import FileManage
 from .CommoneBuilder.CommonBuilder.Ocr.typing import OCR
+from .debug import DebugRecorder
 from .translate import Lang, translate
 from .configEntity import JczxSectionEntity, SectionType
 from .taskManage import TaskManage
@@ -338,6 +340,7 @@ class JCZXGaming(Device):
             ttl_ms=500,
             log=self.log,
         )
+        self._recorder = None
 
     def screenshot(self):
         return self._screen_cache.screenshot()
@@ -349,14 +352,20 @@ class JCZXGaming(Device):
         return gray
 
     def click(self, x, y):
+        if self._recorder:
+            self._recorder.on_click(self.screenshot(), x, y)
         super().click(x, y)
         self._screen_cache.invalidate()
 
     def swipe(self, x1, y1, x2, y2, duration=200):
+        if self._recorder:
+            self._recorder.on_swipe(self.screenshot(), x1, y1, x2, y2, "滑动")
         super().swipe(x1, y1, x2, y2, duration)
         self._screen_cache.invalidate()
 
     def dragAndDrop(self, x1, y1, x2, y2, duration=200):
+        if self._recorder:
+            self._recorder.on_swipe(self.screenshot(), x1, y1, x2, y2, "拖动")
         super().dragAndDrop(x1, y1, x2, y2, duration)
         self._screen_cache.invalidate()
     
@@ -415,6 +424,8 @@ class JCZXGaming(Device):
             if not result or not result.matched:
                 self.log.debug(f"match 未匹配到: {target}")
                 return None
+            if self._recorder:
+                self._recorder.on_match(self.screenshot(), result)
             for action in e.action:
                 result = self._transform_match(result, action)
             return result
@@ -429,6 +440,7 @@ class JCZXGaming(Device):
         """执行 ocr 类型实体：匹配图像区域 → 裁剪 → OCR 识别 → 返回文本。"""
         entity = self._get_entity(section)
         def _on_exec(e: JczxSectionEntity):
+            mt = None
             result = ""
             if e.match:
                 mt = self.exec(e.match)
@@ -445,6 +457,8 @@ class JCZXGaming(Device):
             if not result and e.raise_value:
                 result = self._resolver.resolve(e.raise_value, e.only_key)
                 self.log.debug(f"OCR 识别失败，使用 raise_value: {result}")
+            if result and self._recorder:
+                self._recorder.on_ocr(self.screenshot(), mt, result)
             return result
         return self._exec_entity(entity, _on_exec, testFor=True)
 
@@ -631,6 +645,8 @@ class JCZXGaming(Device):
                     self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
                     self._exec_mgr.token.sleep(self._resolve_scalar(entity, "testFor_sleep"))
                 self._exec_mgr.token.sleep(self._resolve_scalar(entity, "pre_sleep"))
+                if self._recorder:
+                    self._recorder.on_step(self.screenshot())
                 self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
                 result = on_exec(entity)
                 self._exec_mgr.token.sleep(self._resolve_scalar(entity, "sleep"))
@@ -928,6 +944,10 @@ class JczxCli:
         self.adb: JCZXGaming = None
         self.task_manage = TaskManage("")
         self.ocr = None
+        mode = self.config.get_config(opt="debug.screenshot.mode") or "off"
+        debug_dir = os.path.join(os.getcwd(), "screenHistory")
+        self._debug_recorder = DebugRecorder(mode, debug_dir, self.logger)
+        self._debug_recorder.ensure_dir()
         self.rich_log = RichLog(id="console", highlight=True, auto_scroll=False)
         self._running_future: Optional[Future] = None
         self._settings_task_id: Optional[str] = None
@@ -1012,6 +1032,7 @@ class JczxCli:
         self.logger.info(f"ADB加载完成 {self.device.device_id}")
         if self.ocr:
             self.device.set_ocr(self.ocr)
+        self.device._recorder = self._debug_recorder
         if self.device.u2_device:
             self.logger.debug(f"截图方式: U2 Screenshot")
         else:
