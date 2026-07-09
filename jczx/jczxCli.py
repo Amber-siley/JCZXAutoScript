@@ -1010,6 +1010,8 @@ class JczxCli:
             self.logger.info("ADB当前无可连接设备")
             return
         self.logger.info(f"ADB加载完成 {self.device.device_id}")
+        if self.ocr:
+            self.device.set_ocr(self.ocr)
         if self.device.u2_device:
             self.logger.debug(f"截图方式: U2 Screenshot")
         else:
