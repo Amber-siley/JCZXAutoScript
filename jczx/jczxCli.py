@@ -340,13 +340,18 @@ class JCZXGaming(Device):
             ttl_ms=500,
             log=self.log,
         )
-        self._recorder = None
+        self._recorder: Optional[DebugRecorder] = None
 
     def screenshot(self):
-        return self._screen_cache.screenshot()
+        img = self._screen_cache.screenshot()
+        if self._recorder:
+            self._recorder.on_step(img)
+        return img
 
     def grayScreenshot(self, cutPoints=None):
         gray = self._screen_cache.gray_screenshot()
+        if self._recorder:
+            self._recorder.on_step(self._screen_cache._color)
         if cutPoints:
             return self.cutScreenshot(gray, cutPoints)
         return gray
@@ -645,8 +650,6 @@ class JCZXGaming(Device):
                     self.log.debug(f"testFor_before 匹配到 {entity.testFor_before}")
                     self._exec_mgr.token.sleep(self._resolve_scalar(entity, "testFor_sleep"))
                 self._exec_mgr.token.sleep(self._resolve_scalar(entity, "pre_sleep"))
-                if self._recorder:
-                    self._recorder.on_step(self.screenshot())
                 self.log.debug(f"开始执行实体 {entity.get_task_name()} {entity}")
                 result = on_exec(entity)
                 self._exec_mgr.token.sleep(self._resolve_scalar(entity, "sleep"))
