@@ -16,12 +16,12 @@ args: 2,4
 [drop-center-up]
 type: func
 func: drag_drop_proportion
-args: 2,2,3,10,1000
+args: 2,2,2,10,1000
 
 [swipe-center-up]
 type: func
 func: swipe_proportion
-args: 2,3,3,4
+args: 2,2,2,10
 
 [context-check]
 type: func

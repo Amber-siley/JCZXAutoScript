@@ -577,7 +577,7 @@ class JCZXGaming(Device):
                     result = self.exec(e.wait_sec)
                     self.log.debug(f"匹配资源 {target}")
                     if img is not None and self._recorder:
-                        # debug记录匹配结果
+                        # 记录debug记录匹配结果
                         mt = self.findImageDetail(img, per=e.per)
                         if mt and mt.matched:
                             self._recorder.on_match(self.screenshot(), mt)
