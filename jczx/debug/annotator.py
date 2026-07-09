@@ -1,17 +1,33 @@
 import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+
+
+def _get_cjk_font(size: int = 20) -> ImageFont.FreeTypeFont:
+    for path in ("C:/Windows/Fonts/simhei.ttf", "C:/Windows/Fonts/msyh.ttc",
+                 "C:/Windows/Fonts/simsun.ttc", "C:/Windows/Fonts/arial.ttf"):
+        try:
+            return ImageFont.truetype(path, size)
+        except (OSError, IOError):
+            continue
+    return ImageFont.load_default()
 
 
 class ScreenAnnotator:
-    COLOR = (0, 255, 0)
-    THICKNESS = 2
+    COLOR = (0, 0, 255)       # BGR 红色
+    THICKNESS = 3
+    CROSS_SIZE = 25
     FONT = cv2.FONT_HERSHEY_SIMPLEX
-    FONT_SCALE = 0.5
-    CROSS_SIZE = 10
+    FONT_SCALE = 0.6
+    FONT_THICKNESS = 2
+    _PIL_FONT = _get_cjk_font(22)
 
     @classmethod
     def _draw_label(cls, img, x, y, text):
-        cv2.putText(img, text, (x + 4, y - 4),
-                    cls.FONT, cls.FONT_SCALE, cls.COLOR, 1)
+        pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        draw = ImageDraw.Draw(pil)
+        draw.text((x + 4, max(y - 26, 2)), text, font=cls._PIL_FONT, fill=(255, 0, 0))
+        img[:] = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
 
     @classmethod
     def draw_click(cls, img, x, y):
