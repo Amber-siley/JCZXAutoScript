@@ -1,4 +1,5 @@
 import os
+import re
 import cv2
 from logging import Logger
 from cv2.typing import MatLike
@@ -19,10 +20,13 @@ class DebugRecorder:
         self._log = log
         self._annotator = ScreenAnnotator()
 
+    _NUMERIC_PNG = re.compile(r"^\d+\.png$")
+
     def ensure_dir(self):
         if os.path.isdir(self._output_dir):
             for f in os.listdir(self._output_dir):
-                os.remove(os.path.join(self._output_dir, f))
+                if self._NUMERIC_PNG.match(f):
+                    os.remove(os.path.join(self._output_dir, f))
             self._log.debug(f"已清空调试截图目录 {self._output_dir}")
         else:
             os.makedirs(self._output_dir, exist_ok=True)
