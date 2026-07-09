@@ -196,7 +196,7 @@ context_type: int
 [match-combat-power]
 type: match
 target: locations\firstScoreLoc.png
-action: right-1
+action: right|1,left-M|15,right-M|10
 
 [match-simulate-refresh-times]
 type: match

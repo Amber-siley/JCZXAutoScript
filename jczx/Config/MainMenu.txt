@@ -204,7 +204,6 @@ name: 前往主界面
 desc: 判断是否主界面，不是则尝试返回或点击中间
 screen_cache_ttl: 0
 action: goto-home-click-home
-sleep: 4
 
 [goto-home-click-home]
 type: click
@@ -357,3 +356,14 @@ name: 虚影周本
 type: file
 target: tasks\Favor.txt
 name: 竞技场刷好感
+
+[file-test]
+type: file
+target: tasks\test.txt
+name: 测试
+
+[file-receive-task]
+type: file
+target: tasks\receive.txt
+name: 领取各种东西
+

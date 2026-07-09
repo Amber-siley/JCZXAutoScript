@@ -1,0 +1,7 @@
+
+
+[test]
+type: task
+view: off
+name: 测试
+action: get-combat-power,context-check

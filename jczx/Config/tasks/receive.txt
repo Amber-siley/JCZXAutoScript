@@ -1,0 +1,25 @@
+
+
+[task-receive-everyday]
+type: task
+view: on
+name: 领取每日礼包
+action: goto-home,goto-supplyStation,click-giftPackage,click-free-giftPackage,click-get-item,goto-home
+
+[goto-supplyStation]
+type: click
+name: 补给站
+target: buttons\supplyStation.png
+wait_target: buttons\giftPackage.png
+
+[click-giftPackage]
+type: click
+name: 礼包
+target: buttons\giftPackage.png
+sleep: 1
+
+[click-free-giftPackage]
+type: click
+name: 每日礼包
+target: buttons\freePackage.png
+sleep: 1
