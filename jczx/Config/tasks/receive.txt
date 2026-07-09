@@ -23,3 +23,4 @@ type: click
 name: 每日礼包
 target: buttons\freePackage.png
 sleep: 1
+max_wait: 3

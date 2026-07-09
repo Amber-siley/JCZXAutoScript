@@ -377,19 +377,6 @@ class JCZXGaming(Device):
     
     def set_ocr(self, ocr):
         self.ocr = ocr
-        
-    def findImageDetail(
-            self, 
-            button: str | MatLike,
-            cutPoints=None,
-            per: float = 0.9,
-            grayScreenshot=None
-        ) -> Optional[MatchTemplete]:
-        """在截图中查找模板，返回 MatchTemplete 对象，包含匹配结果和坐标信息。"""
-        matchTemplate = super().findImageDetail(button, cutPoints, per, grayScreenshot)
-        if self._recorder and matchTemplate:
-            self._recorder.on_match(self.screenshot(), matchTemplate)
-        return matchTemplate
 
     def context_get(self, key: str, default = ""):
         return self._context.get(key, default)
@@ -589,9 +576,10 @@ class JCZXGaming(Device):
                         break
                     result = self.exec(e.wait_sec)
                     self.log.debug(f"匹配资源 {target}")
-                    if img is not None:
+                    if img is not None and self._recorder:
+                        # debug记录匹配结果
                         mt = self.findImageDetail(img, per=e.per)
-                        if mt and mt.matched and self._recorder:
+                        if mt and mt.matched:
                             self._recorder.on_match(self.screenshot(), mt)
                     if img is not None and (result := self.clickResource(img, per=e.per, index=e.index)):
                         self.log.debug(f"匹配并点击资源 {target}")
