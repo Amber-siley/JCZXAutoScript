@@ -546,11 +546,28 @@ class JCZXGaming(Device):
                 self.click(*e.pos)
             elif e.match:
                 mt = self.exec(e.match)
-                if mt is not None and getattr(mt, 'matchTempleteCenterPoints', None):
-                    idx = e.target_index
-                    pt = mt.matchTempleteCenterPoints[idx] if idx < len(mt.matchTempleteCenterPoints) else mt.matchTempleteCenterPoints[0]
-                    self.click(*pt)
-                    result = mt
+                if mt is not None and mt.matched:
+                    if e.target:
+                        target = self._resolver.resolve(e.target, e.only_key)
+                        img = self.task_manage.get_img(target)
+                        if img is not None:
+                            all_pts = []
+                            for pts in mt.matchTempletePoints:
+                                (x0, y0), (_, _), (_, _), (x1, y1) = pts
+                                sub_mt = self.findImageDetail(img, cutPoints=((x0, y0), (x1, y1)), per=e.per)
+                                if sub_mt and sub_mt.matched:
+                                    all_pts.extend(sub_mt.matchTempleteCenterPoints)
+                            if all_pts:
+                                idx = e.target_index
+                                pt = all_pts[idx] if idx < len(all_pts) else all_pts[0]
+                                self.click(*pt)
+                                result = mt
+                    else:
+                        if mt.matchTempleteCenterPoints:
+                            idx = e.target_index
+                            pt = mt.matchTempleteCenterPoints[idx] if idx < len(mt.matchTempleteCenterPoints) else mt.matchTempleteCenterPoints[0]
+                            self.click(*pt)
+                        result = mt
             else:
                 target = self._resolver.resolve(e.target, e.only_key) if e.target else None
                 img = self.task_manage.get_img(target) if target else None
@@ -881,6 +898,23 @@ class JCZXGaming(Device):
         list_pos = self.findImageCenterLocations(self.task_manage.get_img(target), per = float(per))
         self.log.debug(f"查找资源 {target} 位置 {list_pos}")
         return bool(list_pos)
+
+    def near_location(self, target: str, match_key: str, per=0.8):
+        """在 match 实体的匹配区域内搜索 target 图片，返回第一个命中子匹配的全局索引，未找到返回 -1。"""
+        mt = self.exec(match_key)
+        if not mt or not mt.matched:
+            return -1
+        img = self.task_manage.get_img(target)
+        if img is None:
+            return -1
+        per = float(per)
+        all_pts = []
+        for pts in mt.matchTempletePoints:
+            (x0, y0), (_, _), (_, _), (x1, y1) = pts
+            sub_mt = self.findImageDetail(img, cutPoints=((x0, y0), (x1, y1)), per=per)
+            if sub_mt and sub_mt.matched:
+                all_pts.extend(sub_mt.matchTempleteCenterPoints)
+        return len(all_pts) - 1 if all_pts else -1
         
     def start_game(self, app: str, activity: str):
         if not self.get_app_pid(app):

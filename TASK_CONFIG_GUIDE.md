@@ -150,20 +150,26 @@ Config/
 
 ### click 类型专用
 
+点击优先级：`pos` > `match`（+ `target`）> `target`（单独）。
+
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `target` | str | — | 匹配的图片路径（支持 `${}` `@{}` 占位符） |
 | `pos` | list[int] | `[]` | 直接点击坐标 `[x, y]`，设置后跳过所有匹配 |
-| `match` | str | — | 引用 `match` 实体，对其结果坐标点击 |
+| `match` | str | — | 引用 `match` 实体，对其结果坐标点击；与 `target` 同时设置时触发级联匹配（见下） |
 | `per` | float | `0.8` | 匹配阈值 |
 | `max_wait` | int | — | 最大等待秒数 |
 | `break_point` | str | `off` | 超时是否跳出：`on` / `off` |
-| `index` | int | `0` | 多匹配时取第几个结果 |
+| `index` | int | `0` | 多匹配时取第几个结果（级联模式下为全局子匹配索引） |
 | `condition` | str | — | 前置条件：实体 key 或 `&{...}` 表达式 |
 | `condition_not` | str | — | 反向条件（优先级高于 `condition`） |
 | `condition_then` | list[str] | `[]` | 条件满足时执行的实体 |
 | `condition_else` | list[str] | `[]` | 条件不满足时执行的实体 |
 | `wait_sec` | list[str] | `[]` | 匹配等待期间每轮执行的操作 |
+
+**`match` + `target` 级联匹配**：两者同时设置时，先执行 `match` 定位大区域（可能多个），再在每个区域内用 `target` 图片做二次模板匹配，全部子匹配按区域顺序排列。`index` 选择第 N 个子匹配点击。
+
+示例：match 命中 (A, B, C)，target 二次匹配得 (A0,A1,B0,C0,C1,C2)，`index=2` → 点击 B0。
 
 ### func 类型专用
 
