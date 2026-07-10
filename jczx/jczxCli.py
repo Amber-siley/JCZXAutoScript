@@ -900,21 +900,20 @@ class JCZXGaming(Device):
         return bool(list_pos)
 
     def near_location(self, target: str, match_key: str, per=0.8):
-        """在 match 实体的匹配区域内搜索 target 图片，返回第一个命中子匹配的全局索引，未找到返回 -1。"""
+        """在 match 实体的匹配区域内搜索 target 图片，找到返回 True，未找到返回 False。"""
         mt = self.exec(match_key)
         if not mt or not mt.matched:
-            return -1
+            return False
         img = self.task_manage.get_img(target)
         if img is None:
-            return -1
+            return False
         per = float(per)
-        all_pts = []
         for pts in mt.matchTempletePoints:
             (x0, y0), (_, _), (_, _), (x1, y1) = pts
             sub_mt = self.findImageDetail(img, cutPoints=((x0, y0), (x1, y1)), per=per)
             if sub_mt and sub_mt.matched:
-                all_pts.extend(sub_mt.matchTempleteCenterPoints)
-        return len(all_pts) - 1 if all_pts else -1
+                return True
+        return False
         
     def start_game(self, app: str, activity: str):
         if not self.get_app_pid(app):
