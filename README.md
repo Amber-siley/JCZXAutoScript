@@ -54,25 +54,33 @@ mklink /J resources jczx\resources
 
 | 文件 | 用途 |
 |------|------|
-| `jczx/Config/Config.txt` | 全局设置（日志、线程、ADB 路径） |
-| `jczx/Config/MainMenu.txt` | 任务定义和设置 |
+| `jczx/Config/Config.txt` | 全局设置（日志、线程、ADB 路径、调试截图模式） |
+| `jczx/Config/MainMenu.txt` | 任务定义和设置（支持 `type: file` 引入外部配置） |
+| `jczx/Config/Queues.txt` | 任务队列定义（顺序执行多个任务） |
 | `TASK_CONFIG_GUIDE.md` | 任务配置完整文档 |
+
+## TUI 功能
+
+| 功能 | 说明 |
+|------|------|
+| 任务列表 + 启停 | 左侧任务卡片，勾选启动/停止 |
+| 任务设置 | 右侧设置面板，动态表单 |
+| 任务队列 | 创建/编辑/删除队列，顺序执行，拖拽排序，与单任务互斥 |
+| 调试截图 | 两种模式：连续截图（simple）/ 标注截图（annotated），配置控制 |
+| 级联匹配 | click 实体 `match` + `target` 组合使用，区域嵌套匹配 |
+| `near_location` | 在 match 区域内搜索目标图片，直接用于 condition |
 
 ## 调试截图
 
-在 `jczx/Config/Config.txt` 中设置 `debug.screenshot.mode: simple`，截图输出到 `screenHistory/` 目录。
+`jczx/Config/Config.txt` 中设置 `debug.screenshot.mode`：
+- `off` — 关闭
+- `simple` — 每次截图保存至 `screenHistory/N.png`
+- `annotated` — 标注匹配/点击/滑动/OCR 位置后保存
 
 合成视频（需安装 ffmpeg）：
 
 ```powershell
-# PNG 序列 → MP4（10 fps）
 ffmpeg -framerate 10 -i screenHistory/%d.png -c:v libx264 -pix_fmt yuv420p output.mp4
-
-# 指定起始序号
-ffmpeg -start_number 1 -framerate 10 -i screenHistory/%d.png -c:v libx264 -pix_fmt yuv420p output.mp4
-
-# 图片序号不连续时
-ffmpeg -framerate 10 -pattern_type glob -i "screenHistory/*.png" -c:v libx264 -pix_fmt yuv420p output.mp4
 ```
 
 ## 快捷键
@@ -81,6 +89,7 @@ ffmpeg -framerate 10 -pattern_type glob -i "screenHistory/*.png" -c:v libx264 -p
 |------|------|
 | `q` | 退出程序 |
 | `ctrl+l` | 清空日志控制台 |
+| `ctrl+shift+c` | 复制全部日志到剪贴板 |
 
 ## 依赖
 
