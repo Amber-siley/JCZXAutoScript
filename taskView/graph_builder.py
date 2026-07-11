@@ -183,10 +183,10 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
 
         if entity.condition and entity.condition in configs:
             _add_node(configs[entity.condition])
-            _add_edge(src, entity.condition, "", "condition")
+            _add_edge(src, entity.condition, "条件", "condition")
         if entity.condition_not and entity.condition_not in configs:
             _add_node(configs[entity.condition_not])
-            _add_edge(src, entity.condition_not, "", "condition_not")
+            _add_edge(src, entity.condition_not, "条件", "condition_not")
 
         for target in entity.condition_then:
             if target in configs:
@@ -331,24 +331,23 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
             if cond_key not in path:
                 cond_uid = _expand(cond_key, path + [key])
                 if cond_uid:
-                    edges.append({"data": {"id": f"{uid}→{cond_uid}::condition", "source": uid, "target": cond_uid, "label": ""}, "classes": "condition_not" if is_not else "condition"})
+                    edges.append({"data": {"id": f"{uid}→{cond_uid}::condition", "source": uid, "target": cond_uid, "label": "条件"}, "classes": "condition_not" if is_not else "condition"})
                     then_label = "否" if is_not else "是"
                     else_label = "是" if is_not else "否"
-                    branch_src = uid if entity.type == "condition" else cond_uid
                     for t in (then_list or []):
                         if t in path:
-                            cycles.append({"from": branch_src, "to": _first_uid(t), "label": "⟲"})
+                            cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
                             continue
-                        tuid = _expand(t, path + ([key, cond_key] if entity.type != "condition" else [key]))
+                        tuid = _expand(t, path + [key, cond_key])
                         if tuid:
-                            edges.append({"data": {"id": f"{branch_src}→{tuid}::then", "source": branch_src, "target": tuid, "label": then_label}, "classes": "condition_then"})
+                            edges.append({"data": {"id": f"{cond_uid}→{tuid}::then", "source": cond_uid, "target": tuid, "label": then_label}, "classes": "condition_then"})
                     for t in (else_list or []):
                         if t in path:
-                            cycles.append({"from": branch_src, "to": _first_uid(t), "label": "⟲"})
+                            cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
                             continue
-                        tuid = _expand(t, path + ([key, cond_key] if entity.type != "condition" else [key]))
+                        tuid = _expand(t, path + [key, cond_key])
                         if tuid:
-                            edges.append({"data": {"id": f"{branch_src}→{tuid}::else", "source": branch_src, "target": tuid, "label": else_label}, "classes": "condition_else"})
+                            edges.append({"data": {"id": f"{cond_uid}→{tuid}::else", "source": cond_uid, "target": tuid, "label": else_label}, "classes": "condition_else"})
             elif cond_key in path:
                 cycles.append({"from": uid, "to": _first_uid(cond_key), "label": "⟲"})
 
