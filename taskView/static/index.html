@@ -128,6 +128,8 @@ let currentFlowTask = null;
 let detailVisible = true;
 let fullNodes = [];
 let fullEdges = [];
+let collapsedSet = new Set();
+let collapsedStore = new Map();
 
 function toggleDetail() {
   const detail = document.getElementById('detail');
@@ -192,6 +194,8 @@ function filterByTask(taskId) {
 
 async function loadFlowTree(taskId) {
   if (!currentFile || !taskId) return;
+  collapsedSet.clear();
+  collapsedStore.clear();
   try {
     const res = await fetch(`/api/flow?file=${encodeURIComponent(currentFile)}&task=${encodeURIComponent(taskId)}`);
     const data = await res.json();
@@ -214,6 +218,8 @@ async function loadFlowTree(taskId) {
 }
 
 function showAll() {
+  collapsedSet.clear();
+  collapsedStore.clear();
   if (currentView === 'flow') {
     if (currentFlowTask) loadFlowTree(currentFlowTask);
     return;
@@ -222,6 +228,72 @@ function showAll() {
   cy.add({ nodes: processLabels(fullNodes), edges: fullEdges });
   cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
   document.getElementById('stats').textContent = `节点 ${fullNodes.length} · 边 ${fullEdges.length}`;
+}
+
+function flowDescendants(rootId) {
+  const adj = {};
+  cy.edges().forEach(e => {
+    const s = e.data('source'), t = e.data('target');
+    if (!adj[s]) adj[s] = [];
+    adj[s].push(t);
+  });
+  const visited = new Set();
+  const queue = [rootId];
+  visited.add(rootId);
+  while (queue.length > 0) {
+    const cur = queue.shift();
+    if (cur !== rootId && collapsedSet.has(cur)) continue;
+    (adj[cur] || []).forEach(n => {
+      if (!visited.has(n)) { visited.add(n); queue.push(n); }
+    });
+  }
+  visited.delete(rootId);
+  return visited;
+}
+
+function toggleCollapse(uid) {
+  if (collapsedSet.has(uid)) {
+    const stored = collapsedStore.get(uid);
+    if (!stored) return;
+    collapsedSet.delete(uid);
+    collapsedStore.delete(uid);
+    cy.add({ nodes: stored.nodes, edges: stored.edges });
+    cy.layout({ name: 'dagre', rankDir: 'LR', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
+    _updateStats();
+  } else {
+    const descIds = flowDescendants(uid);
+    if (descIds.size === 0) return;
+    const toRemove = cy.nodes().filter(n => descIds.has(n.id()));
+    const connectedEdges = toRemove.connectedEdges();
+    collapsedSet.add(uid);
+    collapsedStore.set(uid, { nodes: toRemove.map(n => n.json()), edges: connectedEdges.map(e => e.json()) });
+    cy.remove(toRemove);
+    cy.layout({ name: 'dagre', rankDir: 'LR', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
+    _updateStats();
+  }
+  _updateCollapseStyle();
+}
+
+function _updateStats() {
+  document.getElementById('stats').textContent = `节点 ${cy.nodes().length} · 边 ${cy.edges().length}`;
+}
+
+function _updateCollapseStyle() {
+  cy.nodes().forEach(n => {
+    if (collapsedSet.has(n.id())) {
+      if (!n.hasClass('collapsed-node')) n.addClass('collapsed-node');
+      const stored = collapsedStore.get(n.id());
+      const count = stored ? stored.nodes.length : 0;
+      const baseLabel = n.data('_orig_label') || n.data('label');
+      n.data('_orig_label', baseLabel);
+      n.data('label', baseLabel + ' [+' + count + ']');
+    } else {
+      if (n.hasClass('collapsed-node')) {
+        n.removeClass('collapsed-node');
+        if (n.data('_orig_label')) n.data('label', n.data('_orig_label'));
+      }
+    }
+  });
 }
 
 const NODE_STYLES = {
@@ -264,6 +336,7 @@ function initCy() {
       { selector: 'node:selected', style: { 'border-color': '#e94560', 'border-width': 3 } },
       { selector: 'edge', style: { 'width': 1.5, 'curve-style': 'bezier', 'font-size': '10px', 'color': '#888', 'text-background-color': '#1a1a2e', 'text-background-opacity': 0.8, 'text-background-padding': '2px', 'text-rotation': 'autorotate' } },
       ...Object.entries(EDGE_STYLES).map(([cls, sty]) => ({ selector: `edge.${cls}`, style: sty })),
+      { selector: 'node.collapsed-node', style: { 'border-style': 'dashed', 'opacity': 0.7 } },
     ],
     layout: { name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 },
     wheelSensitivity: 0.3,
@@ -290,6 +363,11 @@ function initCy() {
     if (evt.target === cy) {
       document.getElementById('detail-content').innerHTML = '<div id="detail-empty">点击画布中的节点查看详情</div>';
     }
+  });
+
+  cy.on('dbltap', 'node', function (evt) {
+    if (currentView !== 'flow') return;
+    toggleCollapse(evt.target.id());
   });
 }
 
