@@ -80,7 +80,14 @@ mklink /J resources jczx\resources
 合成视频（需安装 ffmpeg）：
 
 ```powershell
+# PNG 序列 → MP4（10 fps）
 ffmpeg -framerate 10 -i screenHistory/%d.png -c:v libx264 -pix_fmt yuv420p output.mp4
+
+# 指定起始序号
+ffmpeg -start_number 1 -framerate 10 -i screenHistory/%d.png -c:v libx264 -pix_fmt yuv420p output.mp4
+
+# 图片序号不连续时
+ffmpeg -framerate 10 -pattern_type glob -i "screenHistory/*.png" -c:v libx264 -pix_fmt yuv420p output.mp4
 ```
 
 ## 快捷键
