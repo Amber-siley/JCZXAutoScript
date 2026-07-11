@@ -179,3 +179,4 @@ resources-2.2.1-backup
 jczx.build
 jczx.dist
 .superpowers/
+screenHistory/*

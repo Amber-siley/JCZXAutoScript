@@ -55,6 +55,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 .legend-line { width: 16px; height: 0; flex-shrink: 0; }
 .legend-tag { color: #aaa; }
+.filter-section { padding: 6px 10px; border-top: 1px solid #0f3460; font-size: 10px; }
+.filter-section h3 { font-size: 11px; color: #888; margin-bottom: 3px; text-transform: uppercase; cursor: pointer; user-select: none; }
+.filter-section h3 .arrow { font-size: 9px; margin-right: 3px; }
+.filter-items { display: flex; flex-wrap: wrap; gap: 2px 4px; }
+.filter-item { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; padding: 1px 3px; border-radius: 2px; opacity: 1; transition: opacity 0.15s; }
+.filter-item.off { opacity: 0.35; }
+.filter-dot { width: 8px; height: 0; border-top-width: 2px; border-top-style: solid; flex-shrink: 0; }
+.filter-item .label { color: #bbb; }
+.filter-actions { display: flex; gap: 3px; margin-top: 4px; }
+.filter-actions button { padding: 1px 5px; border: 1px solid #0f3460; background: #1a1a2e; color: #888; border-radius: 2px; cursor: pointer; font-size: 9px; }
+.filter-actions button:hover { background: #0f3460; }
+.filter-items.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -85,6 +97,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
     </div>
   </div>
   <div id="stats">节点 0 · 边 0</div>
+  <div class="filter-section">
+    <h3 onclick="document.getElementById('filter-items').classList.toggle('hidden'); this.querySelector('.arrow').textContent = document.getElementById('filter-items').classList.contains('hidden') ? '▶' : '▼'"><span class="arrow">▼</span> 边线过滤</h3>
+    <div id="filter-items">
+      <div id="edge-filters"></div>
+      <div class="filter-actions">
+        <button onclick="filterAllEdges(true)">全显</button>
+        <button onclick="filterAllEdges(false)">全隐</button>
+      </div>
+    </div>
+  </div>
   <div class="legend">
     <h3>图例</h3>
     <div class="legend-item"><div class="legend-dot" style="background:#42a5f5;"></div><span class="legend-tag">task 任务</span></div>
@@ -177,6 +199,12 @@ function processLabels(nodes) {
     return { ...n, data: { ...d, label: parts.join(' ') } };
   });
 }
+function applyEdgeFilters() {
+  document.querySelectorAll('.filter-item.off').forEach(el => {
+    if (cy) cy.edges('.' + el.dataset.cls).hide();
+  });
+}
+
 function filterByTask(taskId) {
   if (currentView === 'flow') {
     currentFlowTask = taskId;
@@ -188,6 +216,7 @@ function filterByTask(taskId) {
   const filteredEdges = fullEdges.filter(e => reachable.has(e.data.source) && reachable.has(e.data.target));
   cy.elements().remove();
   cy.add({ nodes: filteredNodes, edges: filteredEdges });
+  applyEdgeFilters();
   cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
   document.getElementById('stats').textContent = `节点 ${filteredNodes.length} · 边 ${filteredEdges.length}`;
 }
@@ -204,11 +233,13 @@ async function loadFlowTree(taskId) {
     const flowEdges = data.edges.filter(e => nodeIds.has(e.data.source) && nodeIds.has(e.data.target));
     cy.elements().remove();
     cy.add({ nodes: flowNodes, edges: flowEdges });
+    applyEdgeFilters();
     cy.layout({ name: 'dagre', rankDir: 'LR', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
     if (data.cycles) {
       data.cycles.forEach(c => {
         cy.add({ data: { id: c.from + '→' + c.to + '::cycle', source: c.from, target: c.to, label: c.label }, classes: 'cycle' });
       });
+      applyEdgeFilters();
     }
     document.getElementById('stats').textContent = `节点 ${flowNodes.length} · 边 ${flowEdges.length + (data.cycles || []).length}`;
     document.getElementById('detail-content').innerHTML = '<div id="detail-empty">点击画布中的节点查看详情</div>';
@@ -226,6 +257,7 @@ function showAll() {
   }
   cy.elements().remove();
   cy.add({ nodes: processLabels(fullNodes), edges: fullEdges });
+  applyEdgeFilters();
   cy.layout({ name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 }).run();
   document.getElementById('stats').textContent = `节点 ${fullNodes.length} · 边 ${fullEdges.length}`;
 }
@@ -258,6 +290,7 @@ function toggleCollapse(uid) {
     collapsedSet.delete(uid);
     collapsedStore.delete(uid);
     cy.add({ nodes: stored.nodes, edges: stored.edges });
+    applyEdgeFilters();
     cy.layout({ name: 'dagre', rankDir: 'LR', nodeSep: 30, rankSep: 60, spacingFactor: 1.4 }).run();
     _updateStats();
   } else {
@@ -512,7 +545,50 @@ document.getElementById('btn-svg').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 
+const EDGE_FILTERS = [
+  { cls: 'action',          label: '动作链',       color: '#888',    line: 'solid' },
+  { cls: 'condition',       label: '条件',         color: '#4fc3f7', line: 'dashed' },
+  { cls: 'condition_not',   label: '条件不满足',   color: '#4fc3f7', line: 'dashed' },
+  { cls: 'condition_then',  label: '是',           color: '#66bb6a', line: 'dashed' },
+  { cls: 'condition_else',  label: '否',           color: '#ef5350', line: 'dotted' },
+  { cls: 'extend',          label: '继承',         color: '#555',    line: 'dashed' },
+  { cls: 'settings',        label: '设置',         color: '#555',    line: 'solid' },
+  { cls: 'execute',         label: '@{..}',        color: '#ce93d8', line: 'solid' },
+  { cls: 'config',          label: '${..}',        color: '#ffd54f', line: 'dashed' },
+  { cls: 'expression',      label: '&{..}',        color: '#ef9a9a', line: 'solid' },
+  { cls: 'context',         label: '%{..}',        color: '#b0bec5', line: 'dashed' },
+  { cls: 'cycle',           label: '环路',         color: '#ef5350', line: 'dashed' },
+];
+
+function buildEdgeFilter() {
+  const container = document.getElementById('edge-filters');
+  container.innerHTML = '<div class="filter-items">' + EDGE_FILTERS.map(f =>
+    `<span class="filter-item" data-cls="${f.cls}" onclick="toggleEdgeFilter(this)" title="${f.label}"><span class="filter-dot" style="border-top:2px ${f.line} ${f.color}"></span><span class="label">${f.label}</span></span>`
+  ).join('') + '</div>';
+}
+
+function toggleEdgeFilter(el) {
+  const cls = el.dataset.cls;
+  const off = el.classList.toggle('off');
+  if (cy) {
+    const edges = cy.edges('.' + cls);
+    if (off) edges.hide(); else edges.show();
+    _updateStats();
+  }
+}
+
+function filterAllEdges(show) {
+  document.querySelectorAll('.filter-item').forEach(el => {
+    if (show) el.classList.remove('off'); else el.classList.add('off');
+  });
+  if (cy) {
+    if (show) cy.edges().show(); else cy.edges().hide();
+    _updateStats();
+  }
+}
+
 initCy();
+buildEdgeFilter();
 loadFiles();
 </script>
 </body>

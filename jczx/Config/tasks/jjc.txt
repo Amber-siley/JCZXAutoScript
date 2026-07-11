@@ -51,7 +51,7 @@ condition_else: goto-home
 [get-average-refresh-times]
 type: task
 name: 计算可以平均使用刷新的次数 -> average_times
-action: get-simulate-times,get-simulate-refresh-times,get-combat-power,context-simulate-fight-refresh-times,context-simulate-continue-times,context-simulate-continue-times-max-3
+action: get-combat-power,context-simulate-fight-refresh-times,context-simulate-continue-times,context-simulate-continue-times-max-3
 
 / 竞技场流程:
 /   | 获取(挑战次数,获取第一位的战力值,获取剩余刷新次数,获取是+28/+26)
@@ -67,7 +67,7 @@ name: 条件判断是否挑战
 desc: 战力阈值 & （平均刷新次数期望 <= 0 | 是+28）,不满足条件继续刷新
 condition: &{%{combat_power} <= ${jjc-simulate-values:setting-power-threshold-jjc} & (%{average_times} <= 0 | @{condition-jjc-in-28})}
 condition_then: click-jjc-fight,click-jjc-fight-sure,auto-fight,click-get-item,condition-compare-jjc-fight-times,context-check,wait-2,condition-simulate-need-fight
-condition_else: context-average-times-1,click-jjc-fight-refresh,get-combat-power,get-simulate-refresh-times,get-simulate-times,condition-simulate-need-fight-1
+condition_else: context-average-times-1,click-jjc-fight-refresh,get-combat-power,condition-simulate-need-fight-1
 
 [condition-simulate-need-fight-1]
 type: condition
