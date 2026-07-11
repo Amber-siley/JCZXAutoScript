@@ -1,10 +1,25 @@
-
+/ 领取各种东西
 
 [task-receive-everyday]
 type: task
 view: on
 name: 领取每日礼包
-action: goto-home,goto-supplyStation,click-giftPackage,click-free-giftPackage,click-get-item,goto-home
+action: goto-home,goto-supplyStation,click-giftPackage,condition-to-get-freePackage
+
+[task-receive-mail]
+type: task
+view: on
+name: 领取邮件礼包
+action: null
+
+
+/ 杂项
+
+[click-mail]
+type: click
+name: 邮件
+target: buttons\mail.png
+sleep: 1
 
 [goto-supplyStation]
 type: click
@@ -18,6 +33,18 @@ name: 礼包
 target: buttons\giftPackage.png
 sleep: 1
 
+[condition-to-get-freePackage]
+type: condition
+name: 条件判断是否有免费礼包
+condition: condition-in_location-freePackage
+condition_then: click-free-giftPackage,condition-to-purchase,goto-home
+condition_else: goto-home
+
+[condition-in_location-freePackage]
+extend: in_location
+target: buttons\freePackage.png
+args: 0.75
+
 [click-free-giftPackage]
 type: click
 name: 每日礼包
@@ -25,3 +52,20 @@ target: buttons\freePackage.png
 per: 0.75
 sleep: 1
 max_wait: 3
+
+[condition-to-purchase]
+type: condition
+name: 条件判断是否有购买按钮
+condition: condition-in_location-purchase
+condition_then: click-purchase,click-get-item
+
+[condition-in_location-purchase]
+extend: in_location
+target: buttons\purchase.png
+
+[click-purchase]
+type: click
+name: 购买
+target: buttons\purchase.png
+sleep: 1
+

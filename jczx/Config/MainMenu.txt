@@ -35,6 +35,10 @@ func: context_print
 type: func
 func: in_location
 
+[near_location]
+type: func
+func: near_location
+
 [parse_placeholder]
 type: func
 func: parse_placeholder
@@ -139,7 +143,7 @@ max_wait: 5
 type: condition
 name: 战斗结束 战斗胜利 或者 失败
 condition: &{condition-in_location-fight-over-win | condition-in_location-fight-over-loss1 | in_location-get-item}
-condition_then: click-center,wait-1,click-center,wait-1,click-center,condition-set-win-flag,condition-get-item-win
+condition_then: click-center,wait-1,click-center,click-upcenter,condition-set-win-flag,condition-get-item-win
 condition_else: auto-fight-end
 
 [auto-fight-get-item]
@@ -279,7 +283,7 @@ testFor_before: locations\onUseLogin.png
 condition: condition-start-game
 condition_then: click-start-game,wait-5,goto-home
 condition_else: click-userLogin,click-start-game,wait-5,goto-home
-max_wait: 300
+max_wait: 3000
 
 [click-userLogin]
 type: click
