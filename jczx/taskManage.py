@@ -284,9 +284,28 @@ class TaskManage:
             target_config.set_config(section, field_name, str(val))
             if target_config is not self.menu_config:
                 self.menu_config.set_config(section, field_name, str(val))
-        target_config.save()
+        if target_config is self.menu_config:
+            self._save_menu_config_clean(section)
+        else:
+            target_config.save()
+            self.menu_config.save()
         self.log.debug(f"任务 {task_key} 设置已保存到 {source}: {values}")
         self._update_entities_after_save(task_key)
+
+    def _save_menu_config_clean(self, extra_section: str):
+        ext_keys = set()
+        for _, ext_config in self._external_configs:
+            ext_keys.update(ext_config._configs.keys())
+        ext_keys.discard(extra_section)
+        backup = {}
+        for key in ext_keys:
+            if key in self.menu_config._configs:
+                backup[key] = self.menu_config._configs.pop(key)
+        try:
+            self.menu_config.save()
+        finally:
+            self.menu_config._configs.update(backup)
+            self.menu_config.init_configs()
 
     def _update_entities_after_save(self, task_key: str) -> None:
         entity = self.get_task(task_key)
