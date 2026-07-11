@@ -44,6 +44,17 @@ def _load_all_entities(filename: str) -> dict[str, JczxSectionEntity]:
     return all_configs
 
 
+def _load_all_files() -> dict[str, JczxSectionEntity]:
+    all_configs: dict[str, JczxSectionEntity] = {}
+    seen: set[str] = set()
+    main_menu_path = os.path.join(CONFIG_DIR, "MainMenu.txt")
+    _load_one(main_menu_path, all_configs, seen)
+    _resolve_extends(all_configs)
+    for key, entity in all_configs.items():
+        entity.only_key = key
+    return all_configs
+
+
 def _load_one(path: str, all_configs: dict[str, JczxSectionEntity], seen: set[str]) -> None:
     if not os.path.isfile(path) or path in seen:
         return
@@ -236,7 +247,7 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
 
 def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[str, Any]:
     try:
-        configs = _load_all_entities(filename)
+        configs = _load_all_files()
     except (ValueError, FileNotFoundError):
         return {"nodes": [], "edges": [], "cycles": []}
 
@@ -323,20 +334,21 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                     edges.append({"data": {"id": f"{uid}→{cond_uid}::condition", "source": uid, "target": cond_uid, "label": ""}, "classes": "condition_not" if is_not else "condition"})
                     then_label = "否" if is_not else "是"
                     else_label = "是" if is_not else "否"
+                    branch_src = uid if entity.type == "condition" else cond_uid
                     for t in (then_list or []):
                         if t in path:
-                            cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
+                            cycles.append({"from": branch_src, "to": _first_uid(t), "label": "⟲"})
                             continue
-                        tuid = _expand(t, path + [key, cond_key])
+                        tuid = _expand(t, path + ([key, cond_key] if entity.type != "condition" else [key]))
                         if tuid:
-                            edges.append({"data": {"id": f"{cond_uid}→{tuid}::then", "source": cond_uid, "target": tuid, "label": then_label}, "classes": "condition_then"})
+                            edges.append({"data": {"id": f"{branch_src}→{tuid}::then", "source": branch_src, "target": tuid, "label": then_label}, "classes": "condition_then"})
                     for t in (else_list or []):
                         if t in path:
-                            cycles.append({"from": cond_uid, "to": _first_uid(t), "label": "⟲"})
+                            cycles.append({"from": branch_src, "to": _first_uid(t), "label": "⟲"})
                             continue
-                        tuid = _expand(t, path + [key, cond_key])
+                        tuid = _expand(t, path + ([key, cond_key] if entity.type != "condition" else [key]))
                         if tuid:
-                            edges.append({"data": {"id": f"{cond_uid}→{tuid}::else", "source": cond_uid, "target": tuid, "label": else_label}, "classes": "condition_else"})
+                            edges.append({"data": {"id": f"{branch_src}→{tuid}::else", "source": branch_src, "target": tuid, "label": else_label}, "classes": "condition_else"})
             elif cond_key in path:
                 cycles.append({"from": uid, "to": _first_uid(cond_key), "label": "⟲"})
 
@@ -417,7 +429,7 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
 
 def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
     try:
-        configs = _load_all_entities(filename)
+        configs = _load_all_files()
     except (ValueError, FileNotFoundError):
         return None
 
