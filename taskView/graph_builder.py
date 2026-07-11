@@ -133,9 +133,6 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 "context_key": getattr(entity, "context_key", "") or "",
                 "wait_target": getattr(entity, "wait_target", "") or "",
                 "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
-                "extend": entity.extend or "",
-                "extend_type": configs[entity.extend].type if entity.extend and entity.extend in configs else "",
-                "extend_name": configs[entity.extend].name or entity.extend if entity.extend and entity.extend in configs else "",
             },
             "classes": classes,
         })
@@ -291,9 +288,6 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                 "context_key": getattr(entity, "context_key", "") or "",
                 "wait_target": getattr(entity, "wait_target", "") or "",
                 "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
-                "extend": entity.extend or "",
-                "extend_type": configs[entity.extend].type if entity.extend and entity.extend in configs else "",
-                "extend_name": configs[entity.extend].name or entity.extend if entity.extend and entity.extend in configs else "",
             },
             "classes": classes,
         }
@@ -466,6 +460,4 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
         "log_level": getattr(entity, "log_level", "") or "",
         "wait_target": getattr(entity, "wait_target", "") or "",
         "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
-        "extend_type": (configs[entity.extend].type if entity.extend and entity.extend in configs else "") or "",
-        "extend_name": (configs[entity.extend].name or entity.extend if entity.extend and entity.extend in configs else "") or "",
     }
