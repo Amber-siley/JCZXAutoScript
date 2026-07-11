@@ -55,6 +55,10 @@ func: context_get
 type: func
 func: context_set
 
+[launch_emulator]
+type: func
+func: launch_emulator
+
 / ==================
 / 通用等待
 / ==================
@@ -370,4 +374,33 @@ name: 测试
 type: file
 target: tasks\receive.txt
 name: 领取各种东西
+
+/ ==================
+/ 模拟器设置
+/ ==================
+
+[emu]
+type: task
+view: on
+name: 模拟器设置
+action: launch_emulator_task
+settings: emu-settings
+
+[launch_emulator_task]
+extend: launch_emulator
+args: ${}
+
+[emu-settings]
+type: settings
+fields: emu-manager-path,emu-setting-index
+
+[emu-setting-index]
+type: setting
+setting_type: integer
+label: 模拟器索引
+
+[emu-manager-path]
+type: setting
+setting_type: input
+label: 模拟器调试程序路径
 

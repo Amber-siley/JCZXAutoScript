@@ -342,6 +342,7 @@ class JCZXGaming(Device):
             log=self.log,
         )
         self._recorder: Optional[DebugRecorder] = None
+        self._emu_strategy = None
 
     def screenshot(self):
         img = self._screen_cache.screenshot()
@@ -918,6 +919,30 @@ class JCZXGaming(Device):
     def start_game(self, app: str, activity: str):
         if not self.get_app_pid(app):
             self.launch_app(activity)
+
+    def _init_emu_strategy(self):
+        if self._emu_strategy:
+            return
+        values = self.task_manage.get_task_values("emu")
+        path = values.get("emu-manager-path", "")
+        if path and os.path.isfile(path):
+            from .emu import MuMuStrategy
+            self._emu_strategy = MuMuStrategy(path, self.startupinfo)
+            self.log.debug(f"MuMu 模拟器策略已激活: {path}")
+
+    def launch_emulator(self, index: str = "0"):
+        if self._emu_strategy:
+            self.log.info(f"启动模拟器 index={index}")
+            self._emu_strategy.launch(str(index))
+        else:
+            self.log.warning("未配置模拟器策略，跳过启动")
+
+    def shutdown_emulator(self, index: str = "0"):
+        if self._emu_strategy:
+            self.log.info(f"关闭模拟器 index={index}")
+            self._emu_strategy.shutdown(str(index))
+        else:
+            self.log.warning("未配置模拟器策略，跳过关闭")
     
     def save_screenshot(self, dir: str, name: str):
         path = self.fm.join(dir, f"{name}.png")
@@ -1075,6 +1100,7 @@ class JczxCli:
         if self.ocr:
             self.device.set_ocr(self.ocr)
         self.device._recorder = self._debug_recorder
+        self.device._init_emu_strategy()
         if self.device.u2_device:
             self.logger.debug(f"截图方式: U2 Screenshot")
         else:
