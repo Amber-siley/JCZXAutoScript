@@ -9,3 +9,7 @@ class EmulatorStrategy(ABC):
     @abstractmethod
     def shutdown(self, index: str) -> bool:
         ...
+
+    @abstractmethod
+    def wait_started(self, index: str, timeout: int = 120) -> bool:
+        ...

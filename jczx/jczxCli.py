@@ -921,19 +921,27 @@ class JCZXGaming(Device):
             self.launch_app(activity)
 
     def _init_emu_strategy(self):
-        if self._emu_strategy:
-            return
         values = self.task_manage.get_task_values("emu")
         path = values.get("emu-manager-path", "")
         if path and os.path.isfile(path):
-            from .emu import MuMuStrategy
-            self._emu_strategy = MuMuStrategy(path, self.startupinfo)
-            self.log.debug(f"MuMu 模拟器策略已激活: {path}")
+            from .emu import get_emu_strategy
+            self._emu_strategy = get_emu_strategy(path, self.startupinfo)
+            if self._emu_strategy:
+                self.log.debug(f"模拟器策略已激活: {path}")
+            else:
+                self.log.warning(f"未找到匹配的模拟器策略: {path}")
+        else:
+            self._emu_strategy = None
 
     def launch_emulator(self, index: str = "0"):
         if self._emu_strategy:
             self.log.info(f"启动模拟器 index={index}")
             self._emu_strategy.launch(str(index))
+            self.log.info(f"等待模拟器启动完成...")
+            if self._emu_strategy.wait_started(str(index)):
+                self.log.info(f"模拟器启动完成 index={index}")
+            else:
+                self.log.warning(f"模拟器启动超时 index={index}")
         else:
             self.log.warning("未配置模拟器策略，跳过启动")
 
@@ -1009,7 +1017,7 @@ class JczxCli:
         )
         self.device = None  # 设备
         self.adb: JCZXGaming = None
-        self.task_manage = TaskManage("")
+        self.task_manage = TaskManage("", log=self.logger)
         self.ocr = None
         mode = self.config.get_config(opt="debug.screenshot.mode") or "off"
         debug_dir = os.path.join(os.getcwd(), "screenHistory")
@@ -1091,8 +1099,14 @@ class JczxCli:
         except IndexError:
             self.logger.info("ADB当前无可连接设备")
             return
-        if self.adb.get_device_names():
-            self.device = self.adb.get_device()
+        self.adb._init_emu_strategy()
+        device_names = self.adb.get_device_names()
+        if device_names:
+            if not self.adb.device_id:
+                self.adb.device_id = device_names[0]
+                self.adb.size = self.adb.getScreenSize()
+                self.adb._init_u2_device()
+            self.device = self.adb
         else:
             self.logger.info("ADB当前无可连接设备")
             return
@@ -1100,7 +1114,6 @@ class JczxCli:
         if self.ocr:
             self.device.set_ocr(self.ocr)
         self.device._recorder = self._debug_recorder
-        self.device._init_emu_strategy()
         if self.device.u2_device:
             self.logger.debug(f"截图方式: U2 Screenshot")
         else:
@@ -1159,7 +1172,7 @@ class JczxTUI(App, JczxCli):
         self.logger.debug("日志控制台已清空")
 
     def action_copy_log(self) -> None:
-        text = str(self.rich_log.render_str)
+        text = self.rich_log.render_str()
         self.copy_to_clipboard(text)
         self.logger.debug("日志已复制到剪贴板")
 
@@ -1184,8 +1197,8 @@ class JczxTUI(App, JczxCli):
     # ── helpers ──────────────────────────────────────────
 
     def _get_editor_task_names(self) -> list[str]:
-        """返回任务 key 列表（英文标识符，用于组件 id）."""
-        return self.task_manage.get_task_names()
+        """返回队列编辑器中可选的任务 key 列表（view != off 且 queueable != off）"""
+        return self.task_manage.get_queueable_task_names()
 
     def _get_editor_task_options(self) -> list[tuple[str, str]]:
         """返回 [(显示名称, key), ...] 用于下拉框."""
@@ -1201,7 +1214,7 @@ class JczxTUI(App, JczxCli):
         """Fill the task-list panel from config."""
         panel = self.query_one("#task-list-panel", TaskListPanel)
         panel.clear_tasks()
-        for key in self._get_editor_task_names():
+        for key in self.task_manage.get_task_names():
             panel.add_task(key, self.task_manage.get_task_display_name(key))
 
     # ── DeviceBar handlers ───────────────────────────────
@@ -1263,27 +1276,33 @@ class JczxTUI(App, JczxCli):
             self._stop_running_task()
 
     def _start_task(self, task_id: str) -> bool:
+        is_emu = (task_id == "emu")
         if not self.device:
-            self.logger.warning("设备未就绪，无法启动任务")
-            return False
+            if not is_emu:
+                self.logger.warning("设备未就绪，无法启动任务")
+                return False
         if not self.ocr:
-            self.logger.warning("OCR 未初始化完成，无法启动任务")
-            return False
-        if self.device._exec_mgr.is_running():
+            if not is_emu:
+                self.logger.warning("OCR 未初始化完成，无法启动任务")
+                return False
+        executor = self.device or self.adb
+        if executor._exec_mgr.is_running():
             self.logger.warning("已有任务/队列正在执行，请先停止")
             return False
         entity = self.task_manage.get_task(task_id)
         if not entity:
             self.logger.error("任务实体不存在: %s", task_id)
             return False
-        self.device._exec_mgr.start(task_id)
+        executor._exec_mgr.start(task_id)
         self.logger.info("任务启动: %s", entity.get_task_name())
-        self._running_future = self.executor.submit(self._run_task, entity, task_id)
+        self._running_future = self.executor.submit(self._run_task, entity, task_id, is_emu)
         return True
 
     def _stop_running_task(self) -> None:
         if self.device:
             self.device._exec_mgr.stop()
+        elif self.adb:
+            self.adb._exec_mgr.stop()
         self.logger.info("任务已停止")
         try:
             panel = self.query_one("#queue-panel", QueuePanel)
@@ -1292,9 +1311,10 @@ class JczxTUI(App, JczxCli):
         except Exception:
             pass
 
-    def _run_task(self, entity: JczxSectionEntity, task_id: str) -> None:
+    def _run_task(self, entity: JczxSectionEntity, task_id: str, is_emu: bool = False) -> None:
+        executor = self.device or (self.adb if is_emu else None)
         try:
-            self.device.exec_task_raw(entity)
+            executor.exec_task_raw(entity)
         except TaskCancelledError:
             self.logger.info("任务已取消: %s", entity.get_task_name())
         except Exception as e:
@@ -1303,10 +1323,21 @@ class JczxTUI(App, JczxCli):
             self.call_from_thread(self._on_task_finished, task_id)
 
     def _on_task_finished(self, task_id: str) -> None:
-        if self.device and self.device._exec_mgr.task_id != task_id:
+        is_emu = (task_id == "emu")
+        executor = self.device or self.adb
+        if executor and executor._exec_mgr.task_id != task_id:
             return
-        if self.device:
-            self.device._exec_mgr.reset()
+        if executor:
+            executor._exec_mgr.reset()
+        if is_emu:
+            self.logger.info("模拟器启动完成，重启 ADB 服务...")
+            try:
+                self.adb.run([self.adb.adb_path, "kill-server"])
+            except Exception:
+                pass
+            self.logger.info("重新连接设备...")
+            self._init_device()
+            self._update_device_bar()
         panel = self.query_one("#task-list-panel", TaskListPanel)
         for card in panel.body.query(TaskCard):
             if card._task_id == task_id:
@@ -1362,6 +1393,10 @@ class JczxTUI(App, JczxCli):
         if self.device is not None:
             self.device.task_manage.menu_config = self.task_manage.menu_config
             self.logger.debug("已同步配置到设备端")
+            self.device._init_emu_strategy()
+        elif self.adb is not None:
+            self.adb.task_manage.menu_config = self.task_manage.menu_config
+            self.adb._init_emu_strategy()
 
     # ── QueuePanel handlers ──────────────────────────────
 
@@ -1398,6 +1433,9 @@ class JczxTUI(App, JczxCli):
             queue_id = self._editing_queue_id
             self.task_manage.delete_queue(queue_id)
             self.logger.info("队列已删除: %s", queue_id)
+            if self.device is not None:
+                self.device.task_manage.queue_config = self.task_manage.queue_config
+                self.device.task_manage.load_queues()
             self._refresh_queue_panel()
             return
         name = result.get("name", "")
@@ -1408,6 +1446,10 @@ class JczxTUI(App, JczxCli):
         queue_id = self._editing_queue_id or f"queue-{name}"
         self.task_manage.save_queue(queue_id, name, task_keys)
         self.logger.info("队列已保存: %s (%d 个任务)", name, len(task_keys))
+        if self.device is not None:
+            self.device.task_manage.queue_config = self.task_manage.queue_config
+            self.device.task_manage.load_queues()
+            self.logger.debug("已同步队列配置到设备端")
         self._refresh_queue_panel()
         self.query_one("#queue-panel", QueuePanel).select_queue(queue_id)
 

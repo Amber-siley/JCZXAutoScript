@@ -16,5 +16,5 @@ thread.max_workers : 10
 adb.path : platform-tools/adb.exe
 / adb连接端口
 adb.port : 7555
-/ 调试截图模式: off=关闭 simple=连续截图 annotated=标注截图
+/ 调试截图模式 off=关闭 simple=连续截图 annotated=标注截图
 debug.screenshot.mode : annotated

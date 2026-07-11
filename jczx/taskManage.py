@@ -198,6 +198,13 @@ class TaskManage:
         except Exception:
             return []
 
+    def get_queueable_task_names(self) -> list[str]:
+        """获取队列中可选的任务 key 列表（view != off 且 queueable != off）"""
+        try:
+            return [k for k, v in self.task_pool.items() if v.view != "off" and v.queueable != "off"]
+        except Exception:
+            return []
+
     def get_task_display_name(self, task_key: str) -> str:
         """获取任务的中文显示名称"""
         entity = self.get_task(task_key)

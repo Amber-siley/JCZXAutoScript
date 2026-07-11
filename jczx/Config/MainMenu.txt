@@ -251,13 +251,14 @@ action: goto-home-click-home
 [condition-in_location-home]
 type: func
 func: in_location
-target: buttons\supplyStation.png
+target: buttons\fight.png
 args: 0.95
 
 [condition-in_location-home-button]
 type: func
 func: in_location
 target: buttons\home.png
+args: 0.9
 
 [condition-in_location-back]
 type: func
@@ -345,7 +346,41 @@ func: save_screenshot
 args: E:\\IDE\pyththon_project\\jczx_auto_script\\jczx\\template,${screenshot-task-values:screenshot-name}
 
 [screenshot-task-values]
-screenshot-name: name_1
+screenshot-name: name_11
+
+/ ==================
+/ 模拟器设置
+/ ==================
+
+[emu]
+type: task
+view: on
+name: 模拟器设置
+action: launch_emulator_task
+settings: emu-settings
+queueable: off
+
+[launch_emulator_task]
+extend: launch_emulator
+args: ${emu-values:emu-setting-index}
+
+[emu-settings]
+type: settings
+fields: emu-manager-path,emu-setting-index
+
+[emu-setting-index]
+type: setting
+setting_type: integer
+label: 模拟器索引
+
+[emu-manager-path]
+type: setting
+setting_type: input
+label: 模拟器调试程序路径
+
+[emu-values]
+emu-setting-index: 0
+emu-manager-path: D:\Program Files\Netease\MuMu\nx_main\MuMuManager.exe
 
 / ==================
 / 任务入口引用
@@ -374,33 +409,3 @@ name: 测试
 type: file
 target: tasks\receive.txt
 name: 领取各种东西
-
-/ ==================
-/ 模拟器设置
-/ ==================
-
-[emu]
-type: task
-view: on
-name: 模拟器设置
-action: launch_emulator_task
-settings: emu-settings
-
-[launch_emulator_task]
-extend: launch_emulator
-args: ${}
-
-[emu-settings]
-type: settings
-fields: emu-manager-path,emu-setting-index
-
-[emu-setting-index]
-type: setting
-setting_type: integer
-label: 模拟器索引
-
-[emu-manager-path]
-type: setting
-setting_type: input
-label: 模拟器调试程序路径
-

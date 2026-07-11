@@ -4,7 +4,7 @@
 type: task
 view: on
 name: 领取每日礼包
-action: goto-home,goto-supplyStation,click-giftPackage,condition-to-get-freePackage
+action: goto-home,goto-supplyStation,click-giftPackage,wait-5,condition-to-get-freePackage
 
 [task-receive-mail]
 type: task

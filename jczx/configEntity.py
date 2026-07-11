@@ -100,6 +100,7 @@ class JczxSectionEntity(BaseEntity):
     log: str = None
     log_level: str = "info"
     screen_cache_ttl: float = -1
+    queueable: str = "on"
     
     def get_task_name(self):
         return self.name or self.only_key

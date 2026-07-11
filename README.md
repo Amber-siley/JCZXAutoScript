@@ -67,8 +67,6 @@ mklink /J resources jczx\resources
 | 任务设置 | 右侧设置面板，动态表单 |
 | 任务队列 | 创建/编辑/删除队列，顺序执行，拖拽排序，与单任务互斥 |
 | 调试截图 | 两种模式：连续截图（simple）/ 标注截图（annotated），配置控制 |
-| 级联匹配 | click 实体 `match` + `target` 组合使用，区域嵌套匹配 |
-| `near_location` | 在 match 区域内搜索目标图片，直接用于 condition |
 
 ## 调试截图
 
