@@ -172,6 +172,7 @@ function processLabels(nodes) {
     if (d.times > 1) parts.push('×' + d.times);
     if (d.has_test_after) parts.push('↻');
     if (d.has_test_before) parts.push('⊲');
+    if (d.extend) parts.push('↗' + (d.extend_name || d.extend));
     return { ...n, data: { ...d, label: parts.join(' ') } };
   });
 }
@@ -307,6 +308,8 @@ function renderDetail(d) {
     ['condition_then', d.condition_then && d.condition_then.length ? d.condition_then.map(a => `<span class="tag">${esc(a)}</span>`).join('') : ''],
     ['condition_else', d.condition_else && d.condition_else.length ? d.condition_else.map(a => `<span class="tag">${esc(a)}</span>`).join('') : ''],
     ['extend', esc(d.extend)],
+    ['extend_type', esc(d.extend_type)],
+    ['extend_name', esc(d.extend_name)],
     ['context_key', esc(d.context_key)],
     ['context_type', esc(d.context_type)],
     ['sleep', d.sleep != null ? `${d.sleep}s` : ''],
