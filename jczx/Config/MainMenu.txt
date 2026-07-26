@@ -120,6 +120,7 @@ sleep: 1
 type: click
 name: 开始行动
 target: buttons\startToAct.png
+max_wait: 2
 sleep: 10
 
 / ==================
@@ -244,8 +245,8 @@ condition_else: condition-to-back
 [condition-to-back]
 type: click
 condition: condition-in_location-back
-condition_then: click-back
-condition_else: click-upcenter
+condition_then: click-back,wait-1
+condition_else: click-upcenter,wait-1
 action: goto-home-click-home
 
 [condition-in_location-home]
@@ -285,6 +286,7 @@ sleep: 30
 type: click
 name: 点击登录
 testFor_before: locations\onUseLogin.png
+testFor_per: 0.75
 condition: condition-start-game
 condition_then: click-start-game,wait-5,goto-home
 condition_else: click-userLogin,click-start-game,wait-5,goto-home

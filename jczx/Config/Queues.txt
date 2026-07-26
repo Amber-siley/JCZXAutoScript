@@ -1,3 +1,6 @@
 [queue-daily]
 name: 日常
 tasks: launch-game,task-receive-everyday,jjc-simulate,goto-inllusion
+[queue-日常2]
+name:日常2
+tasks:task-receive-everyday,jjc-simulate,goto-inllusion
