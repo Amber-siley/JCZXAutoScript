@@ -2,7 +2,7 @@ import os
 import re
 from typing import Any
 
-from jczx.CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig
+from jczx.CommonBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig
 from jczx.configEntity import JczxSectionEntity, SectionType
 
 

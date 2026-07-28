@@ -1,6 +1,6 @@
 from .configEntity import JczxConfigFileEntity, JczxSectionEntity, JczxSettingEntity, SectionType
-from .CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig, FileManage
-from .CommoneBuilder.CommonBuilder.FileTools.Base.Variable import DictVariable
+from .CommonBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig, FileManage
+from .CommonBuilder.CommonBuilder.FileTools.Base.Variable import DictVariable
 
 from logging import Logger
 from typing import Optional

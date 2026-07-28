@@ -17,10 +17,10 @@ from textual.containers import Container, VerticalScroll
 from textual.binding import Binding
 from numpy.typing import NDArray
 
-from .CommoneBuilder.CommonBuilder.Android.Adb import Device, MatchTemplete
-from .CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig
-from .CommoneBuilder.CommonBuilder.FileTools.File import FileManage
-from .CommoneBuilder.CommonBuilder.Ocr.typing import OCR
+from .CommonBuilder.CommonBuilder.Android.Adb import Device, MatchTemplete
+from .CommonBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig
+from .CommonBuilder.CommonBuilder.FileTools.File import FileManage
+from .CommonBuilder.CommonBuilder.Ocr.typing import OCR
 from .debug import DebugRecorder
 from .translate import Lang, translate
 from .configEntity import JczxSectionEntity, SectionType
@@ -1124,7 +1124,7 @@ class JczxCli:
         if self.ocr:
             return
         self.logger.info("初始化OCR...")
-        from .CommoneBuilder.CommonBuilder.Ocr.Ocr import OCR
+        from .CommonBuilder.CommonBuilder.Ocr.Ocr import OCR
         self.ocr = OCR(
             use_textline_orientation = False,
             use_doc_orientation_classify = False,

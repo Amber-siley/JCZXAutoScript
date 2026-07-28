@@ -162,7 +162,7 @@ taskView/             # 根目录下新建
 
 ## 10. 实现要点
 
-1. **复用原项目模块**：`from jczx.CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig` 和 `from jczx.configEntity import JczxSectionEntity` 和 `from jczx.taskManage import TaskManage`
+1. **复用原项目模块**：`from jczx.CommonBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig` 和 `from jczx.configEntity import JczxSectionEntity` 和 `from jczx.taskManage import TaskManage`
 2. **零侵入**：`taskView/` 是完全独立的目录，不修改 `jczx/` 下任何文件
 3. **graph_builder.py** 核心逻辑：读取配置文件 → 构建实体池 → 遍历每个实体，提取 action/condition/condition_then/condition_else/extend/settings → 生成 nodes 数组 + edges 数组
 4. **自动打开浏览器**：`__main__.py` 中 `threading.Timer(1.0, lambda: webbrowser.open('http://localhost:8000')).start()`

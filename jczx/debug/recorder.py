@@ -4,7 +4,7 @@ import cv2
 from logging import Logger
 from cv2.typing import MatLike
 
-from ..CommoneBuilder.CommonBuilder.Android.Adb import MatchTemplete
+from ..CommonBuilder.CommonBuilder.Android.Adb import MatchTemplete
 from .annotator import ScreenAnnotator
 
 

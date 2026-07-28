@@ -46,12 +46,12 @@ python build.py
 - `JczxSectionEntity` 中的 `target`、`action`、`args` 等字符串字段自动按逗号拆分为列表。
 - `SectionType` 枚举值：`task`、`func`、`click`、`option`、`settings`、`setting`。
 
-## 共享库：CommoneBuilder
+## 共享库：CommonBuilder
 
-位于 `jczx/CommoneBuilder/CommonBuilder/`，导入路径注意双重 `CommonBuilder`：
+位于 `jczx/CommonBuilder/CommonBuilder/`，导入路径注意双重 `CommonBuilder`：
 ```python
-from .CommoneBuilder.CommonBuilder.Android.Adb import Adb, Device
-from .CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig
+from .CommonBuilder.CommonBuilder.Android.Adb import Adb, Device
+from .CommonBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig
 ```
 
 提供：

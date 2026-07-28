@@ -93,7 +93,7 @@ git commit -m "feat(taskView): add project scaffold with entry point"
 import os
 from typing import Any
 
-from jczx.CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig
+from jczx.CommonBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig
 from jczx.configEntity import JczxSectionEntity, SectionType
 
 

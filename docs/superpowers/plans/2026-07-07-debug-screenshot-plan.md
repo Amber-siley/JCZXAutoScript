@@ -94,7 +94,7 @@ import cv2
 from logging import Logger
 from cv2.typing import MatLike
 
-from ..CommoneBuilder.CommonBuilder.Android.Adb import MatchTemplete
+from ..CommonBuilder.CommonBuilder.Android.Adb import MatchTemplete
 from .annotator import ScreenAnnotator
 
 
@@ -334,7 +334,7 @@ python -c "from jczx.debug import DebugRecorder, ScreenAnnotator; print('import 
 - [ ] **Step 2: Verify Config.txt has entry**
 
 ```bash
-python -c "from jczx.CommoneBuilder.CommonBuilder.FileTools.ConfigUtils import Config; c=Config('jczx/Config/Config.txt').Config; print(c.get_config(opt='debug.screenshot.mode'))"
+python -c "from jczx.CommonBuilder.CommonBuilder.FileTools.ConfigUtils import Config; c=Config('jczx/Config/Config.txt').Config; print(c.get_config(opt='debug.screenshot.mode'))"
 ```
 
 Expected: `off`
