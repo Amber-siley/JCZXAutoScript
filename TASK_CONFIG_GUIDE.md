@@ -185,6 +185,7 @@ Config/
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
+| `match` | str | — | 引用 `match` 实体 key，与 `target` 同时设置时触发级联匹配（不点击，仅检测） |
 | `target` | str | — | 匹配的模板图片路径（相对于 `resources/`） |
 | `per` | float | `0.8` | 匹配阈值（`cv2.TM_CCOEFF_NORMED`） |
 | `action` | list[str] | `[]` | **变换操作**（非执行链），见下方 |
@@ -273,7 +274,23 @@ context_type: int
 - 匹配成功：`MatchTemplete` 对象（`matched=True`，包含 `matchTempleteCenterPoints` 中心点坐标列表）
 - 匹配失败：`None`
 
-**不支持的字段**（对 `match` 无效）：`pos`、`match`、`index`、`func`、`args`、`condition*`、`break_point`、`wait_sec`
+**不支持的字段**（对 `match` 无效）：`pos`、`index`、`func`、`args`、`condition*`、`break_point`、`wait_sec`
+
+**`match` + `target` 级联匹配**：同时设置时，先执行 `match` 实体定位大区域，再在每个区域内用 `target` 图片做二次模板匹配，合并所有子匹配点返回 `MatchTemplete`。无任何子匹配返回 `None`。
+
+```ini
+# 级联检测：先找大区域 power-panel，再检测区域内是否有 power-icon
+[check-power-in-region]
+type: match
+match: find-power-panel
+target: buttons\power_icon.png
+
+# 用作条件判断（None → 条件不满足）
+[guard-power]
+type: condition
+condition: check-power-in-region
+condition_then: do-something
+```
 
 ### ocr 类型专用
 
