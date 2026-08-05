@@ -443,6 +443,8 @@ class JCZXGaming(Device):
                     return None
                 target = self._resolver.resolve(e.target, e.only_key)
                 result = self._cascade_match(mt, target, e.per)
+                if not result:
+                    return None
             elif e.target:
                 img = self.task_manage.get_img(e.target)
                 if img is None:
