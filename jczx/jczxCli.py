@@ -574,22 +574,16 @@ class JCZXGaming(Device):
                 if mt is not None and mt.matched:
                     if e.target:
                         target = self._resolver.resolve(e.target, e.only_key)
-                        img = self.task_manage.get_img(target)
-                        if img is not None:
-                            all_pts = []
-                            for pts in mt.matchTempletePoints:
-                                (x0, y0), (_, _), (_, _), (x1, y1) = pts
-                                sub_mt = self.findImageDetail(img, cutPoints=((x0, y0), (x1, y1)), per=e.per)
-                                if sub_mt and sub_mt.matched:
-                                    all_pts.extend(sub_mt.matchTempleteCenterPoints)
-                            if all_pts:
-                                idx = e.target_index
-                                pt = all_pts[idx] if idx < len(all_pts) else all_pts[0]
-                                self.click(*pt)
-                                result = mt
+                        cascade_result = self._cascade_match(mt, target, e.per)
+                        if cascade_result and cascade_result.matchTempleteCenterPoints:
+                            idx = e.index
+                            pts = cascade_result.matchTempleteCenterPoints
+                            pt = pts[idx] if idx < len(pts) else pts[0]
+                            self.click(*pt)
+                            result = mt
                     else:
                         if mt.matchTempleteCenterPoints:
-                            idx = e.target_index
+                            idx = e.index
                             pt = mt.matchTempleteCenterPoints[idx] if idx < len(mt.matchTempleteCenterPoints) else mt.matchTempleteCenterPoints[0]
                             self.click(*pt)
                         result = mt
