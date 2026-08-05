@@ -437,17 +437,23 @@ class JCZXGaming(Device):
         action 字段为变换操作列表（非执行链），如 down-0.5、reW-1.0 等。"""
         entity = self._get_entity(section)
         def _on_exec(e: JczxSectionEntity):
-            target = e.target
-            if not target:
+            if e.match and e.target:
+                mt = self.exec(e.match)
+                if mt is None or not mt.matched:
+                    return None
+                target = self._resolver.resolve(e.target, e.only_key)
+                result = self._cascade_match(mt, target, e.per)
+            elif e.target:
+                img = self.task_manage.get_img(e.target)
+                if img is None:
+                    self.log.debug(f"match 图片未找到: {e.target}")
+                    return None
+                result = self.findImageDetail(img, per=e.per)
+                if not result or not result.matched:
+                    self.log.debug(f"match 未匹配到: {e.target}")
+                    return None
+            else:
                 self.log.debug("match 类型缺少 target")
-                return None
-            img = self.task_manage.get_img(target)
-            if img is None:
-                self.log.debug(f"match 图片未找到: {target}")
-                return None
-            result = self.findImageDetail(img, per=e.per)
-            if not result or not result.matched:
-                self.log.debug(f"match 未匹配到: {target}")
                 return None
             if self._recorder:
                 self._recorder.on_match(self.screenshot(), result)
