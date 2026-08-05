@@ -414,6 +414,24 @@ class JCZXGaming(Device):
             raise AttributeError(f"方法未查询到 {e.func}")
         return self._exec_entity(entity, _on_exec)
 
+    def _cascade_match(self, mt: MatchTemplete, target: str, per: float):
+        img = self.task_manage.get_img(target)
+        if img is None:
+            self.log.debug(f"级联匹配 target 图片未找到: {target}")
+            return None
+        all_pts = []
+        for pts in mt.matchTempletePoints:
+            (x0, y0), (_, _), (_, _), (x1, y1) = pts
+            sub_mt = self.findImageDetail(img, cutPoints=((x0, y0), (x1, y1)), per=per)
+            if sub_mt and sub_mt.matched:
+                all_pts.extend(sub_mt.matchTempleteCenterPoints)
+        if not all_pts:
+            return None
+        merged = MatchTemplete()
+        merged.matchTempleteCenterPoints = all_pts
+        merged.matched = True
+        return merged
+
     def exec_match(self, section: Union[JczxSectionEntity, str]):
         """执行 match 类型实体：纯模板匹配不点击，返回 MatchTemplete 对象供其他实体使用。
         action 字段为变换操作列表（非执行链），如 down-0.5、reW-1.0 等。"""
@@ -953,6 +971,9 @@ class JCZXGaming(Device):
             self.log.warning("未配置模拟器策略，跳过关闭")
     
     def save_screenshot(self, dir: str, name: str):
+        if not os.path.isabs(dir):
+            dir = self.fm.join_p(dir)
+        os.makedirs(dir, exist_ok=True)
         path = self.fm.join(dir, f"{name}.png")
         array: NDArray = self.screenshot()
         cv2.imwrite(path, array)
@@ -1166,6 +1187,11 @@ class JczxTUI(App, JczxCli):
                     id="queue-panel",
                 )
         yield Footer(show_command_palette=False)
+
+    def action_quit(self) -> None:
+        self._stop_running_task()
+        self.executor.shutdown(wait=False, cancel_futures=True)
+        self.exit()
 
     def action_clear_log(self) -> None:
         self.rich_log.clear()
