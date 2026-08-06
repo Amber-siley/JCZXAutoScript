@@ -10,16 +10,85 @@ action: goto-home,goto-supplyStation,click-giftPackage,wait-5,condition-to-get-f
 type: task
 view: on
 name: 领取邮件礼包
-action: null
+action: goto-home,click-mail,click-claimAll,condition-to-get-item,goto-home
 
+[task-receive-dayAndWeek]
+type: task
+view: on
+name: 领取常规任务奖励
+action: goto-home,click-task-menu,condition-to-receive-daily,condition-to-receive-week,goto-home
 
 / 杂项
+[click-task-menu]
+type: click
+name: 任务
+target: buttons\Task.png
+sleep: 2
+
+[condition-to-receive-daily]
+type: condition
+name: 条件判断是否有日常领取
+condition: matched-daily-has-new
+condition_then: click-Daily,click-claimAll,condition-to-get-item
+
+[condition-to-receive-week]
+type: condition
+name: 条件判断是否有周常领取
+condition: matched-week-has-new
+condition_then: click-Week,click-claimAll,condition-to-get-item
+
+[click-Daily]
+type: click
+target: buttons\Daily.png
+sleep: 1
+
+[click-Week]
+type: click
+target: buttons\Week.png
+sleep: 1
+
+[matched-daily-has-new]
+type: match
+match: match-Daily
+target: locations\hasNew.png
+
+[matched-week-has-new]
+type: match
+match: match-Week
+target: locations\hasNew.png
+
+[match-Week]
+type: match
+target: buttons\Week.png
+action: right|1,right-M|20,up-M|10,down-M|10
+
+[match-Daily]
+type: match
+target: buttons\Daily.png
+action: right|1,right-M|20,up-M|10,down-M|10
 
 [click-mail]
 type: click
 name: 邮件
 target: buttons\mail.png
 sleep: 1
+
+[click-claimAll]
+type: click
+name: 一键领取
+target: buttons\claimAll.png
+per: 0.7
+sleep: 1
+
+[condition-to-get-item]
+type: condition
+name: 条件判断有领取物品
+condition: in_location-getItems1
+condition_then: click-get-item
+
+[in_location-getItems1]
+extend: in_location
+target: buttons\getItems1.png
 
 [goto-supplyStation]
 type: click

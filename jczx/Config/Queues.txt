@@ -1,6 +1,6 @@
 [queue-daily]
 name: 日常
-tasks: launch-game,task-receive-everyday,jjc-simulate,goto-inllusion
+tasks: launch-game,task-receive-everyday,jjc-simulate,goto-inllusion,task-receive-mail,task-receive-dayAndWeek
 [queue-日常2]
 name:日常2
-tasks:task-receive-everyday,jjc-simulate,goto-inllusion
+tasks:task-receive-everyday,jjc-simulate,goto-inllusion,task-receive-mail,task-receive-dayAndWeek

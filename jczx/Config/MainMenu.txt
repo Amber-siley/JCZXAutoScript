@@ -149,7 +149,7 @@ type: condition
 name: 战斗结束 战斗胜利 或者 失败
 condition: &{condition-in_location-fight-over-win | condition-in_location-fight-over-loss1 | in_location-get-item}
 condition_then: click-center,wait-1,click-center,click-upcenter,condition-set-win-flag,condition-get-item-win
-condition_else: auto-fight-end
+condition_else: wait-1,auto-fight-end
 
 [auto-fight-get-item]
 type: condition
@@ -267,12 +267,23 @@ func: in_location
 target: buttons\back.png
 
 / ==================
+/ 常规任务 - 启动模拟器
+/ ==================
+[emu]
+type: task
+view: on
+name: 启动-模拟器
+action: launch_emulator_task
+settings: emu-settings
+queueable: off
+
+/ ==================
 / 常规任务 - 启动游戏
 / ==================
 [launch-game]
 type: task
 view: on
-name: 启动游戏
+name: 启动-游戏
 action: launch-game-plan
 
 [launch-game-plan]
@@ -286,7 +297,7 @@ sleep: 30
 type: click
 name: 点击登录
 testFor_before: locations\onUseLogin.png
-testFor_per: 0.75
+testFor_per: 0.7
 condition: condition-start-game
 condition_then: click-start-game,wait-5,goto-home
 condition_else: click-userLogin,click-start-game,wait-5,goto-home
@@ -345,7 +356,7 @@ default: name
 [screenshot]
 type: func
 func: save_screenshot
-args: E:\\IDE\pyththon_project\\jczx_auto_script\\jczx\\template,${screenshot-task-values:screenshot-name}
+args: template,${screenshot-task-values:screenshot-name}
 
 [screenshot-task-values]
 screenshot-name: name_11
@@ -353,14 +364,6 @@ screenshot-name: name_11
 / ==================
 / 模拟器设置
 / ==================
-
-[emu]
-type: task
-view: on
-name: 模拟器设置
-action: launch_emulator_task
-settings: emu-settings
-queueable: off
 
 [launch_emulator_task]
 extend: launch_emulator
@@ -382,7 +385,7 @@ label: 模拟器调试程序路径
 
 [emu-values]
 emu-setting-index: 0
-emu-manager-path: D:\Program Files\Netease\MuMu\nx_main\MuMuManager.exe
+emu-manager-path: D:\Software\MuMu\MuMuPlayer\nx_main\MuMuManager.exe
 
 / ==================
 / 任务入口引用
