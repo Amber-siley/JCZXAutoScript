@@ -420,17 +420,23 @@ class JCZXGaming(Device):
             self.log.debug(f"级联匹配 target 图片未找到: {target}")
             return None
         all_pts = []
+        all_center_pts = []
         for pts in mt.matchTempletePoints:
             (x0, y0), (_, _), (_, _), (x1, y1) = pts
             sub_mt = self.findImageDetail(img, cutPoints=((x0, y0), (x1, y1)), per=per)
             if sub_mt and sub_mt.matched:
-                all_pts.extend(sub_mt.matchTempleteCenterPoints)
+                all_pts.extend(sub_mt.matchTempletePoints)
+                all_center_pts.extend(sub_mt.matchTempleteCenterPoints)
         if not all_pts:
             return None
-        merged = MatchTemplete()
-        merged.matchTempleteCenterPoints = all_pts
-        merged.matched = True
-        return merged
+        template_size = mt.templeteSize
+        return MatchTemplete(
+            baseGrayScreenshot=None,
+            grayScreenshot=None,
+            templeteSize=template_size,
+            matchTempletePoints=all_pts,
+            matchTempleteCenterPoints=all_center_pts,
+        )
 
     def exec_match(self, section: Union[JczxSectionEntity, str]):
         """执行 match 类型实体：纯模板匹配不点击，返回 MatchTemplete 对象供其他实体使用。
