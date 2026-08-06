@@ -444,6 +444,8 @@ class JCZXGaming(Device):
                 target = self._resolver.resolve(e.target, e.only_key)
                 result = self._cascade_match(mt, target, e.per)
                 if not result:
+                    if self._recorder:
+                        self._recorder.on_match(self.screenshot(), mt)
                     return None
             elif e.target:
                 img = self.task_manage.get_img(e.target)
