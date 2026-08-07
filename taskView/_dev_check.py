@@ -72,6 +72,36 @@ def test_save_atomic_and_hash():
         assert "sleep: 2\n" in f.read()
     os.unlink(p)
 
+# ---- Task 2: 校验层断言 ----
+from taskView.editor import load_entity_pool, simulate_and_validate
+
+def test_load_pool():
+    pool, efile = load_entity_pool()
+    assert "goto-home" in pool or "click-center" in pool, "MainMenu 公共实体应存在"
+    assert len(pool) > 5
+    # 每个实体都能定位到定义文件
+    assert all(k in efile for k in pool)
+
+def test_validate_bad_ref_and_dup():
+    pool, efile = load_entity_pool()
+    # update 一个 action 指向不存在实体 -> 应报错
+    writes, errors = simulate_and_validate(pool, efile, "tasks/receive.txt", [
+        {"type": "update", "key": "task-receive-everyday", "fields": {"action": "no-such-entity"}}
+    ])
+    assert errors, "应产生引用错误"
+    assert any("no-such-entity" in e["message"] for e in errors)
+    assert writes == [], "校验失败时不得产生写回"
+
+def test_validate_ok_and_create():
+    pool, efile = load_entity_pool()
+    writes, errors = simulate_and_validate(pool, efile, "tasks/receive.txt", [
+        {"type": "create", "key": "_zz_dev_new", "entity": {"type": "click", "target": "buttons\\home.png"}},
+        {"type": "delete", "key": "_zz_dev_new"},
+    ])
+    assert not errors, errors
+    assert writes, "应产生写回"
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
