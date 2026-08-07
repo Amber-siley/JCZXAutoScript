@@ -60,11 +60,13 @@
 
 ### 4.2 #6 flow 节点带 file 字段 + #2 detail 补字段
 - `build_flow_tree` 节点 `data` 增加 `file` 字段（`entity_file[key]`），供前端 tap handler 用来源文件请求 detail。
-- `get_entity_detail` 返回补充 settings/setting 专有字段：`fields`、`setting_type`、`label`、`options`、`default`、`min`、`max`（`JczxSectionEntity` 已有这些字段）。
+- `get_entity_detail` 返回补充 settings/setting 专有字段：`fields`、`setting_type`、`label`、`options`、`default`、`min`、`max`。这些字段声明在 `JczxSettingEntity` 而非 `JczxSectionEntity` 上，故：
+  - `get_entity_detail` 对 settings/setting 实体用 `JczxSettingEntity` 从来源文件重解析补齐（Task 1 已实现）。
+  - `editor.py` 的 `_apply_field` 对 settings/setting 类型实体放行这 7 个专有字段（`_SETTING_ENTITY_FIELDS`），setattr 存为实例属性、写回时按文件行更新（Task 2 修订新增）。
 
 ## 5. 不改动的部分
 
-- `taskView/editor.py`：校验层已支持空 target 跳过图片检查；`explicit` 字段逻辑保持。
+- `taskView/editor.py`：`_apply_field` 修订为支持 settings/setting 专有字段（见 4.2）；其余校验（空 target 跳过图片检查、`explicit` 字段逻辑）保持。
 - `jczx/` 全部文件：零侵入。
 - 前端只读功能（拖拽/缩放/布局切换/导出/边过滤）：保持。
 

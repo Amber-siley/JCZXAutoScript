@@ -228,12 +228,25 @@ def load_entity_pool() -> tuple[dict[str, JczxSectionEntity], dict[str, str]]:
     return pool, entity_file
 
 
+_SETTING_ENTITY_FIELDS = ("fields", "setting_type", "label", "options", "default", "min", "max")
+
+
 def _apply_field(ent: JczxSectionEntity, field: str, value: str, errors: list[dict]) -> None:
-    """把字符串值设置到实体字段，复用 __setattr__ 类型转换；失败记错误。"""
+    """把字符串值设置到实体字段，复用 __setattr__ 类型转换；失败记错误。
+
+    settings/setting 实体的 7 个专有字段只声明在 JczxSettingEntity 上（见
+    jczx/configEntity.py），而实体池以 JczxSectionEntity 解析，__dataclass_fields__
+    不含这些字段。对 settings/setting 类型实体放行：setattr 存为实例属性（值原样，
+    list 字段不拆），写回时 update_value/add_option 按文件行更新（字段行在文件中存在）。
+    """
     if field not in ent.__dataclass_fields__:
-        errors.append({"file": ent.only_key or "", "key": ent.only_key or "",
-                       "field": field, "message": f"未知字段: {field}"})
-        return
+        if (getattr(ent, "type", None) in (SectionType.SETTINGS.value, SectionType.SETTING.value)
+                and field in _SETTING_ENTITY_FIELDS):
+            pass    # settings/setting 专有字段，允许（存为实例属性，写回时按文件行更新）
+        else:
+            errors.append({"file": ent.only_key or "", "key": ent.only_key or "",
+                           "field": field, "message": f"未知字段: {field}"})
+            return
     try:
         setattr(ent, field, value)
     except Exception as e:

@@ -601,7 +601,10 @@ function buildEntityForm(detail) {
       <button onclick="addDraftEntity()">新增</button>
       <button onclick="duplicateEntity()">复制</button>
       <button onclick="deleteDraftEntity()" style="color:#ef5350">删除</button>
-      <span style="margin-left:auto">type: <select data-field="type" data-orig="${escAttr(type)}">${TYPE_OPTIONS.map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`).join('')}</select></span></div>${html}`;
+      <span style="margin-left:auto">type: <select data-field="type" data-orig="${type === '' ? '' : escAttr(type)}">
+        <option value="">(无)</option>
+        ${TYPE_OPTIONS.map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`).join('')}
+      </select></span></div>${html}`;
 }
 
 function renderEditForm(detail) {
