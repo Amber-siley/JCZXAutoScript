@@ -34,7 +34,9 @@
 - 字段值来自后端 detail（见 4.2）。
 
 ### 3.3 #3 未保存新节点跳过 fetch
-- tap handler：`lookupName` 不在当前图数据 `fullNodes`（`fullNodes.some(n => n.data.id === lookupName)`）→ 判定为新建节点，**跳过 fetch**，直接用节点信息构造 detail（type 从 class 推断）。消除 404 噪音。
+- tap handler：`lookupName` 用**全局实体池** `entityCandidates`（`/api/entities`，含当前文件闭包之外的跨文件实体）判断是否已保存：`entityCandidates.some(c => c.key === lookupName)` → 不在池中判定为新建节点，**跳过 fetch**，直接用节点信息构造 detail（type 从 class 推断）。消除 404 噪音。
+- `entityCandidates` 为空（`fetchEntities` 未加载/失败）时回退 `fullNodes`（`fullNodes.some(n => n.data.id === lookupName)`）判断，避免全空白。
+- 覆盖 flow 跨文件闭包实体：flow 树由全局池展开，可含当前文件闭包之外、仅存在于全局池的实体；用全局池判断可正确 fetch（#6 用来源文件 `detailFile`）。乐观更新新建节点同样不在 `entityCandidates` → 语义不变。
 
 ### 3.4 #5 新增默认 target 留空
 - `addDraftEntity` 默认 entity 去掉 `target` 字段（不再填 `buttons\xxx.png`）。

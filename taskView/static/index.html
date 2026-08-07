@@ -401,8 +401,11 @@ function initCy() {
     document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载中…</div>';
     // #6: flow 节点带来源文件（data.file），graph 节点回退 currentFile
     const detailFile = node.data('file') || currentFile;
-    // #3: 新建节点（不在当前图数据 fullNodes）不 fetch，避免 404 噪音
-    const isSaved = fullNodes.some(n => n.data.id === lookupName);
+    // #3: 用全局实体池 entityCandidates 判断已保存（覆盖 flow 跨文件闭包实体）；
+    // 乐观更新新建节点不在 entityCandidates → isSaved=false → 跳过 fetch（消除 404）
+    const isSaved = (entityCandidates.length
+      ? entityCandidates.some(c => c.key === lookupName)
+      : fullNodes.some(n => n.data.id === lookupName));   // entityCandidates 未加载时回退 fullNodes
     let detail;
     if (isSaved) {
       try {
