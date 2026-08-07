@@ -398,23 +398,32 @@ function initCy() {
     const lookupName = entityName.replace(/#\d+$/, '');
     if (!currentFile || !entityName) return;
     if (!detailVisible) toggleDetail();
-    // 立即反馈，避免 fetch 期间显示旧内容/空白（编辑表单异步渲染）
     document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载中…</div>';
-    try {
-      const res = await fetch(`/api/entity/${encodeURIComponent(lookupName)}?file=${encodeURIComponent(currentFile)}`);
-      let detail;
-      if (res.ok) {
-        detail = await res.json();
-      } else {
-        // 未保存的新实体（乐观更新节点）：后端无记录，用节点自身信息构造表单，保证可编辑/删除/复制
-        const typeCls = ['task','func','click','match','ocr','condition','context','dynamic','settings','setting','file']
-          .find(c => node.hasClass(c)) || 'click';
-        detail = { key: lookupName, type: typeCls, desc: '未保存的新实体（草稿，保存后写入配置）' };
+    // #6: flow 节点带来源文件（data.file），graph 节点回退 currentFile
+    const detailFile = node.data('file') || currentFile;
+    // #3: 新建节点（不在当前图数据 fullNodes）不 fetch，避免 404 噪音
+    const isSaved = fullNodes.some(n => n.data.id === lookupName);
+    let detail;
+    if (isSaved) {
+      try {
+        const res = await fetch(`/api/entity/${encodeURIComponent(lookupName)}?file=${encodeURIComponent(detailFile)}`);
+        if (res.ok) {
+          detail = await res.json();
+        } else {
+          const typeCls = ['task','func','click','match','ocr','condition','context','dynamic','settings','setting','file']
+            .find(c => node.hasClass(c)) || 'click';
+          detail = { key: lookupName, type: typeCls, desc: '未保存的新实体（草稿，保存后写入配置）' };
+        }
+      } catch (e) {
+        document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载详情失败</div>';
+        return;
       }
-      renderEditForm(detail);
-    } catch (e) {
-      document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载详情失败</div>';
+    } else {
+      const typeCls = ['task','func','click','match','ocr','condition','context','dynamic','settings','setting','file']
+        .find(c => node.hasClass(c)) || 'click';
+      detail = { key: lookupName, type: typeCls, desc: '未保存的新实体（草稿，保存后写入配置）' };
     }
+    renderEditForm(detail);
   });
 
   cy.on('tap', function (evt) {
@@ -498,10 +507,16 @@ async function fetchEntities() {
   entityCandidates = await (await fetch('/api/entities')).json();
 }
 
+function findNode(key) {
+  const exact = cy.getElementById(key);
+  if (exact.length) return exact;
+  return cy.$(`[id^="${key}#"]`);   // flow 节点 id 形如 key#N
+}
+
 function trackDirty(key) {
   dirtyKeys.add(key);
-  const n = cy.getElementById(key);
-  if (n) n.addClass('dirty');
+  const n = findNode(key);
+  if (n.length) n.addClass('dirty');
   refreshDraftBar();
 }
 
@@ -628,7 +643,7 @@ function renderEditForm(detail) {
       }
       // 该 key 仍存在任何草稿 op 则保持脏标记，否则清除
       if (draftOps.some(o => o.key === key)) trackDirty(key);
-      else { dirtyKeys.delete(key); cy.getElementById(key).removeClass('dirty'); }
+      else { dirtyKeys.delete(key); findNode(key).removeClass('dirty'); }
       refreshDraftBar();
     });
   });
@@ -656,13 +671,23 @@ function pushDraft(op) {
   // 乐观更新图：仅 graph 视图生效。flow 视图是流程展示（currentView==='flow'），
   // 草稿操作不改变图上节点/不重布局，避免视图跳变；仅在节点存在时标脏、更新草稿栏。
   if (currentView === 'flow') {
-    const nf = cy.getElementById(key);
-    if (nf.length) trackDirty(key);
-    else refreshDraftBar();
+    const nf = findNode(key);
+    if (nf.length) {
+      if (type === 'delete') {
+        dirtyKeys.delete(key);
+        nf.removeClass('dirty').addClass('deleted');
+      } else {
+        nf.removeClass('deleted');
+        trackDirty(key);
+      }
+      refreshDraftBar();
+    } else {
+      refreshDraftBar();
+    }
     return;
   }
   // 乐观更新图：新增立即显示、删除立即标红、修改标黄
-  const n = cy.getElementById(key);
+  const n = findNode(key);
   if (type === 'create') {
     if (!n.length) {
       cy.add({ data: { id: key, label: key, type: op.entity.type || 'click', desc: '未保存的新实体' }, classes: (op.entity.type || 'click') + ' dirty' });
@@ -686,7 +711,7 @@ function pushDraft(op) {
 async function addDraftEntity() {
   const key = prompt('新实体 key（如 my-click）');
   if (!key) return;
-  pushDraft({type:'create', key, entity:{type:'click', target:'buttons\\xxx.png'}});
+  pushDraft({ type: 'create', key, entity: { type: 'click' } });   // 不再默认 buttons\xxx.png
   showBanner(`草稿: 新增 ${key}（请在表单补全字段）`, 'ok');
 }
 
