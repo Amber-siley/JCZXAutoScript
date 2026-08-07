@@ -34,6 +34,10 @@ def test_detail_has_settings_fields():
     assert dn["setting_type"] == "input", "setting 实体 setting_type 应有值"
     assert dn["label"] == "截图名称", "setting 实体 label 应有值"
     assert dn["default"] == "name", "setting 实体 default 应有值"
+    # 专有字段应并入 explicit（前端复制 settings/setting 实体不丢字段）
+    assert "fields" in ds["explicit"], "settings 实体 explicit 应含 fields"
+    assert "setting_type" in dn["explicit"], "setting 实体 explicit 应含 setting_type"
+    assert "default" in dn["explicit"], "setting 实体 explicit 应含 default"
 
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):

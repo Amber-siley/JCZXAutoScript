@@ -497,7 +497,7 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
     detail["min"] = getattr(entity, "min", None)
     detail["max"] = getattr(entity, "max", None)
     # settings/setting 实体专有字段声明在 JczxSettingEntity 上，JczxSectionEntity 解析会丢弃；
-    # 用 JczxSettingEntity 从来源文件重解析补齐（不触碰 jczx/）
+    # 用 JczxSettingEntity 从来源文件重解析补齐，并把非空专有字段并入 explicit 供前端复制
     if entity.type in (SectionType.SETTINGS.value, SectionType.SETTING.value):
         from jczx.configEntity import JczxSettingEntity
         path = entity_file.get(entity_name, "")
@@ -505,12 +505,11 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
             sents = TxtConfig(path).trans_entity_dict(JczxSettingEntity)
             sent = sents.get(entity_name)
             if sent:
-                detail["fields"] = sent.fields or []
-                detail["setting_type"] = sent.setting_type or ""
-                detail["label"] = sent.label or ""
-                detail["options"] = sent.options or []
-                detail["default"] = sent.default or ""
-                detail["min"] = sent.min
-                detail["max"] = sent.max
+                for f in ("fields", "setting_type", "label", "options", "default", "min", "max"):
+                    v = getattr(sent, f)
+                    if v not in (None, "", []):
+                        detail[f] = v
+                        if f not in explicit:
+                            explicit.append(f)
     detail["explicit"] = explicit
     return detail
