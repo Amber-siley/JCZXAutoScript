@@ -60,6 +60,16 @@ def test_rename():
     assert "[goto-home]" not in ed.text
     os.unlink(p)
 
+def test_delete_no_leftover_blank():
+    p = make()
+    ed = ConfigEditor(p)
+    ed.load()
+    orig = ed.text
+    ed.add_entity("zz-tmp", {"type": "click", "target": "buttons\\a.png"})
+    ed.delete_entity("zz-tmp")
+    assert ed.text == orig, "create→delete 往返应无残留空行/内容"
+    os.unlink(p)
+
 def test_save_atomic_and_hash():
     p = make()
     h1 = file_hash(p)

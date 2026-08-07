@@ -102,11 +102,13 @@ class ConfigEditor:
     def add_entity(self, key: str, fields: dict[str, str]) -> None:
         if key in self._entity_by_name:
             raise ValueError(f"实体已存在: {key}")
-        lines = ["", f"[{key}]"]
+        lines = [f"[{key}]"]
         for opt, val in fields.items():
             lines.append(f"{opt}: {val}")
-        # 追加到文件末尾；若文件末尾无空行则补一个空行分隔
-        if self._lines and self._lines[-1].strip():
+        # 追加到文件末尾；始终插入一个全新的分隔空行（文件为空时除外），
+        # 使 delete_entity 删除该 section 时能精确移除这个由本方法新增的
+        # 空行，而不会误删文件原有的末尾空行 —— create→delete 往返字节级干净。
+        if self._lines:
             self._lines.append("")
         self._lines.extend(lines)
         self._reindex()  # 重建索引
@@ -114,7 +116,13 @@ class ConfigEditor:
     def delete_entity(self, key: str) -> None:
         ent = self._entity(key)
         drop = {ent.header_idx, *ent.option_lines}
+        # 清理 header 之前的紧邻分隔空行（add_entity 补的，最多一个）
+        if ent.header_idx > 0 and self._lines[ent.header_idx - 1].strip() == "":
+            drop.add(ent.header_idx - 1)
         self._lines = [ln for i, ln in enumerate(self._lines) if i not in drop]
+        # 清理文件末尾多余空行（最多保留一个）
+        while len(self._lines) > 1 and self._lines[-1].strip() == "" and self._lines[-2].strip() == "":
+            self._lines.pop()
         self._reindex()
 
     def rename_entity(self, old: str, new: str) -> None:

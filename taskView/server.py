@@ -53,6 +53,9 @@ async def api_entities():
 @app.post("/api/file/{file:path}/validate")
 async def api_validate(file: str, req: ApplyRequest = Body(...)):
     pool, efile = ed.load_entity_pool()
+    target_path = os.path.join(ed.CONFIG_DIR, *file.split("/"))
+    if not os.path.isfile(target_path):
+        raise HTTPException(status_code=404, detail=f"File not found: {file}")
     try:
         _, errors = ed.simulate_and_validate(pool, efile, file, req.ops)
     except ValueError as e:
