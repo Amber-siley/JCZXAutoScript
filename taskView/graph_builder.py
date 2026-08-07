@@ -143,7 +143,7 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
         })
         return nid
 
-    def _add_external_node(key: str, label_hint: str) -> str:
+    def _add_external_node(key: str) -> str:
         """跨文件引用实体节点（当前文件外），标注来源文件。"""
         if key in seen_node_ids:
             return key
@@ -168,7 +168,7 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
 
     def _resolve_ref(ref: str, src: str, label: str, classes: str) -> None:
         """引用解析：当前文件实体 → 普通节点；跨文件 → external 节点。"""
-        if not ref or ref in seen_edge_ids:
+        if not ref:
             return
         eid = f"{src}→{ref}::{classes}"
         if eid in seen_edge_ids:
@@ -176,7 +176,7 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
         if ref in configs:
             _add_node(configs[ref])
         elif ref in global_configs:
-            _add_external_node(ref, "")
+            _add_external_node(ref)
         else:
             return
         seen_edge_ids.add(eid)
@@ -213,7 +213,7 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
             if sk and sk in configs:
                 _add_node(configs[sk]); _add_edge(src, sk, "设置", "settings")
             elif sk and sk in global_configs:
-                _add_external_node(sk, ""); _add_edge(src, sk, "设置", "settings")
+                _add_external_node(sk); _add_edge(src, sk, "设置", "settings")
 
     # 占位符引用（@{} ${} 等）沿用现有逻辑，仅对 configs 内实体建边；跨文件占位符不建边
     for key, entity in configs.items():

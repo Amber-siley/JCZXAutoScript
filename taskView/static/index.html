@@ -753,7 +753,7 @@ function showErrors(errors) {
   document.querySelectorAll('#err-banner .err').forEach(el =>
     el.addEventListener('click', () => {
       const k = el.dataset.key;
-      if (k && cy.getElementById(k).length) { cy.getElementById(k).addClass('error'); cy.center(cy.getElementById(k)); }
+      if (k) { const n = findNode(k); if (n.length) { n.addClass('error'); cy.center(n); } }
     }));
 }
 function hideErrors() { document.getElementById('err-banner').style.display = 'none'; }
