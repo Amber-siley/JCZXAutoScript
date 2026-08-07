@@ -102,6 +102,66 @@ def test_validate_ok_and_create():
     assert writes, "应产生写回"
 
 
+def _section_block(text, key):
+    """提取文本中 [key] section 的行（含头行，直到下一个 section 头）。"""
+    lines = text.splitlines()
+    start = None
+    end = len(lines)
+    for i, ln in enumerate(lines):
+        s = ln.strip()
+        if s.startswith("[") and s.endswith("]"):
+            if s == f"[{key}]":
+                start = i
+            elif start is not None:
+                end = i
+                break
+    return lines[start:end] if start is not None else []
+
+def _count_options(block):
+    """统计 section 内 option 行数（跳过注释与 section 头）。"""
+    n = 0
+    for ln in block:
+        s = ln.strip()
+        if s and not s.startswith("/") and not (s.startswith("[") and s.endswith("]")):
+            if ":" in s:
+                n += 1
+    return n
+
+def test_update_no_field_pollution():
+    pool, efile = load_entity_pool()
+    key = "task-receive-everyday"
+    raw = open(efile[key], encoding="utf-8").read()
+    before = _count_options(_section_block(raw, key))
+    writes, errors = simulate_and_validate(pool, efile, "tasks/receive.txt", [
+        {"type": "update", "key": key, "fields": {"sleep": "7"}}
+    ])
+    assert not errors, errors
+    assert writes, "应产生写回"
+    recv = next(t for p, t in writes if os.path.basename(p) == "receive.txt")
+    block = _section_block(recv, key)
+    after = _count_options(block)
+    assert after < before + 5, f"update 写回污染配置: option 行数 {before} -> {after}"
+    assert any("sleep: 7" in ln for ln in block), "应只追加变更字段 sleep: 7"
+    # 不应出现未变更的默认字段落盘
+    for bad in ("index: 0", "break_point: off", "queueable: on", "log_level: info",
+                "screen_cache_ttl: -1.0", "condition_else:", "condition_then:", "wait_sec:", "args:"):
+        assert not any(bad in ln for ln in block), f"写回出现未变更默认字段行: {bad}"
+
+def test_rename_writes_rename():
+    pool, efile = load_entity_pool()
+    assert "click-claimAll" in pool, "前置：click-claimAll 实体存在"
+    writes, errors = simulate_and_validate(pool, efile, "tasks/receive.txt", [
+        {"type": "rename", "old": "click-claimAll", "new": "click-claimAll2"}
+    ])
+    assert not errors, errors
+    assert writes, "应产生写回"
+    recv = next(t for p, t in writes if os.path.basename(p) == "receive.txt")
+    assert "[click-claimAll2]\n" in recv, "新 key section 头应存在"
+    assert "[click-claimAll]\n" not in recv, "旧 key section 头应被重命名（不得残留副本）"
+    # 引用 old 的 action/condition_then 应被同步更新
+    assert "click-claimAll2,condition-to-get-item" in recv, "引用旧 key 的字段应同步为 new"
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):

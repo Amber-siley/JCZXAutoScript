@@ -6,6 +6,7 @@ ConfigEditor 只处理实体文件（MainMenu.txt / tasks/*.txt）。已验证�
 import os
 import re
 import tempfile
+from copy import deepcopy
 from hashlib import sha1
 from typing import Optional
 
@@ -157,8 +158,18 @@ _PLACEHOLDER_RE = re.compile(r"\$\{[^}]*\}|@\{[^}]*\}|%\{[^}]*\}|&\{[^}]*\}")
 
 
 def _is_editable_file(file: str) -> bool:
-    """可编辑文件范围：MainMenu.txt 或 tasks/ 下 .txt；排除 Config.txt/Queues.txt。"""
-    return file.endswith(".txt") and (file == "MainMenu.txt" or file.startswith("tasks/"))
+    """可编辑文件范围：归一化后必须落在 CONFIG_DIR 内；排除 Config.txt/Queues.txt。
+
+    用 normpath + commonpath 归一化，防止 `tasks/../Config.txt` 之类路径绕过排除。
+    """
+    full = os.path.normpath(os.path.join(CONFIG_DIR, file))
+    base = os.path.basename(full)
+    if not file.endswith(".txt") or base in ("Config.txt", "Queues.txt"):
+        return False
+    try:
+        return os.path.commonpath([full, CONFIG_DIR]) == os.path.normpath(CONFIG_DIR)
+    except ValueError:
+        return False
 
 
 def load_entity_pool() -> tuple[dict[str, JczxSectionEntity], dict[str, str]]:
@@ -228,8 +239,11 @@ def _validate_entity(pool: dict[str, JczxSectionEntity], key: str,
                     errors.append({**e, "field": f, "message": f"引用实体不存在: {item}"})
 
     settings = getattr(ent, "settings", None)
-    if settings and settings in pool and pool[settings].type != SectionType.SETTINGS.value:
-        errors.append({**e, "field": "settings", "message": f"{settings} 不是 settings 实体"})
+    if settings:
+        if settings not in pool:
+            errors.append({**e, "field": "settings", "message": f"settings 引用实体不存在: {settings}"})
+        elif pool[settings].type != SectionType.SETTINGS.value:
+            errors.append({**e, "field": "settings", "message": f"{settings} 不是 settings 实体"})
 
     target = getattr(ent, "target", "") or ""
     if ent.type in (SectionType.CLICK.value, SectionType.MATCH.value, SectionType.OCR.value) \
@@ -252,19 +266,26 @@ def _validate_pool(pool: dict[str, JczxSectionEntity], resources_dir: str) -> li
     return errors
 
 
-def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tuple[list[tuple[str, list[str]]], list[dict]]:
+def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tuple[list[tuple[str, str]], list[dict]]:
     """模拟应用 ops → 校验 → 返回 (writes, errors)。ops 结构非法抛 ValueError。"""
     if not _is_editable_file(file):
         raise ValueError(f"不可编辑文件: {file}")
 
-    # 目标文件路径 + 复制实体池（避免污染加载结果）
+    # 目标文件路径 + 复制实体池与实体文件映射（避免污染加载结果）
     target_path = os.path.join(CONFIG_DIR, *file.split("/"))
-    new_pool = dict(pool)
+    new_pool = deepcopy(pool)
+    entity_file = dict(entity_file)
     errors: list[dict] = []
-    touched: dict[str, set] = {}   # 文件路径 -> 涉及实体 key 集合（用于生成 writes）
+    # 变更明细：文件路径 -> 实体 key -> 变更序列。writeback 只按明细写，
+    # 不再遍历实体全字段，避免把默认值/未变更字段一并落盘（C1）。
+    changes: dict[str, dict[str, list[dict]]] = {}
 
-    def _touch(path: str, key: str) -> None:
-        touched.setdefault(path, set()).add(key)
+    def _record(path: str, key: str, chg: dict) -> None:
+        lst = changes.setdefault(path, {}).setdefault(key, [])
+        if chg["op"] == "update" and lst and lst[-1]["op"] == "update":
+            lst[-1]["fields"].update(chg["fields"])
+        else:
+            lst.append(chg)
 
     for op in ops:
         t = op.get("type")
@@ -274,29 +295,33 @@ def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tupl
                 errors.append({"file": file, "key": key, "field": "", "message": f"实体不存在: {key}"})
                 continue
             ent = new_pool[key]
-            for field, value in op.get("fields", {}).items():
+            fields = op.get("fields", {})
+            for field, value in fields.items():
                 _apply_field(ent, field, value, errors)
-            _touch(entity_file[key], key)
+            _record(entity_file[key], key, {"op": "update", "fields": dict(fields)})
         elif t == "create":
             key = op["key"]
             if key in new_pool:
                 errors.append({"file": file, "key": key, "field": "", "message": f"实体已存在: {key}"})
                 continue
             ent = JczxSectionEntity()
-            for field, value in op.get("entity", {}).items():
+            fields = op.get("entity", {})
+            for field, value in fields.items():
                 _apply_field(ent, field, value, errors)
             if not ent.type:
                 errors.append({"file": file, "key": key, "field": "type", "message": "缺少 type"})
             new_pool[key] = ent
-            _touch(target_path, key)
+            entity_file[key] = target_path
+            # 只写 op.entity 提供的字段，不转写实体全字段
+            _record(target_path, key, {"op": "create", "fields": dict(fields)})
         elif t == "delete":
             key = op["key"]
             if key not in new_pool:
                 errors.append({"file": file, "key": key, "field": "", "message": f"实体不存在: {key}"})
                 continue
             del new_pool[key]
-            # 本批次内新建的实体不在 entity_file，归入目标文件
-            _touch(entity_file.get(key, target_path), key)
+            # 本批次内新建的实体不在原 entity_file，已由 create 分支归入目标文件
+            _record(entity_file.get(key, target_path), key, {"op": "delete"})
         elif t == "rename":
             old, new = op["old"], op["new"]
             if old not in new_pool or new in new_pool:
@@ -305,18 +330,23 @@ def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tupl
                 continue
             old_path = entity_file[old]
             new_pool[new] = new_pool.pop(old)
-            _touch(old_path, new)
-            # 同步更新所有引用 old 的字段
+            entity_file[new] = entity_file.pop(old)
+            _record(old_path, new, {"op": "rename", "old": old})
+            # 同步更新所有引用 old 的字段（内存 + 变更明细）
             for other_key, other in new_pool.items():
-                changed = False
+                changed_fields: dict[str, str] = {}
                 for f in _REF_FIELDS:
                     val = getattr(other, f, None)
                     if isinstance(val, str) and val == old:
-                        setattr(other, f, new); changed = True
+                        setattr(other, f, new)
+                        changed_fields[f] = new
                     elif isinstance(val, list) and old in val:
-                        setattr(other, f, [new if x == old else x for x in val]); changed = True
-                if changed:
-                    _touch(entity_file[other_key], other_key)
+                        nv = [new if x == old else x for x in val]
+                        setattr(other, f, nv)
+                        changed_fields[f] = ",".join(str(x) for x in nv)
+                if changed_fields:
+                    _record(entity_file[other_key], other_key,
+                            {"op": "update", "fields": changed_fields})
         else:
             raise ValueError(f"未知变更类型: {t}")
 
@@ -326,38 +356,27 @@ def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tupl
     if errors:
         return [], errors
 
-    # 生成写回：每个受影响文件用 ConfigEditor 应用涉及实体的字段变更
-    writes: list[tuple[str, list[str]]] = []
-    for path, keys in touched.items():
+    # 生成写回：按变更明细逐项应用（只写实际变更，不遍历实体全字段）
+    writes: list[tuple[str, str]] = []
+    for path, keys_changes in changes.items():
         ed = ConfigEditor(path)
         ed.load()
-        for key in sorted(keys):
-            ent = new_pool.get(key)
-            if ent is None:
-                if key in ed.sections:
-                    ed.delete_entity(key)
-                continue
-            if key not in ed.sections:
-                fields = {f: str(getattr(ent, f)) for f in ent.__dataclass_fields__
-                          if getattr(ent, f) is not None
-                          and getattr(ent, f) != getattr(JczxSectionEntity(), f)
-                          and f not in ("only_key", "context_default_type")}
-                ed.add_entity(key, fields)
-                continue
-            for f in ent.__dataclass_fields__:
-                if f in ("only_key", "extend", "context_default_type"):
-                    continue
-                val = getattr(ent, f)
-                if val is None:
-                    continue
-                if isinstance(val, list):
-                    val = ",".join(str(x) for x in val)
-                else:
-                    val = str(val)
-                try:
-                    ed.update_value(key, f, val)
-                except ValueError:
-                    ed.add_option(key, f, val)  # 文件无此字段行 → 追加（extend 继承字段落盘）
+        for key, chg_list in keys_changes.items():
+            for chg in chg_list:
+                if chg["op"] == "delete":
+                    if key in ed.sections:
+                        ed.delete_entity(key)
+                elif chg["op"] == "rename":
+                    ed.rename_entity(chg["old"], key)
+                elif chg["op"] == "create":
+                    ed.add_entity(key, {k: str(v) for k, v in chg["fields"].items()})
+                elif chg["op"] == "update":
+                    for field, value in chg["fields"].items():
+                        value = str(value)
+                        try:
+                            ed.update_value(key, field, value)
+                        except ValueError:
+                            ed.add_option(key, field, value)  # 文件无此字段行 → 追加（extend 继承字段落盘）
         writes.append((path, ed.text))
     return writes, []
 
