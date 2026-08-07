@@ -746,8 +746,12 @@ function syncMultiField(field) {
 
 // 草稿态图元素集合（id），供 updateDraftGraph 清除重建（#6）
 const draftGraph = { nodes: new Set(), edges: new Set() };
+// 代际计数器：async updateDraftGraph 含 await fetch，保存/放弃/切文件瞬间在途调用可能
+// 在 loadGraph 重载后回填草稿元素（幽灵草稿）。每次调用 +1，每个 await 后校验代际，过期丢弃。
+let draftGen = 0;
 
 async function updateDraftGraph() {
+  const gen = ++draftGen;
   // 清除旧草稿态
   draftGraph.nodes.forEach(id => { const n = cy.getElementById(id); if (n.length) n.remove(); });
   draftGraph.edges.forEach(id => { const e = cy.getElementById(id); if (e.length) e.remove(); });
@@ -781,8 +785,10 @@ async function updateDraftGraph() {
       } catch (err) {
         res = { ok: false };
       }
+      if (gen !== draftGen) return;   // 代际过期（期间已保存/放弃/切文件重载）：丢弃本次结果
       if (res.ok) {
         const tree = await res.json();
+        if (gen !== draftGen) return;   // 同上：json 解析期间也可能被重载打断
         // 草稿态链路节点放在 source 旁的网格（不重布局，避免扰动已有图）
         let i = 0;
         for (const n of tree.nodes || []) {
@@ -945,6 +951,7 @@ async function loadGraph(filename) {
     baseHash = data.file_hash || null;      // 新增：保存时回传做冲突检测
     draftOps = []; dirtyKeys.clear();       // 新增：切换文件清空草稿
     draftGraph.nodes.clear(); draftGraph.edges.clear();   // 草稿态图随正式图重载清空
+    draftGen++;                            // 使在途 updateDraftGraph 的 fetch 失效（防幽灵草稿）
     cy.$('.dirty').removeClass('dirty');    // 新增
     hideErrors();                           // 新增
     refreshDraftBar();                      // 新增
