@@ -388,6 +388,9 @@ function initCy() {
       { selector: 'node.dirty', style: { 'border-width': 3, 'border-color': '#ffd54f' } },
       { selector: 'node.error', style: { 'border-width': 3, 'border-color': '#ef5350' } },
       { selector: 'node.deleted', style: { 'border-width': 3, 'border-color': '#ef5350', 'border-style': 'dashed' } },
+      // 草稿态节点/边：虚线 + 半透明（放末尾以覆盖类型样式；#6）
+      { selector: 'node.draft', style: { 'border-style': 'dashed', 'opacity': 0.6 } },
+      { selector: 'edge.draft', style: { 'line-style': 'dashed', 'opacity': 0.5 } },
     ],
     layout: { name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 },
     wheelSensitivity: 0.3,
@@ -696,6 +699,7 @@ function renderEditForm(detail) {
       if (draftOps.some(o => o.key === key)) trackDirty(key);
       else { dirtyKeys.delete(key); findNode(key).removeClass('dirty'); }
       refreshDraftBar();
+      updateDraftGraph();   // 字段变更 → 草稿态图实时更新（async，不 await；#6）
     });
   });
 
@@ -738,6 +742,76 @@ function syncMultiField(field) {
   inp.value = keys.join(',');
   inp.dispatchEvent(new Event('change'));   // 走现有草稿收集逻辑
 }
+}
+
+// 草稿态图元素集合（id），供 updateDraftGraph 清除重建（#6）
+const draftGraph = { nodes: new Set(), edges: new Set() };
+
+async function updateDraftGraph() {
+  // 清除旧草稿态
+  draftGraph.nodes.forEach(id => { const n = cy.getElementById(id); if (n.length) n.remove(); });
+  draftGraph.edges.forEach(id => { const e = cy.getElementById(id); if (e.length) e.remove(); });
+  draftGraph.nodes.clear(); draftGraph.edges.clear();
+
+  // 遍历草稿，收集引用关系（source 实体 → target 引用）
+  const refs = [];   // {source, target}
+  for (const op of draftOps) {
+    if (op.type !== 'create' && op.type !== 'update') continue;
+    const fields = op.type === 'create' ? op.entity : op.fields;
+    for (const f of ['action', 'condition_then', 'condition_else']) {
+      const v = fields[f];
+      if (!v) continue;
+      for (const t of String(v).split(',').map(s => s.trim()).filter(Boolean)) {
+        refs.push({ source: op.key, target: t });
+      }
+    }
+  }
+
+  // 对每个引用，确保 target 存在（跨文件展开链路），建边
+  for (const { source, target } of refs) {
+    const srcNode = findNode(source);
+    if (!srcNode.length) continue;
+    const srcPos = srcNode.position();
+    let tgtNode = findNode(target);
+    if (!tgtNode.length) {
+      // 跨文件：尝试加载链路（fetch 失败 / 404 静默跳过，不阻塞）
+      let res;
+      try {
+        res = await fetch(`/api/flow?file=${encodeURIComponent(currentFile)}&task=${encodeURIComponent(target)}`);
+      } catch (err) {
+        res = { ok: false };
+      }
+      if (res.ok) {
+        const tree = await res.json();
+        // 草稿态链路节点放在 source 旁的网格（不重布局，避免扰动已有图）
+        let i = 0;
+        for (const n of tree.nodes || []) {
+          if (!findNode(n.data.id).length) {
+            cy.add({ data: { ...n.data, draft: true }, classes: (n.classes || '') + ' draft',
+                     position: { x: srcPos.x + 200 + (i % 2) * 160, y: srcPos.y + Math.floor(i / 2) * 100 } });
+            draftGraph.nodes.add(n.data.id);
+            i++;
+          }
+        }
+        for (const e of tree.edges || []) {
+          const eid = `draft-${e.data.id}`;
+          if (!cy.getElementById(eid).length) {
+            cy.add({ data: { ...e.data, id: eid }, classes: (e.classes || '') + ' draft' });
+            draftGraph.edges.add(eid);
+          }
+        }
+      }
+    }
+    const tgt = findNode(target);
+    if (tgt.length) {
+      const eid = `draft-${source}→${target}`;
+      if (!cy.getElementById(eid).length) {
+        // 边端点用实际节点 id（跨文件链路节点 id 形如 key#N，直接引用 target 会悬空）
+        cy.add({ data: { id: eid, source: srcNode.id(), target: tgt.id(), label: '草稿' }, classes: 'draft action' });
+        draftGraph.edges.add(eid);
+      }
+    }
+  }
 }
 
 function pushDraft(op) {
@@ -789,6 +863,7 @@ function pushDraft(op) {
     } else {
       refreshDraftBar();
     }
+    updateDraftGraph();     // 各视图分支后实时更新草稿态图（async，不 await）
     return;
   }
   // 乐观更新图：新增立即显示、删除立即标红、修改标黄
@@ -811,6 +886,7 @@ function pushDraft(op) {
   } else {
     trackDirty(key);                 // rename 等
   }
+  updateDraftGraph();     // 各视图分支后实时更新草稿态图（async，不 await）
 }
 
 async function addDraftEntity() {
@@ -868,6 +944,7 @@ async function loadGraph(filename) {
     fullEdges = data.edges;
     baseHash = data.file_hash || null;      // 新增：保存时回传做冲突检测
     draftOps = []; dirtyKeys.clear();       // 新增：切换文件清空草稿
+    draftGraph.nodes.clear(); draftGraph.edges.clear();   // 草稿态图随正式图重载清空
     cy.$('.dirty').removeClass('dirty');    // 新增
     hideErrors();                           // 新增
     refreshDraftBar();                      // 新增
