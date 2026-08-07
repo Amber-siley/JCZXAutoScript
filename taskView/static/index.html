@@ -564,6 +564,7 @@ async function saveAll() {
   }
   baseHash = data.file_hash; draftOps = []; dirtyKeys.clear();
   cy.$('.dirty').removeClass('dirty');
+  fetchEntities();                   // 刷新全局实体池缓存（新增/删除实体后，R1：避免保存后再 tap 出空白表单）
   loadGraph(currentFile);            // 复用现有 loadGraph：重新拉图 + showAll + buildTaskList
   refreshDraftBar(); showBanner('已保存', 'ok');
 }
