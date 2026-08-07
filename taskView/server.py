@@ -32,7 +32,7 @@ async def api_graph(file: str = Query(..., description="Config filename, e.g. Ma
     result = build_graph(file)
     if not result["nodes"] and not result["edges"]:
         raise HTTPException(status_code=404, detail=f"File not found or empty: {file}")
-    target_path = os.path.join(ed.CONFIG_DIR, *file.split("/"))
+    target_path = os.path.normpath(os.path.join(ed.CONFIG_DIR, *file.split("/")))
     if os.path.isfile(target_path):
         result["file_hash"] = ed.file_hash(target_path)
     return result
@@ -53,7 +53,7 @@ async def api_entities():
 @app.post("/api/file/{file:path}/validate")
 async def api_validate(file: str, req: ApplyRequest = Body(...)):
     pool, efile = ed.load_entity_pool()
-    target_path = os.path.join(ed.CONFIG_DIR, *file.split("/"))
+    target_path = os.path.normpath(os.path.join(ed.CONFIG_DIR, *file.split("/")))
     if not os.path.isfile(target_path):
         raise HTTPException(status_code=404, detail=f"File not found: {file}")
     try:
@@ -66,7 +66,7 @@ async def api_validate(file: str, req: ApplyRequest = Body(...)):
 @app.post("/api/file/{file:path}/apply")
 async def api_apply(file: str, req: ApplyRequest = Body(...)):
     pool, efile = ed.load_entity_pool()
-    target_path = os.path.join(ed.CONFIG_DIR, *file.split("/"))
+    target_path = os.path.normpath(os.path.join(ed.CONFIG_DIR, *file.split("/")))
     if not os.path.isfile(target_path):
         raise HTTPException(status_code=404, detail=f"File not found: {file}")
 

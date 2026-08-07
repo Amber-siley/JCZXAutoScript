@@ -32,12 +32,25 @@ class ConfigEditor:
     def __init__(self, path: str):
         self.path = path
         self._lines: list[str] = []                 # 原始行（不含换行符）
+        self._eol = "\n"                            # 检测到的行分隔符（\r\n / \n）
+        self._trailing_eol = True                   # 文件原本是否以换行符结尾
         self._entities: list[_EntityModel] = []     # 有序实体
         self._entity_by_name: dict[str, _EntityModel] = {}
 
     def load(self) -> None:
-        with open(self.path, encoding="utf-8") as fp:
-            self._lines = [ln.rstrip("\r\n") for ln in fp.readlines()]
+        """读入文件并检测原始 EOL，保存其字节风格（CRLF/LF）供 text 往返复用。"""
+        with open(self.path, "r", encoding="utf-8", newline="") as fp:
+            content = fp.read()
+        self._eol = "\r\n" if "\r\n" in content else "\n"
+        if content == "":
+            self._lines = []
+            self._trailing_eol = False
+        else:
+            raw = content.split(self._eol)          # 手动按 EOL 拆分，保留每行原样
+            self._trailing_eol = raw[-1] == ""
+            if self._trailing_eol:
+                raw.pop()                           # 末尾空元素由 text 用 self._eol 补回
+            self._lines = raw
         self._reindex()
 
     def _reindex(self) -> None:
@@ -66,7 +79,8 @@ class ConfigEditor:
 
     @property
     def text(self) -> str:
-        return "\n".join(self._lines) + ("\n" if self._lines else "")
+        body = self._eol.join(self._lines)
+        return body + (self._eol if self._trailing_eol else "")
 
     @property
     def sections(self) -> list[str]:
@@ -136,7 +150,8 @@ class ConfigEditor:
         dirn = os.path.dirname(self.path) or "."
         fd, tmp = tempfile.mkstemp(prefix=".jczx-edit-", suffix=".tmp", dir=dirn)
         try:
-            with os.fdopen(fd, "w", encoding="utf-8") as fp:
+            # newline=""：禁止换行符转换，text 原样写盘（text 已用检测到的 EOL 拼装）
+            with os.fdopen(fd, "w", encoding="utf-8", newline="") as fp:
                 fp.write(self.text)
             os.replace(tmp, self.path)
         except Exception:
@@ -226,6 +241,46 @@ def _apply_field(ent: JczxSectionEntity, field: str, value: str, errors: list[di
                        "field": field, "message": f"字段类型错误: {e}"})
 
 
+_PLACEHOLDER_OPENERS = ("${", "@{", "%{", "&{")
+
+
+def _validate_placeholders(entity_key: str, field: str, value: str,
+                           pool: dict[str, JczxSectionEntity],
+                           errors: list[dict]) -> None:
+    """占位符深层校验：括号闭合 + `@{}` 引用的实体存在。
+
+    - `${section:option}` / `${option}`：**不做存在性硬校验**（`-values` 配置值 section
+      常在保存时由运行时创建 / 不全在实体池，避免误报）。
+    - `@{}`：引用的实体必须存在于实体池，否则报错。
+    - `%{}`（上下文变量）/ `&{}`（动态表达式）：运行时确定，跳过。
+    原则：宁可漏检不可误报（误报会阻止保存）。
+    """
+    if not value:
+        return
+    n = len(value)
+    i = 0
+    while i < n:
+        start = -1
+        for opener in _PLACEHOLDER_OPENERS:
+            idx = value.find(opener, i)
+            if idx != -1 and (start == -1 or idx < start):
+                start = idx
+        if start == -1:
+            break
+        closer = value.find("}", start + 2)
+        if closer == -1:
+            errors.append({"file": "", "key": entity_key, "field": field,
+                           "message": f"占位符括号未闭合: {value[start:start + 12]}..."})
+            break                   # 后续内容无法可靠解析，退出
+        inner = value[start + 2:closer]
+        if value[start:start + 2] == "@{":
+            name = inner.strip()
+            if name and name not in pool:
+                errors.append({"file": "", "key": entity_key, "field": field,
+                               "message": f"@{{...}} 引用的实体不存在: {name}"})
+        i = closer + 1
+
+
 def _validate_entity(pool: dict[str, JczxSectionEntity], key: str,
                      ent: JczxSectionEntity, resources_dir: str) -> list[dict]:
     errors: list[dict] = []
@@ -245,6 +300,15 @@ def _validate_entity(pool: dict[str, JczxSectionEntity], key: str,
             for item in val:
                 if item and not _PLACEHOLDER_RE.search(item) and item not in pool:
                     errors.append({**e, "field": f, "message": f"引用实体不存在: {item}"})
+
+    # 占位符深层校验（所有字段：括号闭合 + @{} 实体存在；&{}/%{}/${} 不误报）
+    for field_name, field_val in vars(ent).items():
+        if isinstance(field_val, str):
+            _validate_placeholders(key, field_name, field_val, pool, errors)
+        elif isinstance(field_val, list):
+            for item in field_val:
+                if isinstance(item, str):
+                    _validate_placeholders(key, field_name, item, pool, errors)
 
     settings = getattr(ent, "settings", None)
     if settings:
@@ -393,7 +457,8 @@ def write_text_atomic(path: str, text: str) -> None:
     dirn = os.path.dirname(path) or "."
     fd, tmp = tempfile.mkstemp(prefix=".jczx-edit-", suffix=".tmp", dir=dirn)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as fp:
+        # newline=""：禁止换行符转换，text 原样写盘（保留 CRLF/LF 字节风格）
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as fp:
             fp.write(text)
         os.replace(tmp, path)
     except Exception:

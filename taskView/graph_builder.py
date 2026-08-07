@@ -35,7 +35,7 @@ def list_config_files() -> list[str]:
 
 
 def _load_all_entities(filename: str) -> dict[str, JczxSectionEntity]:
-    filepath = os.path.join(CONFIG_DIR, filename.replace("/", os.sep))
+    filepath = os.path.normpath(os.path.join(CONFIG_DIR, filename.replace("/", os.sep)))
     all_configs: dict[str, JczxSectionEntity] = {}
     _load_one(filepath, all_configs, set())
     _resolve_extends(all_configs)
@@ -66,8 +66,9 @@ def _load_one(path: str, all_configs: dict[str, JczxSectionEntity], seen: set[st
             raise ValueError(f"Duplicate section '{key}' in {path}")
         all_configs[key] = entity
         if entity.type == "file":
-            sub_path = os.path.join(os.path.dirname(path),
-                                    (getattr(entity, "target", "") or "").replace("/", os.sep))
+            sub_path = os.path.normpath(os.path.join(
+                os.path.dirname(path),
+                (getattr(entity, "target", "") or "").replace("/", os.sep)))
             if sub_path:
                 _load_one(sub_path, all_configs, seen)
 

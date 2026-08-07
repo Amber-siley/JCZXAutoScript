@@ -510,13 +510,30 @@ function discardAll() {
 }
 
 async function saveAll() {
-  const res = await fetch(`/api/file/${encodeURIComponent(currentFile)}/apply`, {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ops: draftOps, base_hash: baseHash})
-  });
-  if (res.status === 409) { showBanner('文件已被外部修改，请重新加载', 'error'); return; }
-  const data = await res.json();
-  if (data.errors) { showErrors(data.errors); return; }
+  let res;
+  try {
+    res = await fetch(`/api/file/${encodeURIComponent(currentFile)}/apply`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ops: draftOps, base_hash: baseHash})
+    });
+  } catch (err) {
+    showBanner('网络错误，草稿已保留', 'error');
+    return;
+  }
+  let data = {};
+  try { data = await res.json(); } catch (err) { data = {}; }
+  if (!res.ok) {
+    // 非 200 一律走错误分支：保留草稿、不更新 baseHash
+    if (res.status === 409) { showBanner('文件已被外部修改，请重新加载', 'error'); return; }
+    if (res.status === 422) {
+      if (data.errors) showErrors(data.errors);
+      else showBanner('校验失败，草稿已保留', 'error');
+      return;
+    }
+    const detail = data.detail || (data.errors && data.errors.length ? data.errors[0].message : '');
+    showBanner(`保存失败 (${res.status})${detail ? '：' + detail : ''}，草稿已保留`, 'error');
+    return;
+  }
   baseHash = data.file_hash; draftOps = []; dirtyKeys.clear();
   cy.$('.dirty').removeClass('dirty');
   loadGraph(currentFile);            // 复用现有 loadGraph：重新拉图 + showAll + buildTaskList
@@ -536,7 +553,8 @@ function buildEntityForm(detail) {
   // 字段定义：通用 + 按 type 追加
   const common = [
     ['name','显示名'], ['desc','备注'], ['action','action 链(引用)'], ['times','次数'],
-    ['view','显示(view)'], ['sleep','sleep'], ['pre_sleep','pre_sleep'], ['max_wait','max_wait'],
+    ['extend','继承'], ['view','显示(view)'], ['sleep','sleep'], ['pre_sleep','pre_sleep'],
+    ['max_wait','max_wait'],
     ['wait_target','wait_target'], ['testFor_before','testFor_before'], ['testFor_after','testFor_after'],
     ['log','log'], ['log_level','log_level'],
   ];
@@ -546,7 +564,7 @@ function buildEntityForm(detail) {
             ['condition_not','condition_not'], ['condition_then','then'], ['condition_else','else']],
     match: [['target','图片'], ['per','阈值']],
     ocr:   [['target','图片'], ['match','match 引用'], ['per','阈值']],
-    func:  [['func','方法'], ['args','参数']],
+    func:  [['func','方法'], ['target','参数'], ['args','参数']],
     condition: [['condition','条件'], ['condition_not','反向条件'],
                 ['condition_then','then'], ['condition_else','else']],
     task:  [['settings','settings 引用']],
@@ -568,7 +586,7 @@ function buildEntityForm(detail) {
       <button onclick="addDraftEntity()">新增</button>
       <button onclick="duplicateEntity()">复制</button>
       <button onclick="deleteDraftEntity()" style="color:#ef5350">删除</button>
-      <span style="margin-left:auto">type: <b>${type}</b></span></div>${html}`;
+      <span style="margin-left:auto">type: <b>${esc(type)}</b></span></div>${html}`;
 }
 
 function renderEditForm(detail) {
