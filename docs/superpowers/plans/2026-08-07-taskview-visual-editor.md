@@ -258,6 +258,17 @@ class ConfigEditor:
                 return
         raise ValueError(f"实体 {key} 无字段 {option}")
 
+    def add_option(self, key: str, option: str, value: str) -> None:
+        """在实体末尾追加一个 option 行。
+
+        用于 extend 实体的继承字段更新落盘：文件里没有该 option 行时，
+        update_value 会抛 ValueError，此方法把字段行追加到 section 末尾。
+        """
+        ent = self._entity(key)
+        insert_at = ent.option_lines[-1] + 1 if ent.option_lines else ent.header_idx + 1
+        self._lines.insert(insert_at, f"{option}: {value}")
+        self.load()
+
     def add_entity(self, key: str, fields: dict[str, str]) -> None:
         if key in self._entity_by_name:
             raise ValueError(f"实体已存在: {key}")
@@ -574,9 +585,10 @@ def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tupl
                 else:
                     val = str(val)
                 try:
-                    ed.update_value(key, f, val)
-                except ValueError:
-                    pass  # 实体无此字段行，跳过（保持精简，不补写默认值）
+                    try:
+                        ed.update_value(key, f, val)
+                    except ValueError:
+                        ed.add_option(key, f, val)  # 文件无此字段行 → 追加（extend 继承字段落盘）
         writes.append((path, ed.text))
     return writes, []
 ```
@@ -793,6 +805,14 @@ async function saveAll() {
   loadGraph(currentFile);            // 复用现有 loadGraph：重新拉图 + showAll + buildTaskList
   refreshDraftBar(); showBanner('已保存', 'ok');
 }
+
+function showBanner(msg, kind) {
+  const b = document.getElementById('draft-bar');
+  b.innerHTML = msg;
+  b.style.display = 'flex';
+  b.style.background = kind === 'error' ? '#7f1d1d' : '#0f3460';
+  setTimeout(() => refreshDraftBar(), 2500);   // 提示后恢复草稿栏
+}
 ```
 
 - [ ] **Step 3: index.html —— 详情面板改为可编辑表单**
@@ -803,7 +823,6 @@ async function saveAll() {
 function buildEntityForm(detail) {
   const type = detail.type || '';
   // 字段定义：通用 + 按 type 追加
-  const groups = [];
   const common = [
     ['name','显示名'], ['desc','备注'], ['action','action 链(引用)'], ['times','次数'],
     ['view','显示(view)'], ['sleep','sleep'], ['pre_sleep','pre_sleep'], ['max_wait','max_wait'],
@@ -961,9 +980,16 @@ CSS 追加（`</style>` 前）：
 #err-banner .err:hover { color:#fff; }
 #detail-content input { width:100%; background:#1a1a2e; color:#e0e0e0; border:1px solid #0f3460;
   border-radius:3px; padding:3px 6px; font-size:12px; margin-top:2px; }
-node.dirty { border-width:3px; border-color:#ffd54f; }
-node.error { border-width:3px; border-color:#ef5350; }
 ```
+
+**节点脏标记/错误标记必须在 cytoscape stylesheet 中声明**（cytoscape 画布渲染不受 CSS 控制）。在 `initCy()` 的 `style` 数组末尾追加两个选择器：
+
+```js
+  { selector: 'node.dirty', style: { 'border-width': 3, 'border-color': '#ffd54f' } },
+  { selector: 'node.error', style: { 'border-width': 3, 'border-color': '#ef5350' } },
+```
+
+（`trackDirty` / `showErrors` 已用 `addClass('dirty'/'error')`，直接生效。）
 
 - [ ] **Step 7: 手动浏览器验证**
 
