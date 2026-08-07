@@ -672,11 +672,21 @@ function pushDraft(op) {
   } else {
     draftOps.push(op);
   }
-  // 乐观更新图：仅 graph 视图生效。flow 视图是流程展示（currentView==='flow'），
-  // 草稿操作不改变图上节点/不重布局，避免视图跳变；仅在节点存在时标脏、更新草稿栏。
+  // 乐观更新图：graph 视图新增/删除/修改均反映到图。
+  // flow 视图（currentView==='flow'）是流程展示：新增实体显示在画布中心（黄色脏标记）但**不重布局**
+  // （保持 pan/zoom 不跳变）；删除标红、修改标黄；节点不存在时仅更新草稿栏。
   if (currentView === 'flow') {
     const nf = findNode(key);
-    if (nf.length) {
+    if (type === 'create' && !nf.length) {
+      const p = cy.pan(), z = cy.zoom();
+      cy.add({
+        data: { id: key, label: key, type: op.entity.type || 'click', desc: '未保存的新实体' },
+        classes: (op.entity.type || 'click') + ' dirty',
+        position: { x: p.x + cy.width() / (2 * z), y: p.y + cy.height() / (2 * z) },
+      });
+      trackDirty(key);
+      refreshDraftBar();
+    } else if (nf.length) {
       if (type === 'delete') {
         dirtyKeys.delete(key);
         nf.removeClass('dirty').addClass('deleted');
