@@ -44,18 +44,20 @@ def _load_all_entities(filename: str) -> dict[str, JczxSectionEntity]:
     return all_configs
 
 
-def _load_all_files() -> dict[str, JczxSectionEntity]:
+def _load_all_files() -> tuple[dict[str, JczxSectionEntity], dict[str, str]]:
     all_configs: dict[str, JczxSectionEntity] = {}
+    entity_file: dict[str, str] = {}
     seen: set[str] = set()
     main_menu_path = os.path.join(CONFIG_DIR, "MainMenu.txt")
-    _load_one(main_menu_path, all_configs, seen)
+    _load_one(main_menu_path, all_configs, seen, entity_file)
     _resolve_extends(all_configs)
     for key, entity in all_configs.items():
         entity.only_key = key
-    return all_configs
+    return all_configs, entity_file
 
 
-def _load_one(path: str, all_configs: dict[str, JczxSectionEntity], seen: set[str]) -> None:
+def _load_one(path: str, all_configs: dict[str, JczxSectionEntity], seen: set[str],
+              entity_file: dict[str, str] | None = None) -> None:
     if not os.path.isfile(path) or path in seen:
         return
     seen.add(path)
@@ -65,12 +67,12 @@ def _load_one(path: str, all_configs: dict[str, JczxSectionEntity], seen: set[st
         if key in all_configs:
             raise ValueError(f"Duplicate section '{key}' in {path}")
         all_configs[key] = entity
+        if entity_file is not None:
+            entity_file[key] = path
         if entity.type == "file":
-            sub_path = os.path.normpath(os.path.join(
-                os.path.dirname(path),
-                (getattr(entity, "target", "") or "").replace("/", os.sep)))
-            if sub_path:
-                _load_one(sub_path, all_configs, seen)
+            sub_path = os.path.join(os.path.dirname(path),
+                                    (getattr(entity, "target", "") or "").replace("/", os.sep))
+            _load_one(sub_path, all_configs, seen, entity_file)
 
 
 def _resolve_extends(configs: dict[str, JczxSectionEntity]) -> None:
@@ -104,16 +106,16 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
         configs = _load_all_entities(filename)
     except (ValueError, FileNotFoundError):
         return {"nodes": [], "edges": []}
+    global_configs, entity_file = _load_all_files()   # 全局池：判断跨文件引用
 
     condition_keys = _find_condition_entities(configs)
-
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     seen_node_ids: set[str] = set()
     seen_edge_ids: set[str] = set()
 
-    def _add_node(entity: JczxSectionEntity) -> str:
-        nid = entity.only_key
+    def _add_node(entity, nid=None) -> str:
+        nid = nid or entity.only_key
         if nid in seen_node_ids:
             return nid
         seen_node_ids.add(nid)
@@ -124,23 +126,14 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
             classes = (classes + " breakpoint").strip()
         if entity.type == "file":
             classes = (classes + " file-entity").strip()
-        has_test_after = bool(getattr(entity, "testFor_after", ""))
-        has_test_before = bool(getattr(entity, "testFor_before", ""))
         nodes.append({
             "data": {
-                "id": nid,
-                "label": entity.name or entity.desc or nid,
-                "type": entity.type or "",
-                "desc": entity.desc or "",
-                "func": entity.func or "",
-                "target": entity.target or "",
-                "sleep": entity.sleep,
-                "per": entity.per,
-                "times": entity.times,
-                "max_wait": entity.max_wait,
-                "break_point": entity.break_point,
-                "has_test_after": has_test_after,
-                "has_test_before": has_test_before,
+                "id": nid, "label": entity.name or entity.desc or nid, "type": entity.type or "",
+                "desc": entity.desc or "", "func": entity.func or "", "target": entity.target or "",
+                "sleep": entity.sleep, "per": entity.per, "times": entity.times,
+                "max_wait": entity.max_wait, "break_point": entity.break_point,
+                "has_test_after": bool(getattr(entity, "testFor_after", "")),
+                "has_test_before": bool(getattr(entity, "testFor_before", "")),
                 "testFor_max_wait": getattr(entity, "testFor_max_wait", 0) or 0,
                 "context_key": getattr(entity, "context_key", "") or "",
                 "wait_target": getattr(entity, "wait_target", "") or "",
@@ -150,63 +143,74 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
         })
         return nid
 
+    def _add_external_node(key: str, label_hint: str) -> str:
+        """跨文件引用实体节点（当前文件外），标注来源文件。"""
+        if key in seen_node_ids:
+            return key
+        seen_node_ids.add(key)
+        ent = global_configs[key]
+        nodes.append({
+            "data": {
+                "id": key, "label": ent.name or ent.desc or key, "type": ent.type or "",
+                "desc": ent.desc or "", "func": ent.func or "", "target": ent.target or "",
+                "sleep": ent.sleep, "per": ent.per, "times": ent.times,
+                "max_wait": ent.max_wait, "break_point": ent.break_point,
+                "file": entity_file.get(key, ""),
+            },
+            "classes": (ent.type or "") + " external",
+        })
+        return key
+
+    def _resolve_ref(ref: str, src: str, label: str, classes: str) -> None:
+        """引用解析：当前文件实体 → 普通节点；跨文件 → external 节点。"""
+        if not ref or ref in seen_edge_ids:
+            return
+        eid = f"{src}→{ref}::{classes}"
+        if eid in seen_edge_ids:
+            return
+        if ref in configs:
+            _add_node(configs[ref])
+        elif ref in global_configs:
+            _add_external_node(ref, "")
+        else:
+            return
+        seen_edge_ids.add(eid)
+        edges.append({"data": {"id": eid, "source": src, "target": ref, "label": label}, "classes": classes})
+
     def _add_edge(source_id: str, target_id: str, label: str, classes: str):
         if not target_id:
             return
-        eid = f"{source_id}→{target_id}::{label}"
+        eid = f"{source_id}→{target_id}::{classes}"
         if eid in seen_edge_ids:
             return
         seen_edge_ids.add(eid)
-        edges.append({
-            "data": {
-                "id": eid,
-                "source": source_id,
-                "target": target_id,
-                "label": label,
-            },
-            "classes": classes,
-        })
+        edges.append({"data": {"id": eid, "source": source_id, "target": target_id, "label": label}, "classes": classes})
 
     for key, entity in configs.items():
         _add_node(entity)
 
     for key, entity in configs.items():
         src = entity.only_key
-
         for idx, target in enumerate(entity.action):
-            if target in configs:
-                _add_node(configs[target])
-                if len(entity.action) > 1:
-                    label = chr(0x2460 + min(idx, 19))
-                else:
-                    label = ""
-                _add_edge(src, target, label, "action")
-
-        if entity.condition and entity.condition in configs:
-            _add_node(configs[entity.condition])
-            _add_edge(src, entity.condition, "条件", "condition")
-        if entity.condition_not and entity.condition_not in configs:
-            _add_node(configs[entity.condition_not])
-            _add_edge(src, entity.condition_not, "条件", "condition_not")
-
+            _resolve_ref(target, src, chr(0x2460 + min(idx, 19)) if len(entity.action) > 1 else "", "action")
+        if entity.condition:
+            _resolve_ref(entity.condition, src, "条件", "condition")
+        if entity.condition_not:
+            _resolve_ref(entity.condition_not, src, "条件", "condition_not")
         for target in entity.condition_then:
-            if target in configs:
-                _add_node(configs[target])
-                _add_edge(src, target, "是", "condition_then")
+            _resolve_ref(target, src, "是", "condition_then")
         for target in entity.condition_else:
-            if target in configs:
-                _add_node(configs[target])
-                _add_edge(src, target, "否", "condition_else")
-
-        if entity.extend and entity.extend in configs:
-            _add_edge(src, entity.extend, "继承", "extend")
-
+            _resolve_ref(target, src, "否", "condition_else")
+        if entity.extend:
+            _resolve_ref(entity.extend, src, "继承", "extend")
         if entity.type == SectionType.TASK.value and getattr(entity, "settings", None):
-            settings_key = getattr(entity, "settings", "")
-            if settings_key and settings_key in configs:
-                _add_node(configs[settings_key])
-                _add_edge(src, settings_key, "设置", "settings")
+            sk = getattr(entity, "settings", "")
+            if sk and sk in configs:
+                _add_node(configs[sk]); _add_edge(src, sk, "设置", "settings")
+            elif sk and sk in global_configs:
+                _add_external_node(sk, ""); _add_edge(src, sk, "设置", "settings")
 
+    # 占位符引用（@{} ${} 等）沿用现有逻辑，仅对 configs 内实体建边；跨文件占位符不建边
     for key, entity in configs.items():
         src = entity.only_key
         texts = []
@@ -220,35 +224,30 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
         if log_v: texts.append(log_v)
         wt = getattr(entity, "wait_target", "") or ""
         if wt: texts.append(wt)
-
         for text in texts:
             if not isinstance(text, str): continue
             for m in _RE_EXEC.findall(text):
                 if m in configs:
-                    _add_node(configs[m])
-                    _add_edge(src, m, f"@{{{m}}}", "execute")
+                    _add_node(configs[m]); _add_edge(src, m, f"@{{{m}}}", "execute")
             for m in _RE_CFG.findall(text):
                 if m in configs:
-                    _add_node(configs[m])
-                    _add_edge(src, m, f"${{{m}}}", "config")
+                    _add_node(configs[m]); _add_edge(src, m, f"${{{m}}}", "config")
             for m in _RE_CTX.findall(text):
                 ref_key = m.split()[0].rstrip(">")
                 for ck in configs:
                     if getattr(configs[ck], "context_key", "") == ref_key:
-                        _add_node(configs[ck])
-                        _add_edge(src, ck, f"%{{{m}}}", "context")
+                        _add_node(configs[ck]); _add_edge(src, ck, f"%{{{m}}}", "context")
             for m in _RE_EXPR.findall(text):
                 for word in re.findall(r'\b([a-zA-Z][\w-]+)\b', m):
                     if word in configs:
-                        _add_node(configs[word])
-                        _add_edge(src, word, f"&{{{word}}}", "expression")
+                        _add_node(configs[word]); _add_edge(src, word, f"&{{{word}}}", "expression")
 
     return {"nodes": nodes, "edges": edges}
 
 
 def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[str, Any]:
     try:
-        configs = _load_all_files()
+        configs, entity_file = _load_all_files()
     except (ValueError, FileNotFoundError):
         return {"nodes": [], "edges": [], "cycles": []}
 
@@ -300,6 +299,7 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                 "context_key": getattr(entity, "context_key", "") or "",
                 "wait_target": getattr(entity, "wait_target", "") or "",
                 "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
+                "file": entity_file.get(base, ""),
             },
             "classes": classes,
         }
@@ -429,7 +429,7 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
 
 def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
     try:
-        configs = _load_all_files()
+        configs, _ = _load_all_files()
     except (ValueError, FileNotFoundError):
         return None
 
@@ -484,5 +484,12 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
         "wait_target": getattr(entity, "wait_target", "") or "",
         "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
     }
+    detail["fields"] = getattr(entity, "fields", []) or []
+    detail["setting_type"] = getattr(entity, "setting_type", "") or ""
+    detail["label"] = getattr(entity, "label", "") or ""
+    detail["options"] = getattr(entity, "options", []) or []
+    detail["default"] = getattr(entity, "default", "") or ""
+    detail["min"] = getattr(entity, "min", None)
+    detail["max"] = getattr(entity, "max", None)
     detail["explicit"] = explicit
     return detail
