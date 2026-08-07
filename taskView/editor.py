@@ -244,6 +244,22 @@ def _apply_field(ent: JczxSectionEntity, field: str, value: str, errors: list[di
 _PLACEHOLDER_OPENERS = ("${", "@{", "%{", "&{")
 
 
+def _find_matching_brace(text: str, brace_idx: int) -> int:
+    """返回与 `text[brace_idx]` 处 `{` 匹配的 `}` 下标（计入嵌套大括号）。
+
+    未闭合返回 -1。用于 `&{}`/`%{}` 闭合区间识别：整体跳过区间内的内容。
+    """
+    depth = 0
+    for k in range(brace_idx, len(text)):
+        if text[k] == "{":
+            depth += 1
+        elif text[k] == "}":
+            depth -= 1
+            if depth == 0:
+                return k
+    return -1
+
+
 def _validate_placeholders(entity_key: str, field: str, value: str,
                            pool: dict[str, JczxSectionEntity],
                            errors: list[dict]) -> None:
@@ -252,7 +268,8 @@ def _validate_placeholders(entity_key: str, field: str, value: str,
     - `${section:option}` / `${option}`：**不做存在性硬校验**（`-values` 配置值 section
       常在保存时由运行时创建 / 不全在实体池，避免误报）。
     - `@{}`：引用的实体必须存在于实体池，否则报错。
-    - `%{}`（上下文变量）/ `&{}`（动态表达式）：运行时确定，跳过。
+    - `%{}`（上下文变量）/ `&{}`（动态表达式）：运行时确定，**整体跳过**其闭合区间，
+      区间内的嵌套占位符（含 `@{}`）不做校验，避免误报（如 `&{%{x} | @{missing}}`）。
     原则：宁可漏检不可误报（误报会阻止保存）。
     """
     if not value:
@@ -267,13 +284,23 @@ def _validate_placeholders(entity_key: str, field: str, value: str,
                 start = idx
         if start == -1:
             break
+        opener = value[start:start + 2]
+        if opener in ("&{", "%{"):
+            # 动态表达式 / 上下文变量：识别闭合区间整体跳过，区间内不做任何校验
+            closer = _find_matching_brace(value, start + 1)
+            if closer == -1:
+                errors.append({"file": "", "key": entity_key, "field": field,
+                               "message": f"占位符括号未闭合: {value[start:start + 12]}..."})
+                break               # 后续内容无法可靠解析，退出
+            i = closer + 1
+            continue
         closer = value.find("}", start + 2)
         if closer == -1:
             errors.append({"file": "", "key": entity_key, "field": field,
                            "message": f"占位符括号未闭合: {value[start:start + 12]}..."})
             break                   # 后续内容无法可靠解析，退出
         inner = value[start + 2:closer]
-        if value[start:start + 2] == "@{":
+        if opener == "@{":
             name = inner.strip()
             if name and name not in pool:
                 errors.append({"file": "", "key": entity_key, "field": field,
