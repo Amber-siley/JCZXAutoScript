@@ -495,7 +495,9 @@ def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tupl
                 elif chg["op"] == "rename":
                     ed.rename_entity(chg["old"], key)
                 elif chg["op"] == "create":
-                    ed.add_entity(key, {k: str(v) for k, v in chg["fields"].items()})
+                    # 空字符串字段（sleep: "" 等）跳过：写空值行会在下次配置加载时
+                    # float('')/list 拆分崩溃，语义上"清空=无该行"
+                    ed.add_entity(key, {k: str(v) for k, v in chg["fields"].items() if v != ""})
                 elif chg["op"] == "update":
                     for field, value in chg["fields"].items():
                         value = str(value)
