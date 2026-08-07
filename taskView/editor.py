@@ -146,6 +146,17 @@ class ConfigEditor:
         self._lines[ent.header_idx] = re.sub(r"\[[^\]]+\]", f"[{new}]", self._lines[ent.header_idx])
         self._reindex()
 
+    def delete_option(self, key: str, option: str) -> None:
+        """删除指定 option 行（不存在则 no-op），重建索引。"""
+        ent = self._entity(key)
+        for i in ent.option_lines:
+            m = _OPTION_RE.match(self._lines[i])
+            if m and m.group("key").strip() == option:
+                del self._lines[i]
+                self._reindex()
+                return
+        # option 不存在：no-op（可能是 extend 继承字段或未配置）
+
     def save(self) -> None:
         dirn = os.path.dirname(self.path) or "."
         fd, tmp = tempfile.mkstemp(prefix=".jczx-edit-", suffix=".tmp", dir=dirn)
@@ -171,7 +182,7 @@ def file_hash(path: str) -> str:
 # ---------------------------------------------------------------------------
 # Task 2: 校验层 —— 实体池加载、模拟应用、严格校验
 # ---------------------------------------------------------------------------
-from jczx.configEntity import JczxSectionEntity, SectionType
+from jczx.configEntity import JczxSectionEntity, SectionType, BaseEntity
 from jczx.CommonBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig
 from jczx.jczxCli import JCZXGaming
 
@@ -248,7 +259,10 @@ def _apply_field(ent: JczxSectionEntity, field: str, value: str, errors: list[di
                            "field": field, "message": f"未知字段: {field}"})
             return
     try:
-        setattr(ent, field, value)
+        if value == "":
+            super(BaseEntity, ent).__setattr__(field, "")   # 空串不类型转换（表示清空删除）
+        else:
+            setattr(ent, field, value)
     except Exception as e:
         errors.append({"file": ent.only_key or "", "key": ent.only_key or "",
                        "field": field, "message": f"字段类型错误: {e}"})
@@ -485,10 +499,13 @@ def simulate_and_validate(pool, entity_file, file: str, ops: list[dict]) -> tupl
                 elif chg["op"] == "update":
                     for field, value in chg["fields"].items():
                         value = str(value)
-                        try:
-                            ed.update_value(key, field, value)
-                        except ValueError:
-                            ed.add_option(key, field, value)  # 文件无此字段行 → 追加（extend 继承字段落盘）
+                        if value == "":
+                            ed.delete_option(key, field)   # 清空 → 删除字段行
+                        else:
+                            try:
+                                ed.update_value(key, field, value)
+                            except ValueError:
+                                ed.add_option(key, field, value)  # 文件无此字段行 → 追加（extend 继承字段落盘）
         writes.append((path, ed.text))
     return writes, []
 
