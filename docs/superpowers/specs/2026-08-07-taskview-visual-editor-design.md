@@ -49,15 +49,15 @@ taskView/
 - `option` — `key : value` 键值行
 - `blank` — 空行
 
-option 行解析为三元组 `(key, value, comment)`：**comment = 第一个 `/` 到行尾**（jczx 配置图片路径用 `\`，占位符不含 `/`，此约定安全）。写回时原样拼回。
+**已验证的事实（2026-08-07）：** 实体文件（MainMenu.txt 与 tasks/*.txt）**不存在行内注释**（`/` 均出现在行首），但存在以 `/` 开头的 value（如 `jjc.txt` 中 `action: /|%{simulate_times}`）。故 option 行解析为二元组 `(key, value)`，**value = `key : ` 后到行尾去尾空白**，不切分行内注释。注释保留仅针对行首 comment 行。
 
 ### 4.2 三种写回操作
 
 | 操作 | 行为 |
 |------|------|
-| 改值 | 只替换 value 段，行尾 `/ 注释` 原样拼回：`key : 新值 / 原注释` |
+| 改值 | 整行替换为 `key : 新值` |
 | 新增实体 | 文件末尾追加 `\n[new-key]` + 字段行 |
-| 删除实体 | 删除 option 行 + section 头行；**注释行保留为孤立注释**（保守，不猜注释归属） |
+| 删除实体 | 删除 option 行 + section 头行；**comment / blank 行保留**（保守，不猜注释归属） |
 
 ### 4.3 原子写回
 
