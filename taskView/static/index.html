@@ -458,6 +458,7 @@ function renderDetail(d) {
 }
 
 function esc(s) { if (!s && s !== 0) return '—'; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
+function escAttr(s) { const e = esc(s); return e === '—' ? e : e.replace(/"/g, '&quot;'); }
 
 async function loadFiles() {
   try {
@@ -524,7 +525,7 @@ async function saveAll() {
 
 function showBanner(msg, kind) {
   const b = document.getElementById('draft-bar');
-  b.innerHTML = msg;
+  b.innerHTML = esc(msg);
   b.style.display = 'flex';
   b.style.background = kind === 'error' ? '#7f1d1d' : '#0f3460';
   setTimeout(() => refreshDraftBar(), 2500);   // 提示后恢复草稿栏
@@ -556,10 +557,11 @@ function buildEntityForm(detail) {
   const html = fields.map(([k, label]) => {
     const val = detail[k] !== undefined && detail[k] !== null
       ? (Array.isArray(detail[k]) ? detail[k].join(',') : String(detail[k])) : '';
+    const escVal = val === '' ? '' : escAttr(val);
     const ref = ['action','condition','condition_not','condition_then','condition_else','match','settings','extend'].includes(k);
-    const dl = ref ? `<datalist id="ref-${k}">${entityCandidates.map(c => `<option value="${c.key}">`).join('')}</datalist>` : '';
+    const dl = ref ? `<datalist id="ref-${k}">${entityCandidates.map(c => `<option value="${escAttr(c.key)}">`).join('')}</datalist>` : '';
     return `<div class="field"><span class="key">${k}</span>
-      <input data-field="${k}" data-orig="${val.replace(/"/g,'&quot;')}" value="${val.replace(/"/g,'&quot;')}" ${ref?'list="ref-'+k+'"':''}>
+      <input data-field="${k}" data-orig="${escVal}" value="${escVal}" ${ref?'list="ref-'+k+'"':''}>
       ${dl}</div>`;
   }).join('');
   return `<div style="display:flex;gap:6px;margin-bottom:8px">
@@ -579,9 +581,19 @@ function renderEditForm(detail) {
       const key = document.getElementById('detail-content').dataset.key;
       const fields = {};
       document.querySelectorAll('#detail-content input[data-field]').forEach(i => {
-        if (i.value.trim() !== '' && i.value.trim() !== i.dataset.orig) fields[i.dataset.field] = i.value.trim();
+        if (i.value !== i.dataset.orig) fields[i.dataset.field] = i.value;  // 含空值，让后端校验决定
       });
-      if (Object.keys(fields).length) pushDraft({type:'update', key, fields});
+      const idx = draftOps.findIndex(o => o.type === 'update' && o.key === key);
+      if (Object.keys(fields).length) {
+        const op = {type:'update', key, fields};
+        if (idx >= 0) draftOps[idx] = op; else draftOps.push(op);
+      } else if (idx >= 0) {
+        draftOps.splice(idx, 1);          // 全部改回原值 → 撤销该 update op
+      }
+      // 该 key 仍存在任何草稿 op 则保持脏标记，否则清除
+      if (draftOps.some(o => o.key === key)) trackDirty(key);
+      else { dirtyKeys.delete(key); cy.getElementById(key).removeClass('dirty'); }
+      refreshDraftBar();
     });
   });
 }
@@ -628,7 +640,7 @@ function deleteDraftEntity() {
 
 function showErrors(errors) {
   const list = errors.map(e =>
-    `<div class="err" data-key="${e.key}">[${e.file}] ${e.key} · ${e.field}: ${e.message}</div>`).join('');
+    `<div class="err" data-key="${escAttr(e.key)}">[${e.file ? esc(e.file) : ''}] ${esc(e.key)} · ${esc(e.field)}: ${esc(e.message)}</div>`).join('');
   document.getElementById('err-banner').innerHTML =
     `<div class="err-head">校验失败，未保存 <button onclick="hideErrors()">×</button></div>${list}`;
   document.getElementById('err-banner').style.display = 'block';
