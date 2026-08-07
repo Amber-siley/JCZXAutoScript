@@ -221,6 +221,7 @@ function applyEdgeFilters() {
 }
 
 function filterByTask(taskId) {
+  draftGen++;                       // 全量重建：使在途 updateDraftGraph 的 fetch 失效（防幽灵草稿）
   if (currentView === 'flow') {
     currentFlowTask = taskId;
     loadFlowTree(taskId);
@@ -238,6 +239,7 @@ function filterByTask(taskId) {
 
 async function loadFlowTree(taskId) {
   if (!currentFile || !taskId) return;
+  draftGen++;                       // 全量重建：使在途 updateDraftGraph 的 fetch 失效（防幽灵草稿）
   collapsedSet.clear();
   collapsedStore.clear();
   try {
@@ -264,6 +266,7 @@ async function loadFlowTree(taskId) {
 }
 
 function showAll() {
+  draftGen++;                       // 全量重建：使在途 updateDraftGraph 的 fetch 失效（防幽灵草稿）
   collapsedSet.clear();
   collapsedStore.clear();
   if (currentView === 'flow') {
@@ -585,12 +588,12 @@ function showBanner(msg, kind) {
 
 const TYPE_OPTIONS = ['task', 'func', 'click', 'dynamic', 'match', 'ocr', 'context', 'condition', 'settings', 'setting', 'file'];
 
-// 多实体引用（list 逗号串，标签式）：action/condition_then/condition_else/wait_sec
-const MULTI_REF_FIELDS = ['action', 'condition_then', 'condition_else', 'wait_sec'];
+// 多实体引用（list 逗号串，标签式）：action/condition_then/condition_else/wait_sec + settings 的 fields（子 setting 列表）
+const MULTI_REF_FIELDS = ['action', 'condition_then', 'condition_else', 'wait_sec', 'fields'];
 // 单实体引用（str 单 key，下拉/输入）：match/condition/condition_not/extend/settings
 const SINGLE_REF_FIELDS = ['match', 'condition', 'condition_not', 'extend', 'settings'];
-// list 非引用（逗号串普通输入）：args/options/fields/pos
-const LIST_FIELDS = ['args', 'options', 'fields', 'pos'];
+// list 非引用（逗号串普通输入）：args/options/pos
+const LIST_FIELDS = ['args', 'options', 'pos'];
 
 function getDraftCandidates() {
   const drafts = draftOps.filter(o => o.type === 'create').map(o => o.key);

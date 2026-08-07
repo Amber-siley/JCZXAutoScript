@@ -263,7 +263,9 @@ def _apply_field(ent: JczxSectionEntity, field: str, value: str, errors: list[di
             super(BaseEntity, ent).__setattr__(field, "")   # 空串不类型转换（表示清空删除）
         else:
             setattr(ent, field, value)
-    except Exception as e:
+    except (ValueError, TypeError) as e:
+        # 只捕获类型转换错误（setattr 走 BaseEntity.__setattr__ 的 typ(value)）；
+        # KeyboardInterrupt/MemoryError 等 BaseException 留给上层处理，不静默吞掉
         errors.append({"file": ent.only_key or "", "key": ent.only_key or "",
                        "field": field, "message": f"字段类型错误: {e}"})
 
@@ -340,7 +342,9 @@ def _validate_entity(pool: dict[str, JczxSectionEntity], key: str,
     errors: list[dict] = []
     e = {"file": "", "key": key, "field": "", "message": ""}
 
-    if ent.type and not SectionType.__contains__(ent.type):
+    # type 值必须是枚举成员值（如 "task"/"click"），否则非法。用 _value2member_map_
+    # 做值查找（惯用写法）：不直接用 SectionType.__contains__（其会额外放行大写成员名）
+    if ent.type and ent.type not in SectionType._value2member_map_:
         return [{**e, "message": f"非法 type: {ent.type}"}]
 
     for f in _REF_FIELDS:
