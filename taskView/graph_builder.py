@@ -149,6 +149,11 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
             return key
         seen_node_ids.add(key)
         ent = global_configs[key]
+        classes = ent.type or ""
+        if key in condition_keys or ent.type == "condition":
+            classes = (classes + " condition-entity").strip()
+        if ent.break_point == "on":
+            classes = (classes + " breakpoint").strip()
         nodes.append({
             "data": {
                 "id": key, "label": ent.name or ent.desc or key, "type": ent.type or "",
@@ -157,7 +162,7 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 "max_wait": ent.max_wait, "break_point": ent.break_point,
                 "file": entity_file.get(key, ""),
             },
-            "classes": (ent.type or "") + " external",
+            "classes": classes + " external",
         })
         return key
 
@@ -429,7 +434,7 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
 
 def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
     try:
-        configs, _ = _load_all_files()
+        configs, entity_file = _load_all_files()
     except (ValueError, FileNotFoundError):
         return None
 
@@ -491,5 +496,21 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
     detail["default"] = getattr(entity, "default", "") or ""
     detail["min"] = getattr(entity, "min", None)
     detail["max"] = getattr(entity, "max", None)
+    # settings/setting 实体专有字段声明在 JczxSettingEntity 上，JczxSectionEntity 解析会丢弃；
+    # 用 JczxSettingEntity 从来源文件重解析补齐（不触碰 jczx/）
+    if entity.type in (SectionType.SETTINGS.value, SectionType.SETTING.value):
+        from jczx.configEntity import JczxSettingEntity
+        path = entity_file.get(entity_name, "")
+        if path:
+            sents = TxtConfig(path).trans_entity_dict(JczxSettingEntity)
+            sent = sents.get(entity_name)
+            if sent:
+                detail["fields"] = sent.fields or []
+                detail["setting_type"] = sent.setting_type or ""
+                detail["label"] = sent.label or ""
+                detail["options"] = sent.options or []
+                detail["default"] = sent.default or ""
+                detail["min"] = sent.min
+                detail["max"] = sent.max
     detail["explicit"] = explicit
     return detail

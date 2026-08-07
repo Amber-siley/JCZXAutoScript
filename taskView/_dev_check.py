@@ -27,6 +27,13 @@ def test_detail_has_settings_fields():
     d = get_entity_detail("tasks/test.txt", "test")
     for f in ("fields", "setting_type", "label", "options", "default", "min", "max"):
         assert f in d, f"detail 应含 {f}"
+    # settings/setting 专有字段应有实际值（非空，防假绿灯）
+    ds = get_entity_detail("MainMenu.txt", "screenshot-task-settings")
+    assert ds["fields"] == ["screenshot-name"], "settings 实体 fields 应有值"
+    dn = get_entity_detail("MainMenu.txt", "screenshot-name")
+    assert dn["setting_type"] == "input", "setting 实体 setting_type 应有值"
+    assert dn["label"] == "截图名称", "setting 实体 label 应有值"
+    assert dn["default"] == "name", "setting 实体 default 应有值"
 
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
