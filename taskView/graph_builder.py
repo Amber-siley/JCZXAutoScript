@@ -438,7 +438,12 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
 
     entity = configs[entity_name]
     entity.only_key = entity_name
-    return {
+    # 显式字段：文件里实际声明的字段（值 != dataclass 默认值），供前端复制只取显式字段
+    default = JczxSectionEntity()
+    explicit = [f for f in entity.__dataclass_fields__
+                if f not in ("only_key", "context_default_type")
+                and getattr(entity, f) != getattr(default, f)]
+    detail = {
         "key": entity_name,
         "type": entity.type or "",
         "name": entity.name or "",
@@ -479,3 +484,5 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
         "wait_target": getattr(entity, "wait_target", "") or "",
         "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
     }
+    detail["explicit"] = explicit
+    return detail

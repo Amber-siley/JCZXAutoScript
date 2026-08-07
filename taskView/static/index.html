@@ -384,6 +384,7 @@ function initCy() {
       { selector: 'node.collapsed-node', style: { 'border-style': 'dashed', 'opacity': 0.7 } },
       { selector: 'node.dirty', style: { 'border-width': 3, 'border-color': '#ffd54f' } },
       { selector: 'node.error', style: { 'border-width': 3, 'border-color': '#ef5350' } },
+      { selector: 'node.deleted', style: { 'border-width': 3, 'border-color': '#ef5350', 'border-style': 'dashed' } },
     ],
     layout: { name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 },
     wheelSensitivity: 0.3,
@@ -397,9 +398,19 @@ function initCy() {
     const lookupName = entityName.replace(/#\d+$/, '');
     if (!currentFile || !entityName) return;
     if (!detailVisible) toggleDetail();
+    // 立即反馈，避免 fetch 期间显示旧内容/空白（编辑表单异步渲染）
+    document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载中…</div>';
     try {
       const res = await fetch(`/api/entity/${encodeURIComponent(lookupName)}?file=${encodeURIComponent(currentFile)}`);
-      const detail = await res.json();
+      let detail;
+      if (res.ok) {
+        detail = await res.json();
+      } else {
+        // 未保存的新实体（乐观更新节点）：后端无记录，用节点自身信息构造表单，保证可编辑/删除/复制
+        const typeCls = ['task','func','click','match','ocr','condition','context','dynamic','settings','setting','file']
+          .find(c => node.hasClass(c)) || 'click';
+        detail = { key: lookupName, type: typeCls, desc: '未保存的新实体（草稿，保存后写入配置）' };
+      }
       renderEditForm(detail);
     } catch (e) {
       document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载详情失败</div>';
@@ -505,8 +516,7 @@ function refreshDraftBar() {
 
 function discardAll() {
   draftOps = []; dirtyKeys.clear();
-  cy.$('.dirty').removeClass('dirty');
-  refreshDraftBar();
+  loadGraph(currentFile);   // 从服务器重载：移除新增节点、恢复删除节点、清除脏标记
 }
 
 async function saveAll() {
@@ -617,16 +627,52 @@ function renderEditForm(detail) {
 }
 
 function pushDraft(op) {
+  const { type, key } = op;
+  // 同 key 冲突：update 撤销 delete（改字段=想保留）；delete 撤销 update
+  if (type === 'update') {
+    const d = draftOps.findIndex(o => o.type === 'delete' && o.key === key);
+    if (d >= 0) draftOps.splice(d, 1);
+  } else if (type === 'delete') {
+    const u = draftOps.findIndex(o => o.type === 'update' && o.key === key);
+    if (u >= 0) draftOps.splice(u, 1);
+  }
   // 同 key 同类型合并（update 合并 fields）
-  const idx = draftOps.findIndex(o => o.type === op.type && o.key === op.key);
-  if (idx >= 0 && op.type === 'update') {
+  const idx = draftOps.findIndex(o => o.type === type && o.key === key);
+  if (idx >= 0 && type === 'update') {
     draftOps[idx].fields = {...draftOps[idx].fields, ...op.fields};
   } else if (idx >= 0) {
     draftOps[idx] = op;
   } else {
     draftOps.push(op);
   }
-  trackDirty(op.key);
+  // 乐观更新图：仅 graph 视图生效。flow 视图是流程展示（currentView==='flow'），
+  // 草稿操作不改变图上节点/不重布局，避免视图跳变；仅在节点存在时标脏、更新草稿栏。
+  if (currentView === 'flow') {
+    const nf = cy.getElementById(key);
+    if (nf.length) trackDirty(key);
+    else refreshDraftBar();
+    return;
+  }
+  // 乐观更新图：新增立即显示、删除立即标红、修改标黄
+  const n = cy.getElementById(key);
+  if (type === 'create') {
+    if (!n.length) {
+      cy.add({ data: { id: key, label: key, type: op.entity.type || 'click', desc: '未保存的新实体' }, classes: (op.entity.type || 'click') + ' dirty' });
+      cy.layout({ name: 'dagre' }).run();
+      cy.center(cy.getElementById(key));
+    }
+    trackDirty(key);
+  } else if (type === 'delete') {
+    dirtyKeys.delete(key);
+    n.removeClass('dirty');
+    n.addClass('deleted');
+    refreshDraftBar();
+  } else if (type === 'update') {
+    n.removeClass('deleted');       // delete 后又改字段 → 恢复
+    trackDirty(key);
+  } else {
+    trackDirty(key);                 // rename 等
+  }
 }
 
 async function addDraftEntity() {
@@ -642,9 +688,14 @@ async function duplicateEntity() {
   const detail = await (await fetch(`/api/entity/${encodeURIComponent(key)}?file=${encodeURIComponent(currentFile)}`)).json();
   const newKey = prompt('新实体 key', `${key}-copy`);
   if (!newKey) return;
+  // 只复制源实体显式字段（后端 explicit，值≠dataclass 默认值），避免把 index/per/times 等默认值写进新实体；
+  // 无 explicit（如未保存的新节点）则回退复制所有非空字段
+  const keys = (detail.explicit && detail.explicit.length) ? detail.explicit : Object.keys(detail);
   const entity = {};
-  for (const k of Object.keys(detail)) {
-    if (k === 'key' || detail[k] === '' || detail[k] === null || detail[k] === undefined) continue;
+  for (const k of keys) {
+    if (k === 'key' || k === 'explicit' || detail[k] === '' || detail[k] === null || detail[k] === undefined) continue;
+    // 空 list 字段（pos/args/condition_then 等）不复制：join(',') 会得空串 ''，后端 int() 转换失败
+    if (Array.isArray(detail[k]) && detail[k].length === 0) continue;
     entity[k] = Array.isArray(detail[k]) ? detail[k].join(',') : String(detail[k]);
   }
   pushDraft({type:'create', key:newKey, entity});
