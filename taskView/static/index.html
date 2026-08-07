@@ -67,6 +67,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .filter-actions button { padding: 1px 5px; border: 1px solid #0f3460; background: #1a1a2e; color: #888; border-radius: 2px; cursor: pointer; font-size: 9px; }
 .filter-actions button:hover { background: #0f3460; }
 .filter-items.hidden { display: none; }
+#draft-bar { position: fixed; left: 180px; right: 310px; bottom: 0; background:#0f3460;
+  color:#eee; padding:6px 12px; font-size:12px; display:none; z-index:10; align-items:center; gap:8px; }
+#err-banner { position: fixed; left: 180px; right: 310px; bottom: 36px; background:#3e2723;
+  color:#ffcdd2; padding:8px 12px; font-size:12px; display:none; z-index:11; max-height:40vh; overflow-y:auto; }
+#err-banner .err { cursor:pointer; padding:2px 0; }
+#err-banner .err:hover { color:#fff; }
+#detail-content input { width:100%; background:#1a1a2e; color:#e0e0e0; border:1px solid #0f3460;
+  border-radius:3px; padding:3px 6px; font-size:12px; margin-top:2px; }
 </style>
 </head>
 <body>
@@ -144,6 +152,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 <script>
 let cy;
 let currentFile = null;
+let baseHash = null;         // 加载时的 file_hash，保存时回传
+let draftOps = [];           // 草稿变更集 [{type,key,...}]
+let dirtyKeys = new Set();   // 有未保存改动的实体 key（脏标记）
+let entityCandidates = [];   // /api/entities 缓存 {key,label,type}
 let currentLayout = 'dagre';
 let currentView = 'graph';
 let currentFlowTask = null;
@@ -370,6 +382,8 @@ function initCy() {
       { selector: 'edge', style: { 'width': 1.5, 'curve-style': 'bezier', 'font-size': '10px', 'color': '#888', 'text-background-color': '#1a1a2e', 'text-background-opacity': 0.8, 'text-background-padding': '2px', 'text-rotation': 'autorotate' } },
       ...Object.entries(EDGE_STYLES).map(([cls, sty]) => ({ selector: `edge.${cls}`, style: sty })),
       { selector: 'node.collapsed-node', style: { 'border-style': 'dashed', 'opacity': 0.7 } },
+      { selector: 'node.dirty', style: { 'border-width': 3, 'border-color': '#ffd54f' } },
+      { selector: 'node.error', style: { 'border-width': 3, 'border-color': '#ef5350' } },
     ],
     layout: { name: currentLayout, rankDir: 'LR', spacingFactor: 1.2 },
     wheelSensitivity: 0.3,
@@ -386,7 +400,7 @@ function initCy() {
     try {
       const res = await fetch(`/api/entity/${encodeURIComponent(lookupName)}?file=${encodeURIComponent(currentFile)}`);
       const detail = await res.json();
-      renderDetail(detail);
+      renderEditForm(detail);
     } catch (e) {
       document.getElementById('detail-content').innerHTML = '<div id="detail-empty">加载详情失败</div>';
     }
@@ -468,6 +482,164 @@ async function loadFiles() {
   }
 }
 
+async function fetchEntities() {
+  entityCandidates = await (await fetch('/api/entities')).json();
+}
+
+function trackDirty(key) {
+  dirtyKeys.add(key);
+  const n = cy.getElementById(key);
+  if (n) n.addClass('dirty');
+  refreshDraftBar();
+}
+
+function refreshDraftBar() {
+  const bar = document.getElementById('draft-bar');
+  const count = draftOps.length;
+  bar.innerHTML = count
+    ? `草稿 ${count} 项 · <button onclick="saveAll()">保存</button> · <button onclick="discardAll()">放弃</button>`
+    : '无未保存修改';
+  bar.style.display = count ? 'flex' : 'none';
+}
+
+function discardAll() {
+  draftOps = []; dirtyKeys.clear();
+  cy.$('.dirty').removeClass('dirty');
+  refreshDraftBar();
+}
+
+async function saveAll() {
+  const res = await fetch(`/api/file/${encodeURIComponent(currentFile)}/apply`, {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ops: draftOps, base_hash: baseHash})
+  });
+  if (res.status === 409) { showBanner('文件已被外部修改，请重新加载', 'error'); return; }
+  const data = await res.json();
+  if (data.errors) { showErrors(data.errors); return; }
+  baseHash = data.file_hash; draftOps = []; dirtyKeys.clear();
+  cy.$('.dirty').removeClass('dirty');
+  loadGraph(currentFile);            // 复用现有 loadGraph：重新拉图 + showAll + buildTaskList
+  refreshDraftBar(); showBanner('已保存', 'ok');
+}
+
+function showBanner(msg, kind) {
+  const b = document.getElementById('draft-bar');
+  b.innerHTML = msg;
+  b.style.display = 'flex';
+  b.style.background = kind === 'error' ? '#7f1d1d' : '#0f3460';
+  setTimeout(() => refreshDraftBar(), 2500);   // 提示后恢复草稿栏
+}
+
+function buildEntityForm(detail) {
+  const type = detail.type || '';
+  // 字段定义：通用 + 按 type 追加
+  const common = [
+    ['name','显示名'], ['desc','备注'], ['action','action 链(引用)'], ['times','次数'],
+    ['view','显示(view)'], ['sleep','sleep'], ['pre_sleep','pre_sleep'], ['max_wait','max_wait'],
+    ['wait_target','wait_target'], ['testFor_before','testFor_before'], ['testFor_after','testFor_after'],
+    ['log','log'], ['log_level','log_level'],
+  ];
+  const byType = {
+    click: [['target','图片'], ['per','阈值'], ['pos','坐标'], ['match','match 引用'],
+            ['index','index'], ['break_point','break_point'], ['condition','condition'],
+            ['condition_not','condition_not'], ['condition_then','then'], ['condition_else','else']],
+    match: [['target','图片'], ['per','阈值']],
+    ocr:   [['target','图片'], ['match','match 引用'], ['per','阈值']],
+    func:  [['func','方法'], ['args','参数']],
+    condition: [['condition','条件'], ['condition_not','反向条件'],
+                ['condition_then','then'], ['condition_else','else']],
+    task:  [['settings','settings 引用']],
+    context: [['context_get','读取'], ['context_default','默认值'], ['action','运算链'], ['context_key','存储']],
+  };
+  const fields = (byType[type] || []).concat(common.filter(f => !(byType[type]||[]).some(x => x[0] === f[0])));
+
+  const html = fields.map(([k, label]) => {
+    const val = detail[k] !== undefined && detail[k] !== null
+      ? (Array.isArray(detail[k]) ? detail[k].join(',') : String(detail[k])) : '';
+    const ref = ['action','condition','condition_not','condition_then','condition_else','match','settings','extend'].includes(k);
+    const dl = ref ? `<datalist id="ref-${k}">${entityCandidates.map(c => `<option value="${c.key}">`).join('')}</datalist>` : '';
+    return `<div class="field"><span class="key">${k}</span>
+      <input data-field="${k}" data-orig="${val.replace(/"/g,'&quot;')}" value="${val.replace(/"/g,'&quot;')}" ${ref?'list="ref-'+k+'"':''}>
+      ${dl}</div>`;
+  }).join('');
+  return `<div style="display:flex;gap:6px;margin-bottom:8px">
+      <button onclick="addDraftEntity()">新增</button>
+      <button onclick="duplicateEntity()">复制</button>
+      <button onclick="deleteDraftEntity()" style="color:#ef5350">删除</button>
+      <span style="margin-left:auto">type: <b>${type}</b></span></div>${html}`;
+}
+
+function renderEditForm(detail) {
+  const name = detail.key;
+  document.getElementById('detail-content').innerHTML = buildEntityForm(detail);
+  document.getElementById('detail-content').dataset.key = name;
+  // 绑定输入变更 -> 加入草稿（data-orig 记录初始值，仅记录有变化的字段）
+  document.querySelectorAll('#detail-content input[data-field]').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const key = document.getElementById('detail-content').dataset.key;
+      const fields = {};
+      document.querySelectorAll('#detail-content input[data-field]').forEach(i => {
+        if (i.value.trim() !== '' && i.value.trim() !== i.dataset.orig) fields[i.dataset.field] = i.value.trim();
+      });
+      if (Object.keys(fields).length) pushDraft({type:'update', key, fields});
+    });
+  });
+}
+
+function pushDraft(op) {
+  // 同 key 同类型合并（update 合并 fields）
+  const idx = draftOps.findIndex(o => o.type === op.type && o.key === op.key);
+  if (idx >= 0 && op.type === 'update') {
+    draftOps[idx].fields = {...draftOps[idx].fields, ...op.fields};
+  } else if (idx >= 0) {
+    draftOps[idx] = op;
+  } else {
+    draftOps.push(op);
+  }
+  trackDirty(op.key);
+}
+
+async function addDraftEntity() {
+  const key = prompt('新实体 key（如 my-click）');
+  if (!key) return;
+  pushDraft({type:'create', key, entity:{type:'click', target:'buttons\\xxx.png'}});
+  showBanner(`草稿: 新增 ${key}（请在表单补全字段）`, 'ok');
+}
+
+async function duplicateEntity() {
+  const key = document.getElementById('detail-content').dataset.key;
+  if (!key) return;
+  const detail = await (await fetch(`/api/entity/${encodeURIComponent(key)}?file=${encodeURIComponent(currentFile)}`)).json();
+  const newKey = prompt('新实体 key', `${key}-copy`);
+  if (!newKey) return;
+  const entity = {};
+  for (const k of Object.keys(detail)) {
+    if (k === 'key' || detail[k] === '' || detail[k] === null || detail[k] === undefined) continue;
+    entity[k] = Array.isArray(detail[k]) ? detail[k].join(',') : String(detail[k]);
+  }
+  pushDraft({type:'create', key:newKey, entity});
+}
+
+function deleteDraftEntity() {
+  const key = document.getElementById('detail-content').dataset.key;
+  if (!key || !confirm(`删除实体 ${key}？`)) return;
+  pushDraft({type:'delete', key});
+}
+
+function showErrors(errors) {
+  const list = errors.map(e =>
+    `<div class="err" data-key="${e.key}">[${e.file}] ${e.key} · ${e.field}: ${e.message}</div>`).join('');
+  document.getElementById('err-banner').innerHTML =
+    `<div class="err-head">校验失败，未保存 <button onclick="hideErrors()">×</button></div>${list}`;
+  document.getElementById('err-banner').style.display = 'block';
+  document.querySelectorAll('#err-banner .err').forEach(el =>
+    el.addEventListener('click', () => {
+      const k = el.dataset.key;
+      if (k && cy.getElementById(k).length) { cy.getElementById(k).addClass('error'); cy.center(cy.getElementById(k)); }
+    }));
+}
+function hideErrors() { document.getElementById('err-banner').style.display = 'none'; }
+
 async function loadGraph(filename) {
   currentFile = filename;
   try {
@@ -475,6 +647,11 @@ async function loadGraph(filename) {
     const data = await res.json();
     fullNodes = data.nodes;
     fullEdges = data.edges;
+    baseHash = data.file_hash || null;      // 新增：保存时回传做冲突检测
+    draftOps = []; dirtyKeys.clear();       // 新增：切换文件清空草稿
+    cy.$('.dirty').removeClass('dirty');    // 新增
+    hideErrors();                           // 新增
+    refreshDraftBar();                      // 新增
     showAll();
     buildTaskList();
     document.getElementById('detail-content').innerHTML = '<div id="detail-empty">点击画布中的节点查看详情</div>';
@@ -589,7 +766,10 @@ function filterAllEdges(show) {
 
 initCy();
 buildEdgeFilter();
+fetchEntities();
 loadFiles();
 </script>
+<div id="draft-bar"></div>
+<div id="err-banner"></div>
 </body>
 </html>
