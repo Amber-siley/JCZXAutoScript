@@ -558,6 +558,8 @@ function showBanner(msg, kind) {
   setTimeout(() => refreshDraftBar(), 2500);   // 提示后恢复草稿栏
 }
 
+const TYPE_OPTIONS = ['task', 'func', 'click', 'dynamic', 'match', 'ocr', 'context', 'condition', 'settings', 'setting', 'file'];
+
 function buildEntityForm(detail) {
   const type = detail.type || '';
   // 字段定义：通用 + 按 type 追加
@@ -579,6 +581,9 @@ function buildEntityForm(detail) {
                 ['condition_then','then'], ['condition_else','else']],
     task:  [['settings','settings 引用']],
     context: [['context_get','读取'], ['context_default','默认值'], ['action','运算链'], ['context_key','存储']],
+    settings: [['fields','fields 引用']],
+    setting: [['setting_type','控件类型'], ['label','标签'], ['desc','说明'], ['options','选项'],
+              ['default','默认值'], ['min','最小'], ['max','最大']],
   };
   const fields = (byType[type] || []).concat(common.filter(f => !(byType[type]||[]).some(x => x[0] === f[0])));
 
@@ -586,7 +591,7 @@ function buildEntityForm(detail) {
     const val = detail[k] !== undefined && detail[k] !== null
       ? (Array.isArray(detail[k]) ? detail[k].join(',') : String(detail[k])) : '';
     const escVal = val === '' ? '' : escAttr(val);
-    const ref = ['action','condition','condition_not','condition_then','condition_else','match','settings','extend'].includes(k);
+    const ref = ['action','condition','condition_not','condition_then','condition_else','match','settings','extend','fields'].includes(k);
     const dl = ref ? `<datalist id="ref-${k}">${entityCandidates.map(c => `<option value="${escAttr(c.key)}">`).join('')}</datalist>` : '';
     return `<div class="field"><span class="key">${k}</span>
       <input data-field="${k}" data-orig="${escVal}" value="${escVal}" ${ref?'list="ref-'+k+'"':''}>
@@ -596,7 +601,7 @@ function buildEntityForm(detail) {
       <button onclick="addDraftEntity()">新增</button>
       <button onclick="duplicateEntity()">复制</button>
       <button onclick="deleteDraftEntity()" style="color:#ef5350">删除</button>
-      <span style="margin-left:auto">type: <b>${esc(type)}</b></span></div>${html}`;
+      <span style="margin-left:auto">type: <select data-field="type" data-orig="${escAttr(type)}">${TYPE_OPTIONS.map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`).join('')}</select></span></div>${html}`;
 }
 
 function renderEditForm(detail) {
@@ -604,11 +609,11 @@ function renderEditForm(detail) {
   document.getElementById('detail-content').innerHTML = buildEntityForm(detail);
   document.getElementById('detail-content').dataset.key = name;
   // 绑定输入变更 -> 加入草稿（data-orig 记录初始值，仅记录有变化的字段）
-  document.querySelectorAll('#detail-content input[data-field]').forEach(inp => {
+  document.querySelectorAll('#detail-content input[data-field], #detail-content select[data-field]').forEach(inp => {
     inp.addEventListener('change', () => {
       const key = document.getElementById('detail-content').dataset.key;
       const fields = {};
-      document.querySelectorAll('#detail-content input[data-field]').forEach(i => {
+      document.querySelectorAll('#detail-content input[data-field], #detail-content select[data-field]').forEach(i => {
         if (i.value !== i.dataset.orig) fields[i.dataset.field] = i.value;  // 含空值，让后端校验决定
       });
       const idx = draftOps.findIndex(o => o.type === 'update' && o.key === key);
