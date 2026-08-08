@@ -879,9 +879,13 @@ function pushDraft(op) {
   const n = findNode(key);
   if (type === 'create') {
     if (!n.length) {
-      // 新增不重布局（保留已拖动节点位置、避免跳变）；新节点放当前视野中心，用户可立即看到
-      const p = cy.pan(), z = cy.zoom();
-      cy.add({ data: { id: key, label: key, type: op.entity.type || 'click', desc: '未保存的新实体' }, classes: (op.entity.type || 'click') + ' dirty', position: { x: p.x + cy.width() / (2 * z), y: p.y + cy.height() / (2 * z) } });
+      // 新增不重布局（保留已拖动节点位置、避免跳变）；新节点放当前选中节点旁边（与 flow 一致），
+      // 无选中则用当前视野中心，用户可立即看到
+      const selKey = document.getElementById('detail-content').dataset.key;
+      let base = null;
+      if (selKey) { const sel = findNode(selKey); if (sel.length) base = sel.position(); }
+      if (!base) { const p = cy.pan(), z = cy.zoom(); base = { x: p.x + cy.width() / (2 * z), y: p.y + cy.height() / (2 * z) }; }
+      cy.add({ data: { id: key, label: key, type: op.entity.type || 'click', desc: '未保存的新实体' }, classes: (op.entity.type || 'click') + ' dirty', position: { x: base.x + 80, y: base.y + 40 } });
     }
     trackDirty(key);
   } else if (type === 'delete') {
