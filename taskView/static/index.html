@@ -660,10 +660,10 @@ function buildEntityForm(detail) {
         <div class="ref-suggest" data-suggest="${k}"></div></div>`;
     }
     if (SINGLE_REF_FIELDS.includes(k)) {
-      const dl = `<datalist id="ref-${k}">${cands.map(c => `<option value="${escAttr(c.key)}">`).join('')}</datalist>`;
+      // 单实体引用：输入 + 智能下拉浮层（与多实体 action 同风格，候选含草稿）
       return `<div class="field"><span class="key">${k}</span>
-        <input data-field="${k}" data-single="1" data-orig="${escVal}" value="${escVal}" list="ref-${k}">
-        ${dl}</div>`;
+        <input data-field="${k}" data-single="1" data-orig="${escVal}" value="${escVal}" placeholder="输入/选择实体 key">
+        <div class="ref-suggest" data-suggest="${k}"></div></div>`;
     }
     if (LIST_FIELDS.includes(k)) {
       return `<div class="field"><span class="key">${k}</span>
@@ -722,12 +722,22 @@ function renderEditForm(detail) {
       inp.dispatchEvent(new Event('change'));      // 提交当前输入（含手动编辑后的全量串）
     });
   });
+  // 单实体字段：输入 + 智能下拉（与多实体 action 同风格，候选含草稿）
+  document.querySelectorAll('#detail-content input[data-single]').forEach(inp => {
+    const field = inp.dataset.field;
+    inp.addEventListener('input', () => showSingleSuggest(inp));
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); pickSingleSuggest(inp); } });
+    inp.addEventListener('blur', () => setTimeout(() => hideSuggest(field), 150));
+  });
   // 候选浮层点击 / 标签 × 删除：用 detail-content 单处理器（赋值覆盖，避免重复绑定累积）
   document.getElementById('detail-content').onclick = (e) => {
     const item = e.target.closest('.ref-suggest-item');
     if (item) { applySuggest(item.dataset.suggest, item.dataset.key); return; }
     const del = e.target.closest('.ref-del');
-    if (del) { removeTag(del.dataset.field, del.dataset.key); }
+    if (del) {
+      const tag = del.closest('.ref-tag');
+      if (tag) removeTag(tag.dataset.field, tag.dataset.key);   // data 在父 .ref-tag 上，不在 .ref-del 上
+    }
   };
 
 // 多实体字段智能下拉辅助：输入框为全量逗号串真相源，标签区辅助展示，候选浮层匹配最后一个逗号后输入
@@ -762,14 +772,40 @@ function pickFirstSuggest(inp) {
 }
 
 function applySuggest(field, key) {
-  const inp = document.querySelector(`#detail-content input[data-field="${field}"][data-multi]`);
+  const inp = document.querySelector(`#detail-content input[data-field="${field}"][data-multi]`) ||
+               document.querySelector(`#detail-content input[data-field="${field}"][data-single]`);
   if (!inp) return;
-  const parts = (inp.value || '').split(',');
-  parts[parts.length - 1] = key;   // 替换最后一个逗号后片段
-  inp.value = parts.join(',');
-  renderTags(field);
+  if (inp.dataset.multi) {
+    const parts = (inp.value || '').split(',');
+    parts[parts.length - 1] = key;   // 多实体：替换最后一个逗号后片段
+    inp.value = parts.join(',');
+    renderTags(field);
+  } else {
+    inp.value = key;   // 单实体：整体替换
+  }
   inp.dispatchEvent(new Event('change'));   // 走现有草稿收集逻辑
   hideSuggest(field);
+}
+
+// 单实体字段智能下拉：输入时匹配，回车/点击选中（整体替换）
+function showSingleSuggest(inp) {
+  const field = inp.dataset.field;
+  const box = document.querySelector(`.ref-suggest[data-suggest="${field}"]`);
+  if (!box) return;
+  const seg = (inp.value || '').trim();
+  if (!seg) { box.innerHTML = ''; return; }
+  const cands = getDraftCandidates().filter(c => c.key.startsWith(seg));
+  box.innerHTML = cands.slice(0, 10).map(c =>
+    `<div class="ref-suggest-item" data-suggest="${field}" data-key="${escAttr(c.key)}">${esc(c.key)}${c.draft ? ' <span class="suggest-draft">(草稿)</span>' : ''}</div>`).join('');
+}
+
+function pickSingleSuggest(inp) {
+  const field = inp.dataset.field;
+  const box = document.querySelector(`.ref-suggest[data-suggest="${field}"]`);
+  if (!box) return;
+  const first = box.querySelector('.ref-suggest-item');
+  if (first) applySuggest(field, first.dataset.key);
+  else inp.blur();
 }
 
 function removeTag(field, key) {
