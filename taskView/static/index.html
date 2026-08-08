@@ -920,7 +920,13 @@ function createEntityAt(key, entity, pos) {
 }
 
 function newEntityAt(pos) {
-  const key = prompt('新实体 key（如 my-click）');
+  // 新建时即校验 key 唯一（实体池 / 草稿 create），冲突则提示重新输入，避免保存时才发现
+  let key = prompt('新实体 key（如 my-click）');
+  while (key) {
+    const exists = entityCandidates.some(c => c.key === key) || draftOps.some(o => o.type === 'create' && o.key === key);
+    if (!exists) break;
+    key = prompt(`实体 key「${key}」已存在，请重新输入：`);
+  }
   if (!key) return;
   createEntityAt(key, { type: 'click' }, pos);
 }
