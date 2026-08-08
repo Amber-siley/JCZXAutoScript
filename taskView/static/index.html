@@ -855,7 +855,7 @@ function showContextMenu(modelPos, isBlank) {
   if (!menu) return;
   const items = isBlank
     ? [{ label: '新建实体', fn: 'newEntity' }, { label: '粘贴', fn: 'paste' }]
-    : [{ label: '复制', fn: 'copy' }, { label: '新建实体', fn: 'newEntity' }, { label: '粘贴', fn: 'paste' }];
+    : [{ label: '复制', fn: 'copy' }, { label: '新建实体', fn: 'newEntity' }, { label: '粘贴', fn: 'paste' }, { label: '删除', fn: 'delete' }];
   menu.innerHTML = items.map(i => `<div class="menu-item" data-action="${i.fn}">${i.label}</div>`).join('');
   // 屏幕坐标 = 画布位置 + pan + 模型坐标 * zoom
   const cyEl = document.getElementById('cy');
@@ -874,7 +874,13 @@ function showContextMenu(modelPos, isBlank) {
     if (action === 'copy') copySelected();
     else if (action === 'newEntity') newEntityAt(pos);
     else if (action === 'paste') pasteEntity(pos);
+    else if (action === 'delete') deleteEntity(menuTarget && menuTarget.key);
   };
+}
+
+function deleteEntity(key) {
+  if (!key || !confirm(`删除实体 ${key}？`)) return;
+  pushDraft({ type: 'delete', key });
 }
 
 async function copySelected() {
