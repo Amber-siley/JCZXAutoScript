@@ -659,8 +659,12 @@ function buildEntityForm(detail) {
     settings: [['fields','fields 引用']],
     setting: [['setting_type','控件类型'], ['label','标签'], ['desc','说明'], ['options','选项'],
               ['default','默认值'], ['min','最小'], ['max','最大']],
+    file: [['target','子文件路径'], ['name','显示名']],
   };
-  const fields = (byType[type] || []).concat(common.filter(f => !(byType[type]||[]).some(x => x[0] === f[0])));
+  // file 类型只显示少量通用字段（desc），其余类型用完整 common
+  let commonForType = common;
+  if (type === 'file') commonForType = common.filter(f => f[0] === 'desc');
+  const fields = (byType[type] || []).concat(commonForType.filter(f => !(byType[type]||[]).some(x => x[0] === f[0])));
   const dl_none = '';
 
   const html = fields.map(([k, label]) => {
@@ -716,6 +720,17 @@ function renderEditForm(detail) {
         if (i.dataset.multi) { v = i.value; }   // 多实体字段：输入框 value 即全量逗号串（真相源）
         if (v !== i.dataset.orig) fields[i.dataset.field] = v;  // 含空值，让后端校验决定
       });
+      // type 切换 → 立即重渲染表单（显示新 type 的字段分组），记录 type 到草稿并保留已输入字段
+      if (fields.type && currentDetail && fields.type !== currentDetail.type) {
+        const tIdx = draftOps.findIndex(o => o.type === 'update' && o.key === key);
+        const tOp = { type: 'update', key, fields: { type: fields.type } };
+        if (tIdx >= 0) draftOps[tIdx] = { ...draftOps[tIdx], fields: { ...draftOps[tIdx].fields, ...tOp.fields } };
+        else draftOps.push(tOp);
+        trackDirty(key); refreshDraftBar();
+        currentDetail = { ...currentDetail, ...fields };
+        renderEditForm(currentDetail);
+        return;
+      }
       const idx = draftOps.findIndex(o => o.type === 'update' && o.key === key);
       if (Object.keys(fields).length) {
         const op = {type:'update', key, fields};
