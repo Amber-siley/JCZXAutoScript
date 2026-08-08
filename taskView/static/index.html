@@ -78,6 +78,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 #detail-content .ref-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
 #detail-content .ref-tag { background: #0f3460; color: #ccc; padding: 2px 6px; border-radius: 3px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; }
 #detail-content .ref-del { cursor: pointer; color: #e94560; font-weight: bold; }
+#detail-content .field { position: relative; }
+#detail-content .ref-suggest { position: absolute; z-index: 20; left: 0; right: 0; top: 100%; background: #16213e; border: 1px solid #0f3460; border-radius: 3px; max-height: 180px; overflow-y: auto; margin-top: 2px; }
+#detail-content .ref-suggest-item { padding: 4px 8px; cursor: pointer; font-size: 12px; }
+#detail-content .ref-suggest-item:hover { background: #0f3460; }
+#detail-content .suggest-draft { color: #ffd54f; font-size: 10px; }
 </style>
 </head>
 <body>
@@ -435,6 +440,11 @@ function initCy() {
         .find(c => node.hasClass(c)) || 'click';
       detail = { key: lookupName, type: typeCls, desc: '未保存的新实体（草稿，保存后写入配置）' };
     }
+    // #fix3: 用草稿修改覆盖 detail——重新选中实体时显示草稿版字段，而非发布版
+    const draftUpd = draftOps.find(o => o.type === 'update' && o.key === lookupName);
+    if (draftUpd) { for (const [f, v] of Object.entries(draftUpd.fields)) detail[f] = v; }
+    const draftCreate = draftOps.find(o => o.type === 'create' && o.key === lookupName);
+    if (draftCreate) { for (const [f, v] of Object.entries(draftCreate.entity)) detail[f] = v; }
     renderEditForm(detail);
   });
 
@@ -640,15 +650,14 @@ function buildEntityForm(detail) {
     const escVal = val === '' ? '' : escAttr(val);
     const cands = getDraftCandidates();
     if (MULTI_REF_FIELDS.includes(k)) {
-      // 标签式：标签区 + 输入框（datalist 提供候选，含草稿）
+      // 输入框显示全量逗号串（可手动编辑，初始即展示）；标签区辅助展示；自定义候选浮层匹配最后一个逗号后输入
       const tags = val ? val.split(',').filter(Boolean) : [];
       const tagHtml = tags.map(t =>
         `<span class="ref-tag" data-field="${k}" data-key="${escAttr(t)}">${esc(t)} <b class="ref-del">×</b></span>`).join('');
-      const dl = `<datalist id="ref-${k}">${cands.map(c => `<option value="${escAttr(c.key)}">`).join('')}</datalist>`;
       return `<div class="field"><span class="key">${k}</span>
         <div class="ref-tags" data-field="${k}">${tagHtml}</div>
-        <input data-field="${k}" data-multi="1" data-orig="${escVal}" list="ref-${k}" placeholder="输入实体 key，回车/选择添加">
-        ${dl}</div>`;
+        <input data-field="${k}" data-multi="1" data-orig="${escVal}" value="${escVal}" placeholder="输入实体 key，逗号分隔；下拉选择/回车添加">
+        <div class="ref-suggest" data-suggest="${k}"></div></div>`;
     }
     if (SINGLE_REF_FIELDS.includes(k)) {
       const dl = `<datalist id="ref-${k}">${cands.map(c => `<option value="${escAttr(c.key)}">`).join('')}</datalist>`;
@@ -685,10 +694,7 @@ function renderEditForm(detail) {
       const fields = {};
       document.querySelectorAll('#detail-content input[data-field], #detail-content select[data-field]').forEach(i => {
         let v = i.value;
-        if (i.dataset.multi) {   // 多实体字段：value 以标签 join 为准（输入框仅作录入口，未交互时 value 为空）
-          const box = document.querySelector(`.ref-tags[data-field="${i.dataset.field}"]`);
-          v = box ? [...box.querySelectorAll('.ref-tag')].map(t => t.dataset.key).join(',') : v;
-        }
+        if (i.dataset.multi) { v = i.value; }   // 多实体字段：输入框 value 即全量逗号串（真相源）
         if (v !== i.dataset.orig) fields[i.dataset.field] = v;  // 含空值，让后端校验决定
       });
       const idx = draftOps.findIndex(o => o.type === 'update' && o.key === key);
@@ -706,44 +712,80 @@ function renderEditForm(detail) {
     });
   });
 
-  // 多实体字段：输入框回车/change 添加标签；标签 × 删除
+  // 多实体字段：输入框全量逗号串 + 智能下拉（匹配最后一个逗号后输入）+ 标签 × 删除
   document.querySelectorAll('#detail-content input[data-multi]').forEach(inp => {
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); appendMultiTag(inp); }
-    });
-    inp.addEventListener('blur', () => appendMultiTag(inp));   // 失焦提交当前输入
-  });
-  // 多实体字段：标签 × 删除。用容器委托而非逐元素绑定：appendMultiTag 动态新增的标签
-  // 不在初始 querySelectorAll 结果里，逐元素绑定会漏掉；.ref-tags 随表单重建，委托无监听堆积
-  document.querySelectorAll('#detail-content .ref-tags').forEach(box => {
-    box.addEventListener('click', e => {
-      const del = e.target.closest('.ref-del');
-      if (!del) return;
-      const tag = del.closest('.ref-tag');
-      tag.remove();
-      syncMultiField(box.dataset.field);
+    const field = inp.dataset.field;
+    inp.addEventListener('input', () => { renderTags(field); showSuggest(inp); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); pickFirstSuggest(inp); } });
+    inp.addEventListener('blur', () => {
+      setTimeout(() => hideSuggest(field), 150);   // 延迟隐藏，允许点击候选
+      inp.dispatchEvent(new Event('change'));      // 提交当前输入（含手动编辑后的全量串）
     });
   });
+  // 候选浮层点击 / 标签 × 删除：用 detail-content 单处理器（赋值覆盖，避免重复绑定累积）
+  document.getElementById('detail-content').onclick = (e) => {
+    const item = e.target.closest('.ref-suggest-item');
+    if (item) { applySuggest(item.dataset.suggest, item.dataset.key); return; }
+    const del = e.target.closest('.ref-del');
+    if (del) { removeTag(del.dataset.field, del.dataset.key); }
+  };
 
-function appendMultiTag(inp) {
-  const text = inp.value.trim();
-  if (!text) return;
-  const tagsBox = inp.closest('.field').querySelector('.ref-tags');
-  // 防重复：值已是当前标签 join（Enter 添加后 input 保留 join，失焦不该再添加一次）
-  const join = [...tagsBox.querySelectorAll('.ref-tag')].map(t => t.dataset.key).join(',');
-  if (text === join) return;
-  tagsBox.insertAdjacentHTML('beforeend',
-    `<span class="ref-tag" data-field="${inp.dataset.field}" data-key="${escAttr(text)}">${esc(text)} <b class="ref-del">×</b></span>`);
-  inp.value = '';
-  syncMultiField(inp.dataset.field);
+// 多实体字段智能下拉辅助：输入框为全量逗号串真相源，标签区辅助展示，候选浮层匹配最后一个逗号后输入
+function renderTags(field) {
+  const inp = document.querySelector(`#detail-content input[data-field="${field}"][data-multi]`);
+  const box = document.querySelector(`.ref-tags[data-field="${field}"]`);
+  if (!inp || !box) return;
+  const keys = (inp.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  box.innerHTML = keys.map(t => `<span class="ref-tag" data-field="${field}" data-key="${escAttr(t)}">${esc(t)} <b class="ref-del">×</b></span>`).join('');
 }
 
-function syncMultiField(field) {
-  const box = document.querySelector(`.ref-tags[data-field="${field}"]`);
-  const keys = [...box.querySelectorAll('.ref-tag')].map(t => t.dataset.key);
+function lastSegment(str) { return str ? String(str).split(',').pop().trim() : ''; }
+
+function showSuggest(inp) {
+  const field = inp.dataset.field;
+  const box = document.querySelector(`.ref-suggest[data-suggest="${field}"]`);
+  if (!box) return;
+  const seg = lastSegment(inp.value);
+  if (!seg) { box.innerHTML = ''; return; }
+  const cands = getDraftCandidates().filter(c => c.key.startsWith(seg));
+  box.innerHTML = cands.slice(0, 10).map(c =>
+    `<div class="ref-suggest-item" data-suggest="${field}" data-key="${escAttr(c.key)}">${esc(c.key)}${c.draft ? ' <span class="suggest-draft">(草稿)</span>' : ''}</div>`).join('');
+}
+
+function pickFirstSuggest(inp) {
+  const field = inp.dataset.field;
+  const box = document.querySelector(`.ref-suggest[data-suggest="${field}"]`);
+  if (!box) return;
+  const first = box.querySelector('.ref-suggest-item');
+  if (first) applySuggest(field, first.dataset.key);
+  else inp.blur();
+}
+
+function applySuggest(field, key) {
   const inp = document.querySelector(`#detail-content input[data-field="${field}"][data-multi]`);
-  inp.value = keys.join(',');
+  if (!inp) return;
+  const parts = (inp.value || '').split(',');
+  parts[parts.length - 1] = key;   // 替换最后一个逗号后片段
+  inp.value = parts.join(',');
+  renderTags(field);
   inp.dispatchEvent(new Event('change'));   // 走现有草稿收集逻辑
+  hideSuggest(field);
+}
+
+function removeTag(field, key) {
+  const inp = document.querySelector(`#detail-content input[data-field="${field}"][data-multi]`);
+  if (!inp) return;
+  const parts = (inp.value || '').split(',').map(s => s.trim()).filter(Boolean);
+  const idx = parts.indexOf(key);
+  if (idx >= 0) parts.splice(idx, 1);
+  inp.value = parts.join(',');
+  renderTags(field);
+  inp.dispatchEvent(new Event('change'));
+}
+
+function hideSuggest(field) {
+  const box = document.querySelector(`.ref-suggest[data-suggest="${field}"]`);
+  if (box) box.innerHTML = '';
 }
 }
 
@@ -813,11 +855,15 @@ async function updateDraftGraph() {
     }
     const tgt = findNode(target);
     if (tgt.length) {
-      const eid = `draft-${source}→${target}`;
-      if (!cy.getElementById(eid).length) {
-        // 边端点用实际节点 id（跨文件链路节点 id 形如 key#N，直接引用 target 会悬空）
-        cy.add({ data: { id: eid, source: srcNode.id(), target: tgt.id(), label: '草稿' }, classes: 'draft action' });
-        draftGraph.edges.add(eid);
+      // #fix1: 已存在正式边（非草稿）的引用不建草稿边——只对新增引用显示虚线，避免所有子节点多虚线
+      const hasFormal = cy.edges().some(e => !e.hasClass('draft') && e.data('source') === srcNode.id() && e.data('target') === tgt.id());
+      if (!hasFormal) {
+        const eid = `draft-${source}→${target}`;
+        if (!cy.getElementById(eid).length) {
+          // 边端点用实际节点 id（跨文件链路节点 id 形如 key#N，直接引用 target 会悬空）
+          cy.add({ data: { id: eid, source: srcNode.id(), target: tgt.id(), label: '草稿' }, classes: 'draft action' });
+          draftGraph.edges.add(eid);
+        }
       }
     }
   }
@@ -995,9 +1041,24 @@ function buildTaskList() {
 document.getElementById('layout-btns').addEventListener('click', (e) => {
   const btn = e.target.closest('button');
   if (!btn) return;
+  const layout = btn.dataset.layout;
+  const targetView = layout === 'flow' ? 'flow' : 'graph';
+  if (targetView === currentView) return;   // 同视图，忽略
+  // #fix4: 切换视图前若有草稿，弹确认框（丢弃草稿才切换）
+  if (draftOps.length > 0 && !confirm('切换视图将丢弃未保存的草稿修改，是否继续？')) {
+    return;   // 取消：保持当前视图与草稿
+  }
+  // 确认丢弃草稿
+  draftOps = []; dirtyKeys.clear();
+  cy.$('.dirty').removeClass('dirty');
+  cy.$('.deleted').removeClass('deleted');
+  draftGraph.nodes.forEach(id => { const n = cy.getElementById(id); if (n.length) n.remove(); });
+  draftGraph.edges.forEach(id => { const e = cy.getElementById(id); if (e.length) e.remove(); });
+  draftGraph.nodes.clear(); draftGraph.edges.clear();
+  hideErrors();
+  refreshDraftBar();
   document.querySelectorAll('#layout-btns button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const layout = btn.dataset.layout;
   if (layout === 'flow') {
     currentView = 'flow';
     currentFlowTask = currentFlowTask || (fullNodes.filter(n => n.data.type === 'task')[0] || {}).data?.id;
