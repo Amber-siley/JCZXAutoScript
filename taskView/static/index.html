@@ -83,6 +83,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 #detail-content .ref-suggest-item { padding: 4px 8px; cursor: pointer; font-size: 12px; }
 #detail-content .ref-suggest-item:hover { background: #0f3460; }
 #detail-content .suggest-draft { color: #ffd54f; font-size: 10px; }
+#context-menu { position: fixed; z-index: 40; background: #16213e; border: 1px solid #0f3460; border-radius: 4px; display: none; min-width: 110px; padding: 4px 0; box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+#context-menu .menu-item { padding: 6px 14px; cursor: pointer; font-size: 12px; color: #ddd; }
+#context-menu .menu-item:hover { background: #0f3460; color: #fff; }
 </style>
 </head>
 <body>
@@ -172,6 +175,9 @@ let fullNodes = [];
 let fullEdges = [];
 let collapsedSet = new Set();
 let collapsedStore = new Map();
+let currentDetail = null;          // 当前选中实体 detail（含草稿覆盖），供复制使用
+let clipboard = null;              // 内存剪贴板 { key, entity }（复制/粘贴）
+let menuTarget = null;             // 右键目标 { type:'node'|'blank', key, modelPos }
 
 function toggleDetail() {
   const detail = document.getElementById('detail');
@@ -445,6 +451,7 @@ function initCy() {
     if (draftUpd) { for (const [f, v] of Object.entries(draftUpd.fields)) detail[f] = v; }
     const draftCreate = draftOps.find(o => o.type === 'create' && o.key === lookupName);
     if (draftCreate) { for (const [f, v] of Object.entries(draftCreate.entity)) detail[f] = v; }
+    currentDetail = detail;   // 记录当前选中实体（含草稿覆盖），供右键复制使用
     renderEditForm(detail);
   });
 
@@ -457,6 +464,18 @@ function initCy() {
   cy.on('dbltap', 'node', function (evt) {
     if (currentView !== 'flow') return;
     toggleCollapse(evt.target.id());
+  });
+  // 右键实体 → 菜单（复制/新建/粘贴）；右键空白 → 菜单（新建/粘贴）
+  cy.on('cxttap', 'node', function (evt) {
+    evt.target.emit('tap');   // 右键实体时先选中（触发 tap handler，更新 currentDetail/detail 面板）
+    menuTarget = { type: 'node', key: evt.target.id().replace(/#\d+$/, ''), modelPos: evt.position };
+    showContextMenu(evt.position, false);
+  });
+  cy.on('cxttap', function (evt) {
+    if (evt.target === cy) {
+      menuTarget = { type: 'blank', modelPos: evt.position };
+      showContextMenu(evt.position, true);
+    }
   });
 }
 
@@ -825,6 +844,96 @@ function hideSuggest(field) {
 }
 }
 
+// ---------- 右键菜单 / 复制粘贴 / 快捷键 ----------
+function closeContextMenu() {
+  const menu = document.getElementById('context-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+function showContextMenu(modelPos, isBlank) {
+  const menu = document.getElementById('context-menu');
+  if (!menu) return;
+  const items = isBlank
+    ? [{ label: '新建实体', fn: 'newEntity' }, { label: '粘贴', fn: 'paste' }]
+    : [{ label: '复制', fn: 'copy' }, { label: '新建实体', fn: 'newEntity' }, { label: '粘贴', fn: 'paste' }];
+  menu.innerHTML = items.map(i => `<div class="menu-item" data-action="${i.fn}">${i.label}</div>`).join('');
+  // 屏幕坐标 = 画布位置 + pan + 模型坐标 * zoom
+  const cyEl = document.getElementById('cy');
+  const rect = cyEl.getBoundingClientRect();
+  const sx = rect.left + cy.pan().x + modelPos.x * cy.zoom();
+  const sy = rect.top + cy.pan().y + modelPos.y * cy.zoom();
+  menu.style.left = Math.min(sx, window.innerWidth - 130) + 'px';
+  menu.style.top = Math.min(sy, window.innerHeight - 40 * items.length) + 'px';
+  menu.style.display = 'block';
+  menu.onclick = (e) => {
+    const item = e.target.closest('.menu-item');
+    if (!item) return;
+    const action = item.dataset.action;
+    closeContextMenu();
+    const pos = menuTarget ? menuTarget.modelPos : null;
+    if (action === 'copy') copySelected();
+    else if (action === 'newEntity') newEntityAt(pos);
+    else if (action === 'paste') pasteEntity(pos);
+  };
+}
+
+async function copySelected() {
+  const key = (menuTarget && menuTarget.type === 'node' && menuTarget.key) ||
+              (currentDetail && currentDetail.key) ||
+              document.getElementById('detail-content').dataset.key;
+  if (!key) return;
+  let entity;
+  if (currentDetail && currentDetail.key === key) {
+    entity = { ...currentDetail };   // 当前选中（含草稿覆盖）
+  } else {
+    try {
+      const res = await fetch(`/api/entity/${encodeURIComponent(key)}?file=${encodeURIComponent(currentFile)}`);
+      if (res.ok) entity = await res.json();
+      else entity = {};
+    } catch (e) { entity = {}; }
+  }
+  clipboard = { key, entity };
+  showBanner(`已复制 ${key}（Ctrl+V 粘贴）`, 'ok');
+}
+
+function uniqueKey(base) {
+  for (let i = 1; i < 1000; i++) {
+    const cand = `${base}-copy${i === 1 ? '' : i}`;
+    const exists = entityCandidates.some(c => c.key === cand) || draftOps.some(o => o.type === 'create' && o.key === cand);
+    if (!exists) return cand;
+  }
+  return `${base}-copy`;
+}
+
+function createEntityAt(key, entity, pos) {
+  pushDraft({ type: 'create', key, entity });
+  if (pos) {   // 指定位置（右键处）时重新定位新节点
+    const n = findNode(key);
+    if (n.length) n.position(pos);
+  }
+}
+
+function newEntityAt(pos) {
+  const key = prompt('新实体 key（如 my-click）');
+  if (!key) return;
+  createEntityAt(key, { type: 'click' }, pos);
+}
+
+function pasteEntity(pos) {
+  if (!clipboard) { showBanner('剪贴板为空，请先复制实体（Ctrl+C）', 'error'); return; }
+  const newKey = uniqueKey(clipboard.key);
+  const entity = {};
+  for (const k of Object.keys(clipboard.entity)) {
+    const v = clipboard.entity[k];
+    if (k === 'key' || k === 'explicit' || v === '' || v === null || v === undefined) continue;
+    if (Array.isArray(v) && v.length === 0) continue;
+    entity[k] = Array.isArray(v) ? v.join(',') : String(v);
+  }
+  if (!entity.type) entity.type = 'click';
+  createEntityAt(newKey, entity, pos);
+  showBanner(`已粘贴为 ${newKey}`, 'ok');
+}
+
 // 草稿态图元素集合（id），供 updateDraftGraph 清除重建（#6）
 const draftGraph = { nodes: new Set(), edges: new Set() };
 // 代际计数器：async updateDraftGraph 含 await fetch，保存/放弃/切文件瞬间在途调用可能
@@ -1175,8 +1284,23 @@ initCy();
 buildEdgeFilter();
 fetchEntities();
 loadFiles();
+
+// 屏蔽浏览器默认右键菜单（cytoscape 画布）
+document.getElementById('cy').addEventListener('contextmenu', e => e.preventDefault());
+// 点击其他处关闭右键菜单
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#context-menu')) closeContextMenu();
+});
+// 快捷键 Ctrl+C 复制选中实体；Ctrl+V 粘贴
+document.addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'c') { copySelected(); e.preventDefault(); }
+  else if (k === 'v') { pasteEntity(null); e.preventDefault(); }
+});
 </script>
 <div id="draft-bar"></div>
 <div id="err-banner"></div>
+<div id="context-menu"></div>
 </body>
 </html>
