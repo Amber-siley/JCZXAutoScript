@@ -148,7 +148,7 @@ max_wait: 5
 type: condition
 name: 战斗结束 战斗胜利 或者 失败
 condition: &{condition-in_location-fight-over-win | condition-in_location-fight-over-loss1 | in_location-get-item}
-condition_then: click-center,wait-1,click-center,click-upcenter,condition-set-win-flag,condition-get-item-win
+condition_then: click-center,wait-1,click-center,wait-1,click-upcenter,condition-set-win-flag,condition-get-item-win
 condition_else: wait-1,auto-fight-end
 
 [auto-fight-get-item]

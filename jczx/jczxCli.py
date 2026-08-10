@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 import time
 import re
@@ -1037,6 +1038,16 @@ class RichLogHandler(Handler):
 
 
 class JczxCli:
+    @staticmethod
+    def _program_dir() -> str:
+        """程序所在根目录（模块文件上溯两级：jczx/jczxCli.py → 工作区根）。
+
+        日志与 screenHistory 输出固定在此，不随启动时的 CWD 变化。
+        """
+        if getattr(sys, 'frozen', False):
+            return os.path.dirname(sys.executable)
+        return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
     def __init__(self):
         self.fm = FileManage()  # 文件管理
         self.config: TxtConfig = Config(self.fm.get_obj_relative_path("Config/Config.txt", self)).Config  # 读取主配置文件
@@ -1051,7 +1062,7 @@ class JczxCli:
         self.task_manage = TaskManage("", log=self.logger)
         self.ocr = None
         mode = self.config.get_config(opt="debug.screenshot.mode") or "off"
-        debug_dir = os.path.join(os.getcwd(), "screenHistory")
+        debug_dir = os.path.join(self._program_dir(), "screenHistory")
         self._debug_recorder = DebugRecorder(mode, debug_dir, self.logger)
         self._debug_recorder.ensure_dir()
         self.rich_log = RichLog(id="console", highlight=True, auto_scroll=False)
@@ -1065,8 +1076,12 @@ class JczxCli:
             try:
                 return func(self, *args, **kwargs)
             except Exception as e:
+                import traceback
                 self.logger.error(f"执行失败 {e.__traceback__.tb_lineno} {e}", stack_info=True)
                 self.logger.debug(f"本地参数：{locals()}")
+                self.logger.debug(f"完整异常链:\n{''.join(traceback.format_exception(type(e), e, e.__traceback__))}")
+                if e.__cause__:
+                    self.logger.warning(f"根因: {e.__cause__}")
         return wrapper
 
     @error_exception
@@ -1088,7 +1103,7 @@ class JczxCli:
         # 文件日志
         mode = self.config.get_config(opt="logging.file.mode")
         filehander = RotatingFileHandler(
-            f"{self.__class__.__name__}.log",
+            os.path.join(self._program_dir(), f"{self.__class__.__name__}.log"),
             mode=mode,
             maxBytes=int(self.config.get_config(opt="logging.file.size")) * 1024 if not mode.lower().startswith("w") else 0,
             encoding="utf-8",
@@ -1297,6 +1312,11 @@ class JczxTUI(App, JczxCli):
     def on_task_card_toggle_pressed(self, event: TaskCard.TogglePressed) -> None:
         if not getattr(self, '_initialized', False):
             self.logger.debug("初始化未完成，忽略启停操作")
+            if event.running:
+                panel = self.query_one("#task-list-panel", TaskListPanel)
+                for card in panel.body.query(TaskCard):
+                    if card._task_id == event.task_id:
+                        card.reset_toggle()
             return
         if event.running:
             panel = self.query_one("#task-list-panel", TaskListPanel)
@@ -1439,9 +1459,14 @@ class JczxTUI(App, JczxCli):
     def on_queue_panel_run_requested(self, event: QueuePanel.RunRequested) -> None:
         if not getattr(self, '_initialized', False):
             self.logger.debug("初始化未完成，忽略队列操作")
+            if event.running:
+                panel = self.query_one("#queue-panel", QueuePanel)
+                panel.reset_toggle()
             return
         if event.running:
-            self._start_queue(event.queue_id)
+            if not self._start_queue(event.queue_id):
+                panel = self.query_one("#queue-panel", QueuePanel)
+                panel.reset_toggle()
         else:
             self._stop_running_task()
 

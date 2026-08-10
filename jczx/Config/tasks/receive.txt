@@ -16,7 +16,7 @@ action: goto-home,click-mail,click-claimAll,condition-to-get-item,goto-home
 type: task
 view: on
 name: 领取常规任务奖励
-action: goto-home,click-task-menu,condition-to-receive-daily,condition-to-receive-week,goto-home
+action: goto-home,click-task-menu,condition-to-receive-daily,wait-1,condition-to-receive-week,goto-home
 
 / 杂项
 [click-task-menu]
