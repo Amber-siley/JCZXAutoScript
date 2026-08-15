@@ -414,3 +414,8 @@ name: 测试
 type: file
 target: tasks\receive.txt
 name: 领取各种东西
+
+[file-construction]
+type: file
+target: tasks\Construction.txt
+name: 基建相关

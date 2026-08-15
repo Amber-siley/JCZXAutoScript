@@ -1,2 +1,40 @@
 / 基建相关
 
+[task-get-ore]
+type: task
+name: 领取矿场矿物
+view: on
+action: goto-home,click-base,click-ore,get-item,goto-home
+
+[task-tradingPost-send]
+type: task
+name: 交易所-交付订单
+view: on
+action: goto-home,click-base,click-tradingPost
+
+/ 通用
+[get-item]
+extend: condition-to-get-item
+
+/ 杂项
+[click-base]
+type: click
+name: 基地
+target: buttons\base.png
+wait_target: buttons\quarry.png
+max_wait: 30
+sleep: 4
+
+[click-tradingPost]
+type: click
+name: 交易所
+target: buttons\tradingPost.png
+wait_target: buttons\chooseFriend.png
+wait_target_sleep: 1
+max_wait: 5
+
+[click-ore]
+type: click
+name: 矿物
+target: buttons\ore.png
+sleep: 1

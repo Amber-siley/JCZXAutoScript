@@ -78,6 +78,8 @@ class ScreenshotCache:
             self._log.debug(f"截图缓存已刷新")
 
     def _stale(self):
+        if self._ttl_ms == 0:
+            return True  # 0 = 禁用缓存：每次读取都重新截图
         return self._dirty or (self._ttl_ms > 0 and (time.monotonic() - self._timestamp) * 1000 > self._ttl_ms)
 
 class TaskCancelledError(Exception):
@@ -470,6 +472,8 @@ class JCZXGaming(Device):
                 self._recorder.on_match(self.screenshot(), result)
             for action in e.action:
                 result = self._transform_match(result, action)
+            if self._recorder:
+                self._recorder.on_match(self.screenshot(), result)
             return result
         return self._exec_entity(entity, _on_exec, testFor=True, action_chain=False)
 
@@ -710,8 +714,14 @@ class JCZXGaming(Device):
                     wait_img = self.task_manage.get_img(self._resolver.resolve(entity.wait_target, entity.only_key))
                     if wait_img is not None:
                         wait_max = self._resolve_scalar(entity, "max_wait")
-                        self.log.debug(f"等待 wait_target {entity.wait_target}，超时 {wait_max}s")
-                        self._wait_for_image(wait_img, wait_max, per=self._resolve_scalar(entity, "wait_target_per"))
+                        self.log.debug(f"开始等待 wait_target {entity.wait_target}，超时 {wait_max}s")
+                        if self._wait_for_image(wait_img, wait_max, per=self._resolve_scalar(entity, "wait_target_per")):
+                            self.log.debug(f"wait_target 匹配到 {entity.wait_target}")
+                            self._exec_mgr.token.sleep(self._resolve_scalar(entity, "wait_target_sleep"))
+                        else:
+                            self.log.debug(f"wait_target 未匹配到 {entity.wait_target}，超时继续执行")
+                    else:
+                        self.log.debug(f"wait_target 图片不存在: {entity.wait_target}")
                 self._log_message(entity)
                 if action_chain and entity.action:
                     resolved = self._resolver.resolve_list(entity.action, entity.only_key)

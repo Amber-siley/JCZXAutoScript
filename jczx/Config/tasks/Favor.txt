@@ -19,7 +19,7 @@ label: 挑战次数
 default: 45
 
 [task-favor-values]
-setting-team-choose: 队伍-01
+setting-team-choose: 队伍-02
 setting-inllusion-choose: 宙斯虚影-Inllusion
 setting-favor-times:45
 

@@ -97,6 +97,7 @@ class JczxSectionEntity(BaseEntity):
     testFor_sleep: float = 0
     wait_target: str = None
     wait_target_per: float = 0.8
+    wait_target_sleep: float = 0
     log: str = None
     log_level: str = "info"
     screen_cache_ttl: float = -1

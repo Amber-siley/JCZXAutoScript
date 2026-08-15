@@ -138,6 +138,7 @@ def build_graph(filename: str) -> dict[str, list[dict[str, Any]]]:
                 "context_key": getattr(entity, "context_key", "") or "",
                 "wait_target": getattr(entity, "wait_target", "") or "",
                 "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
+                "wait_target_sleep": getattr(entity, "wait_target_sleep", 0) or 0,
             },
             "classes": classes,
         })
@@ -304,6 +305,7 @@ def build_flow_tree(filename: str, task_key: str, max_depth: int = 50) -> dict[s
                 "context_key": getattr(entity, "context_key", "") or "",
                 "wait_target": getattr(entity, "wait_target", "") or "",
                 "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
+                "wait_target_sleep": getattr(entity, "wait_target_sleep", 0) or 0,
                 "file": entity_file.get(base, ""),
             },
             "classes": classes,
@@ -488,6 +490,7 @@ def get_entity_detail(filename: str, entity_name: str) -> dict[str, Any] | None:
         "log_level": getattr(entity, "log_level", "") or "",
         "wait_target": getattr(entity, "wait_target", "") or "",
         "wait_target_per": getattr(entity, "wait_target_per", 0.8) or 0.8,
+        "wait_target_sleep": getattr(entity, "wait_target_sleep", 0) or 0,
     }
     detail["fields"] = getattr(entity, "fields", []) or []
     detail["setting_type"] = getattr(entity, "setting_type", "") or ""

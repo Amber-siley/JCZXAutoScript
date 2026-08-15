@@ -507,6 +507,7 @@ function renderDetail(d) {
     ['testFor_per', d.testFor_per != null ? d.testFor_per : ''],
     ['wait_target', esc(d.wait_target)],
     ['wait_target_per', d.wait_target_per != null ? d.wait_target_per : ''],
+    ['wait_target_sleep', d.wait_target_sleep != null ? `${d.wait_target_sleep}s` : ''],
     ['log', esc(d.log)],
     ['log_level', esc(d.log_level)],
   ];
@@ -635,7 +636,7 @@ function buildEntityForm(detail) {
   const common = [
     ['name','显示名'], ['desc','备注'], ['action','action 链(引用)'], ['times','次数'],
     ['extend','继承'], ['view','显示(view)'], ['sleep','sleep'], ['pre_sleep','pre_sleep'],
-    ['max_wait','max_wait'], ['wait_target','wait_target'], ['wait_target_per','wait_target_per'],
+    ['max_wait','max_wait'], ['wait_target','wait_target'], ['wait_target_per','wait_target_per'], ['wait_target_sleep','wait_target_sleep'],
     ['testFor_before','testFor_before'], ['testFor_after','testFor_after'],
     ['testFor_max_wait','testFor_max_wait'], ['testFor_pre_sleep','testFor_pre_sleep'],
     ['testFor_sleep','testFor_sleep'], ['testFor_per','testFor_per'],

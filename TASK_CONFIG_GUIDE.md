@@ -143,6 +143,7 @@ Config/
 | `testFor_per` | float | `0.8` | testFor_before 匹配阈值 |
 | `wait_target` | str | — | 实体主逻辑完成后等待的图片路径，支持占位符。超时受 `max_wait` 约束 |
 | `wait_target_per` | float | `0.8` | wait_target 匹配阈值 |
+| `wait_target_sleep` | float | `0` | wait_target 匹配到后的等待秒数（未匹配超时则不等待） |
 | `max_wait` | float | `0` | wait_target / click 最大等待秒数。`0` 表示不等待
 | `log` | str | — | 自定义日志消息，支持四种占位符（见占位符章节） |
 | `log_level` | str | `info` | log 的等级：`debug` / `info` / `warning` / `error` |

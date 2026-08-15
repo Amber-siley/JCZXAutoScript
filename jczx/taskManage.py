@@ -101,6 +101,11 @@ class TaskManage:
                     put_size += 1
                 else:
                     fail_size += 1
+            if config_entity.wait_target:
+                if self._load_img_to_pool(config_entity.wait_target):
+                    put_size += 1
+                else:
+                    fail_size += 1
         self.log.debug(f"图片缓冲池加载完成，成功加载 {put_size} 张图片，失败 {fail_size} 张图片")
 
     def _load_img_to_pool(self, target: str) -> bool:
@@ -294,8 +299,9 @@ class TaskManage:
         if target_config is self.menu_config:
             self._save_menu_config_clean(section)
         else:
+            # 外部任务的 values 段属于外部文件本身，只落盘外部文件即可；
+            # menu_config 已通过 merge/set_config 在内存中同步，供 ${...} 占位符即时解析。
             target_config.save()
-            self.menu_config.save()
         self.log.debug(f"任务 {task_key} 设置已保存到 {source}: {values}")
         self._update_entities_after_save(task_key)
 

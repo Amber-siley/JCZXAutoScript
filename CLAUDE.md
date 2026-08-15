@@ -23,9 +23,20 @@ uv pip install -e .
 
 # 构建可执行文件（交互式选择 pyinstaller 或 nuitka）
 python build.py
+
+# 运行单元测试（pytest，dev 依赖）
+uv run pytest                # 全部
+uv run pytest tests/pure     # 方案1：纯逻辑单测（配置/占位符/缓存/变换）
+uv run pytest tests/regression  # 方案3：真实 jczx/Config 只读副本回归
+uv run pytest tests/engine   # 方案2：引擎级测试（FakeDevice 桩替身，不连 ADB）
 ```
 
-**无测试套件、Linter 或格式化工具。** 不要运行 `pytest`、`ruff` 或 `mypy` —— 均未配置，`test/` 仅含临时脚本。验证靠运行 TUI 实测。
+**单元测试（pytest）**：
+- `tests/pure/` 纯逻辑单测，不依赖设备与真实配置
+- `tests/regression/` 基于真实配置**只读副本**的回归测试（锁住配置解析/保存行为）
+- `tests/engine/` 引擎级测试：`object.__new__` 绕过 ADB 构造 `JCZXGaming`，`FakeMatcher`/`FakeToken` 桩替身，测 `_exec_entity` 模板与 exec 系列
+
+三者独立可跑。Linter/格式化工具未配置。真实 cv2 合成图匹配与 Textual TUI 测试尚未搭建。
 
 ## 架构：两套并行实现
 
