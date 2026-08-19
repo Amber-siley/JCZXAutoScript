@@ -1,6 +1,6 @@
 [queue-daily]
 name: 日常
-tasks: launch-game,task-receive-everyday,jjc-simulate,goto-inllusion,task-receive-mail,task-get-ore,task-receive-dayAndWeek
+tasks: launch-game,task-receive-everyday,jjc-simulate,goto-inllusion,task-receive-mail,task-get-ore,task-receive-dayAndWeek,task-receive-ExplorationGuidelines
 [queue-日常2]
 name:测试test
 tasks:task-get-ore

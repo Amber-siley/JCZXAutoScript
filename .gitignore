@@ -180,3 +180,6 @@ jczx.build
 jczx.dist
 .superpowers/
 screenHistory/*
+
+opencode.json
+.playwright-mcp

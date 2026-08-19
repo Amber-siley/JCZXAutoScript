@@ -5,7 +5,6 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "fastapi>=0.136.3",
     "imagesize>=2.0.0",
     "nuitka>=2.8",
     "onnxruntime>=1.26.0",
@@ -19,7 +18,6 @@ dependencies = [
     "requests>=2.34.2",
     "textual>=8.2.7",
     "uiautomator2>=3.5.2",
-    "uvicorn>=0.49.0",
 ]
 
 [dependency-groups]

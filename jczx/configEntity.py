@@ -15,7 +15,9 @@ class SectionType(Enum):
     OCR = "ocr"
     CONTEXT = "context"
     CONDITION = "condition"
-    
+    METHOD = "method"
+    CALL = "call"
+
     @classmethod
     def __contains__(cls, value):
         return (value in cls._value2member_map_) or (value in cls._member_names_)
@@ -102,7 +104,13 @@ class JczxSectionEntity(BaseEntity):
     log_level: str = "info"
     screen_cache_ttl: float = -1
     queueable: str = "on"
-    
+    # method / call
+    fn: str = None
+    params: list[str] = field(default_factory=list)
+    param_defaults: list[str] = field(default_factory=list)
+    # context 批量初始化
+    values: list[str] = field(default_factory=list)
+
     def get_task_name(self):
         return self.name or self.only_key
 

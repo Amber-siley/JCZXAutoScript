@@ -218,12 +218,13 @@ class TaskManage:
         return task_key
 
     def get_img(self, img_path: str) -> MatLike:
-        """获取图片"""
+        """获取图片：池未命中且文件存在时按需加载（支持 call/method 动态参数）。"""
         name = self._resolve_placeholder(img_path)
-        try:
+        if name in self.img_pool:
             return self.img_pool[name]
-        except Exception:
-            return None
+        if self._load_img_to_pool(name):
+            return self.img_pool[name]
+        return None
 
     def get_entity(self, entity_name: str, after_key: str = None) -> JczxSectionEntity:
         """获取实体"""

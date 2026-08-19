@@ -359,7 +359,7 @@ func: save_screenshot
 args: template,${screenshot-task-values:screenshot-name}
 
 [screenshot-task-values]
-screenshot-name: name_11
+screenshot-name: name_11223
 
 / ==================
 / 模拟器设置

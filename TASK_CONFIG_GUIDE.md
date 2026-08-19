@@ -55,6 +55,8 @@ adb.path : platform-tools/adb.exe
 | `settings` | 设置容器 | — | 引用 `setting` 字段 |
 | `setting` | 设置字段定义 | — | 描述表单控件 |
 | `file` | 外部配置文件引用 | — | 加载子配置文件中的实体合并到同一 `entity_pool` |
+| `method` | 可复用、带参数的执行链 | ✓ | `params`/`param_defaults` 声明参数，`action` = body |
+| `call` | 调用 method，参数绑定进 context | ✓ | `fn` = 目标 method，`args` = 位置参数 / kwargs |
 
 ---
 
@@ -148,6 +150,10 @@ Config/
 | `log` | str | — | 自定义日志消息，支持四种占位符（见占位符章节） |
 | `log_level` | str | `info` | log 的等级：`debug` / `info` / `warning` / `error` |
 | `screen_cache_ttl` | float | `-1` | 截图缓存 TTL（毫秒）。`-1`=继承上级，`0`=禁用（息屏/动画场景），`N`=自定义。只在链顶层设置即可，子实体 `-1` 自动继承 |
+| `fn` | str | — | call 专用：目标 method 实体 key |
+| `params` | list[str] | `[]` | method 专用：声明参数名（逗号分隔），用于校验与位置绑定 |
+| `param_defaults` | list[str] | `[]` | method 专用：可选参数默认值（`k=v` 逗号分隔） |
+| `values` | list[str] | `[]` | context 专用：批量初始化多个变量（`k=v` 逗号分隔） |
 
 ### click 类型专用
 
@@ -348,6 +354,60 @@ condition / condition_not 支持 `&{...}` 表达式（见占位符章节）。
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `action` | list[str] | `[]` | **循环源**（非执行链）。每个元素执行后，返回值转为 str 作为新 key 再次 `exec()` |
+
+### method / call 类型专用
+
+`method` 定义可复用的参数化执行链，`call` 调用它并把参数绑定进 context（函数体内用 `%{param}` 读取）。参数绑定支持**位置参数**（按 `params` 顺序）与 **kwargs**（`k=v`）混用，`param_defaults` 兜底可选参数。
+
+```txt
+/ ===== method 定义 =====
+[if-next-to-click]
+type: method
+name: 若基础图旁出现邻居图则点击
+params: base, neighbor, neighbor_match
+action: near-check, cond-click
+
+[near-check]
+type: func
+func: near_location
+args: %{neighbor}, %{neighbor_match}
+context_key: near_ok
+
+[cond-click]
+type: condition
+condition: %{near_ok}
+condition_then: click-target
+
+[click-target]
+type: click
+target: %{base}
+
+/ ===== call 调用（位置参数）=====
+[call-exploration]
+type: call
+fn: if-next-to-click
+args: buttons\ExplorationGuidelines.png, locations\hasNew.png, match-exploration-to-new
+
+[task-receive-x]
+type: task
+action: goto-home, call-exploration, goto-home
+```
+
+要点：
+- **位置参数**：`args` 中无 `=` 的值按 method `params` 声明顺序绑定；**kwargs**：`key=value` 按名绑定；两者可混用，显式值覆盖 `param_defaults` 默认值。
+- 参数绑定进**全局 context**，调用后保留（不自动恢复），函数体内实体用 `%{param}` 读取。
+- 校验：缺少必填参数 / 多余参数 / 位置参数超出 / 目标不是 method → `log.warning`（不中断执行）。
+- **嵌套调用**：method body 的 `action` 里可再写 `call` 实体；内层 call 的参数值支持 `%{}` 引用外层参数（绑定前解析）。
+- `method` / `call` 不进任务列表与队列（`view`/`queueable` 对其无效）。
+- `args`/`values` 的值**不能含逗号**（与现有规则一致）。
+
+`context` 批量初始化（不触发 method，仅设变量）：
+
+```txt
+[init-params]
+type: context
+values: base=buttons\a.png, neighbor=locations\b.png
+```
 
 ---
 

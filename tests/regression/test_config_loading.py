@@ -1,4 +1,7 @@
 """方案 3（回归）：基于真实 jczx/Config 只读副本的配置加载测试。"""
+import cv2
+import numpy as np
+
 from jczx.taskManage import TaskManage
 
 
@@ -36,3 +39,23 @@ class TestConfigLoading:
         tm = TaskManage(real_config_dir)
         val = tm._resolve_placeholder("${no-such-values:no-such-opt}", "x")
         assert val == ""
+
+
+class TestGetImgLazyLoad:
+    """get_img 懒加载兜底：call/method 动态参数路径按需加载进图片池。"""
+
+    def test_lazy_load_and_cache(self, real_config_dir, tmp_path):
+        png = tmp_path / "lazy.png"
+        cv2.imwrite(str(png), np.zeros((5, 5, 3), np.uint8))
+        tm = TaskManage(real_config_dir)
+        tm.get_resources_target = lambda target: str(png)  # 定向到临时图片
+        key = "dynamic\\param.png"
+        assert key not in tm.img_pool
+        img = tm.get_img(key)
+        assert img is not None, "懒加载应按需读入图片"
+        assert key in tm.img_pool, "懒加载后应缓存进图片池"
+
+    def test_missing_file_returns_none(self, real_config_dir):
+        tm = TaskManage(real_config_dir)
+        tm.get_resources_target = lambda target: "nonexistent\\path.png"
+        assert tm.get_img("missing\\param.png") is None

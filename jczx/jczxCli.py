@@ -451,17 +451,18 @@ class JCZXGaming(Device):
                 if mt is None or not mt.matched:
                     return None
                 target = self._resolver.resolve(e.target, e.only_key)
-                result = self._cascade_match(mt, target, e.per)
+                result = self._cascade_match(mt, target, self._resolve_scalar(e, "per"))
                 if not result:
                     if self._recorder:
                         self._recorder.on_match(self.screenshot(), mt)
                     return None
             elif e.target:
-                img = self.task_manage.get_img(e.target)
+                target = self._resolver.resolve(e.target, e.only_key)
+                img = self.task_manage.get_img(target)
                 if img is None:
                     self.log.debug(f"match 图片未找到: {e.target}")
                     return None
-                result = self.findImageDetail(img, per=e.per)
+                result = self.findImageDetail(img, per=self._resolve_scalar(e, "per"))
                 if not result or not result.matched:
                     self.log.debug(f"match 未匹配到: {e.target}")
                     return None
@@ -471,7 +472,8 @@ class JCZXGaming(Device):
             if self._recorder:
                 self._recorder.on_match(self.screenshot(), result)
             for action in e.action:
-                result = self._transform_match(result, action)
+                # 先解析 action 占位符（如 up-M|%{expand}），再应用变换
+                result = self._transform_match(result, self._resolver.resolve(action, e.only_key))
             if self._recorder:
                 self._recorder.on_match(self.screenshot(), result)
             return result
@@ -496,7 +498,7 @@ class JCZXGaming(Device):
                 target = self._resolver.resolve(e.target, e.only_key)
                 img = self.task_manage.get_img(target) if target else None
                 if img is not None:
-                    mt = self.findImageDetail(img, per=e.per)
+                    mt = self.findImageDetail(img, per=self._resolve_scalar(e, "per"))
                     if mt and mt.matched and mt.matchTempletePointRange:
                         result = self._ocr_match_region(mt)
                         self.log.info(f"OCR 识别 {e.get_task_name()}: {result}") if e.get_task_name() else None
@@ -529,6 +531,11 @@ class JCZXGaming(Device):
         entity = self._get_entity(section)
         def _on_exec(e: JczxSectionEntity):
             result = None
+            if e.values:
+                # 批量初始化多个 context 变量（k=v 逗号分隔）
+                for k, v in self._parse_kv(e.values).items():
+                    self.context_set(k, self._resolver.resolve(v, e.only_key))
+                return None
             if e.context_get:
                 exists = e.context_get in self._context
                 default_type = e.context_default_type or e.context_type
@@ -589,7 +596,7 @@ class JCZXGaming(Device):
                 if mt is not None and mt.matched:
                     if e.target:
                         target = self._resolver.resolve(e.target, e.only_key)
-                        cascade_result = self._cascade_match(mt, target, e.per)
+                        cascade_result = self._cascade_match(mt, target, self._resolve_scalar(e, "per"))
                         if cascade_result and cascade_result.matchTempleteCenterPoints:
                             idx = e.index
                             pts = cascade_result.matchTempleteCenterPoints
@@ -629,10 +636,10 @@ class JCZXGaming(Device):
                     self.log.debug(f"匹配资源 {target}")
                     if img is not None and self._recorder:
                         # 记录debug记录匹配结果
-                        mt = self.findImageDetail(img, per=e.per)
+                        mt = self.findImageDetail(img, per=self._resolve_scalar(e, "per"))
                         if mt and mt.matched:
                             self._recorder.on_match(self.screenshot(), mt)
-                    if img is not None and (result := self.clickResource(img, per=e.per, index=e.index)):
+                    if img is not None and (result := self.clickResource(img, per=self._resolve_scalar(e, "per"), index=e.index)):
                         self.log.debug(f"匹配并点击资源 {target}")
                         self.log.info(f"执行点击 {e.get_task_name()}") if e.get_task_name() else None
                         break
@@ -640,7 +647,7 @@ class JCZXGaming(Device):
                     if runTime >= e.max_wait:
                         self.log.debug(f"最大等待时间 {e.max_wait}s 结束, 未匹配到资源 {target}")
                         if e.break_point == "on":
-                            self._exec_mgr.token.sleep(e.sleep)
+                            self._exec_mgr.token.sleep(self._resolve_scalar(entity, "sleep"))
                             return None
                         break
             return result
@@ -662,6 +669,63 @@ class JCZXGaming(Device):
             log_fn(f"{prefix}执行完毕 {e.get_task_name()}") if e.get_task_name() else None
             return result
         return self._exec_entity(entity, _on_exec, action_chain=False)
+
+    def exec_method(self, section: Union[JczxSectionEntity, str]):
+        """执行 method 类型实体：可复用、带参数的执行链（≈ exec_task，不进任务池）。"""
+        entity = self._get_entity(section)
+        def _on_exec(e: JczxSectionEntity):
+            result = None
+            for i in self.task_manage.get_next(e):
+                self._exec_mgr.token.check()
+                result = self.exec(i)
+            return result
+        return self._exec_entity(entity, _on_exec, action_chain=False)
+
+    @staticmethod
+    def _parse_kv(items) -> dict:
+        """解析 'k=v' 字符串列表为 dict；无 '=' 的项忽略。"""
+        result = {}
+        for item in items or []:
+            if "=" in item:
+                k, _, v = item.partition("=")
+                result[k.strip()] = v.strip()
+        return result
+
+    def exec_call(self, section: Union[JczxSectionEntity, str]):
+        """执行 call 类型实体：按 method 的 params 绑定位置参数/kwargs 进全局 context，再执行 method body。"""
+        entity = self._get_entity(section)
+        fn = self.task_manage.get_entity(entity.fn) if entity.fn else None
+        if not entity.fn or not fn:
+            self.log.warning(f"call 目标 method 不存在: {entity.fn}")
+            return None
+        if fn.type != SectionType.METHOD.value:
+            self.log.warning(f"call 目标不是 method: {entity.fn} (type={fn.type})")
+            return None
+        declared = [p for p in (fn.params or [])]
+        defaults = self._parse_kv(fn.param_defaults)
+        positional, kwargs = [], {}
+        for item in entity.args or []:
+            if "=" in item:
+                k, _, v = item.partition("=")
+                kwargs[k.strip()] = v.strip()
+            else:
+                positional.append(item.strip())
+        for i, val in enumerate(positional):
+            if i < len(declared):
+                kwargs.setdefault(declared[i], val)
+            else:
+                self.log.warning(f"call {entity.fn} 位置参数超出 params: {val}")
+        for k in kwargs:
+            if k not in declared:
+                self.log.warning(f"call {entity.fn} 多余参数: {k}")
+        missing = [p for p in declared if p not in kwargs and p not in defaults]
+        if missing:
+            self.log.warning(f"call {entity.fn} 缺少参数: {missing}")
+        merged = {**defaults, **kwargs}
+        for k, v in merged.items():
+            # 绑定前解析占位符，支持 ${} 配置 / %{} 引用外层参数（嵌套调用）
+            self.context_set(k, self._resolver.resolve(v, entity.only_key))
+        return self.exec(fn)
 
     def _get_entity(self, section: Union[JczxSectionEntity, str]) -> JczxSectionEntity:
         if isinstance(section, str):
@@ -872,9 +936,13 @@ class JCZXGaming(Device):
                 result = self.exec_context(entity)
             case SectionType.CONDITION.value:
                 result = self.exec_condition(entity)
+            case SectionType.METHOD.value:
+                result = self.exec_method(entity)
+            case SectionType.CALL.value:
+                result = self.exec_call(entity)
             case _:
                 return None
-        if entity.context_key and result is not None and entity.type != SectionType.CONTEXT.value and entity.type != SectionType.CONDITION.value:
+        if entity.context_key and entity.type != SectionType.CONTEXT.value and entity.type != SectionType.CONDITION.value:
             try:
                 match entity.context_type:
                     case "int":
@@ -1139,13 +1207,53 @@ class JczxCli:
     def _running_task_id(self) -> str | None:
         return self.device._exec_mgr.task_id if self.device else None
 
+    def _reconnect_adb(self) -> None:
+        """adb 对象已存在时重新建立连接（模拟器重启后旧 TCP 传输失效）。
+
+        重新 `adb connect 端口` → 刷新 device_id（优先端口地址）→ 重取分辨率 → 重连 u2。
+        """
+        adb = self.adb
+        try:
+            port = int(self.config.get_config(opt="adb.port") or "7555")
+        except (TypeError, ValueError):
+            port = 7555
+        try:
+            adb.connenct(port)
+        except Exception as e:
+            self.logger.warning(f"ADB connect 失败: {e}")
+        try:
+            devices = adb.get_device_names()
+        except Exception as e:
+            self.logger.warning(f"获取设备列表失败: {e}")
+            devices = []
+        if not devices:
+            adb.device_id = None
+            self.logger.info("ADB 当前无可连接设备")
+            return
+        preferred = f"127.0.0.1:{port}"
+        if preferred in devices:
+            adb.device_id = preferred
+        elif adb.device_id not in devices:
+            adb.device_id = devices[0]
+        old_size = adb.size
+        adb.size = None
+        try:
+            adb.size = adb.getScreenSize()
+        except Exception as e:
+            adb.size = old_size  # 刷新失败保留旧值，避免 size=None 导致后续 width/height 崩溃
+            self.logger.warning(f"刷新设备分辨率失败: {e}")
+        try:
+            adb._init_u2_device()
+        except Exception:
+            pass
+
     def _init_device(self):
         adb_path = self.config.get_config(opt="adb.path")
         self.logger.debug(f"ADB路径 {adb_path}")
         self.logger.info("开始加载ADB")
         try:
             if self.adb:
-                ...
+                self._reconnect_adb()
             elif self.fm.isfile(adb_path):
                 self.adb = JCZXGaming(adb_path, log = self.logger)
             else:
@@ -1174,7 +1282,10 @@ class JczxCli:
             self.logger.debug(f"截图方式: U2 Screenshot")
         else:
             self.logger.debug(f"截图方式: ADB Screenshot")
-        self.logger.debug(f"设备分辨率 {self.device.width}x{self.device.height}")
+        if self.device.size:
+            self.logger.debug(f"设备分辨率 {self.device.width}x{self.device.height}")
+        else:
+            self.logger.debug("设备分辨率未知")
 
     def _init_ocr(self):
         if self.ocr:
@@ -1286,6 +1397,22 @@ class JczxTUI(App, JczxCli):
         )
         self.config.set_config(opt="adb.port", val=event.port)
         self.config.save()
+        # 真正切换设备：更新 device_id，重取分辨率与 u2 连接（此前只存端口、不切换）
+        if self.adb and event.device and event.device != self.adb.device_id:
+            old = self.adb.device_id
+            self.adb.device_id = event.device
+            old_size = self.adb.size
+            self.adb.size = None
+            try:
+                self.adb.size = self.adb.getScreenSize()
+            except Exception as e:
+                self.adb.size = old_size  # 失败保留旧值，避免 size=None 崩溃
+                self.logger.warning(f"刷新设备分辨率失败: {e}")
+            try:
+                self.adb._init_u2_device()
+            except Exception:
+                pass
+            self.logger.info(f"设备已切换: {old} → {self.adb.device_id}")
         self.logger.info("配置已保存到文件")
 
     def on_device_bar_refresh_pressed(self, event: DeviceBar.RefreshPressed) -> None:

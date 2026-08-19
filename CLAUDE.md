@@ -88,7 +88,8 @@ from .CommonBuilder.CommonBuilder.FileTools.ConfigUtils import Config, TxtConfig
 要点：
 - `type: file` 引入子文件；**同名 section 冲突抛 `ValueError`**，子文件中不能再嵌套 `file`。
 - `JczxSectionEntity` 中 `action`/`args`/`target` 等 str 字段按逗号自动拆为列表（`configEntity.py` 的 `__setattr__`），故**逗号后不能加空格**。
-- `SectionType` 枚举含 `task`/`func`/`click`/`dynamic`/`match`/`ocr`/`context`/`condition`/`settings`/`setting`/`file`。
+- `SectionType` 枚举含 `task`/`func`/`click`/`dynamic`/`match`/`ocr`/`context`/`condition`/`settings`/`setting`/`file`/`method`/`call`。
+- `method` 定义可复用、带参数的执行链（`params`/`param_defaults`），`call` 调用 method 并把位置参数/kwargs 绑定进全局 context（body 内用 `%{param}` 读取），支持嵌套调用；`context` 可用 `values` 批量初始化变量。详见 `TASK_CONFIG_GUIDE.md`。
 - 实体通过 `extend` 继承同文件其他实体；`condition` 引用实体 key 或 `&{...}` 表达式。
 
 ### 任务引擎执行模型

@@ -22,35 +22,53 @@ action: goto-home,click-task-menu,condition-to-receive-daily,wait-1,condition-to
 type: task
 view: on
 name: 领取勘探指南
-action: goto-home,condition-to-exploration-guidelines,click-eg-task
+action: goto-home,call-exploration-around,click-eg-task,receive-eg-task-rewards,click-EGTaskLoc,click-EGClaimAll,get-item,goto-home
 
 / 杂项
-[condition-to-exploration-guidelines]
-type: condition
-name: 条件判断勘探是否hasNew
-condition: matched-exploration-guidelines-new
-condition_then: click-exploration-guidelines
+/ ===== method：若基础图周围出现邻居图则点击（通用：匹配基础图后按 expand 外扩边级联查 neighbor）=====
+[if-around-click]
+type: method
+name: 若基础图周围出现邻居图则点击
+params: base,base_per,neighbor,then_entity,expand_up,expand_down,expand_left,expand_right,click_sleep
+param_defaults: neighbor=locations\hasNew.png,base_per=0.8,then_entity=click-target,expand_up=40,expand_down=40,expand_left=40,expand_right=40,click_sleep=1
+action: matched-around,cond-click
 
-[condition-to-egTask-daily]
-type: condition
-name: 条件判断每日任务是否hasNew
-condition: 
-
-[matched-egTask-daily-hasNew]
+[matched-around]
 type: match
-match: 
-target: locations\hasNew.png
+match: match-around
+target: %{neighbor}
+context_key: near_ok
+context_type: bool
 
-[match-egTask-daily-new]
+[match-around]
 type: match
+target: %{base}
+per: %{base_per}
+action: up-M|%{expand_up},down-M|%{expand_down},left-M|%{expand_left},right-M|%{expand_right}
 
+[cond-click]
+type: condition
+condition: &{%{near_ok}}
+condition_then: %{then_entity}
 
-[click-exploration-guidelines]
+[click-target]
+type: click
+target: %{base}
+per: %{base_per}
+sleep: %{click_sleep}
+
+[click-exploration]
 type: click
 name: 勘探指南
 target: buttons\ExplorationGuidelines.png
 wait_target: buttons\EGTask.png
 max_wait: 4
+
+/ ===== call：勘探指南周围有 hasNew 则点击 =====
+[call-exploration-around]
+type: call
+fn: if-around-click
+args: base=buttons\ExplorationGuidelines.png,then_entity=click-exploration
 
 [click-eg-task]
 type: click
@@ -58,16 +76,42 @@ name: 任务
 target: buttons\EGTask.png
 sleep: 1
 
-[matched-exploration-guidelines-new]
-type: match
-name: 匹配勘探指南是否hasNew
-match: match-exploration-to-new
-target: locations\hasNew.png
+[receive-eg-task-rewards]
+type: task
+name: 领取勘探奖励
+action: call-egtask-daily-around,click-EGRecive,get-item,call-egtask-week-around,click-EGRecive,get-item,call-egtask-month-around,click-EGRecive,get-item
 
-[match-exploration-to-new]
-type: match
-target: buttons\ExplorationGuidelines.png
-action: left|1,up-M|10,left-M|-50
+[call-egtask-daily-around]
+type: call
+fn: if-around-click
+args: base=buttons\EGDaily.png,base_per=0.9
+
+[call-egtask-week-around]
+type: call
+fn: if-around-click
+args: base=buttons\EGWeek.png,base_per=0.9
+
+[call-egtask-month-around]
+type: call
+fn: if-around-click
+args: base=buttons\EGMonth.png,base_per=0.9
+
+[click-EGRecive]
+type: click
+name: 勘探任务领取
+target: buttons\EGRecive.png
+sleep: 1
+
+[click-EGTaskLoc]
+type: click
+target: locations\EGTaskLoc.png
+sleep: 1
+
+[click-EGClaimAll]
+type: click
+name: 领取全部
+target: buttons\EGClaimAll.png
+sleep: 1
 
 [click-task-menu]
 type: click

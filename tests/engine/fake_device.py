@@ -1,5 +1,6 @@
 """方案 2 harness：FakeDevice 桩替身，object.__new__ 绕过 ADB（避免 ready_env 联网下载）。"""
 import logging
+from copy import deepcopy
 from types import SimpleNamespace
 
 import numpy as np
@@ -42,7 +43,8 @@ class FakeMatcher:
     def __call__(self, img, cutPoints=None, per=0.9, grayScreenshot=None):
         self.calls.append((img, cutPoints, per))
         if isinstance(img, str):
-            return self.results.get(img, _unmatched())
+            # deepcopy：transform() 会原地修改 MatchTemplete，复用对象会污染后续匹配（真实引擎每次新建）
+            return deepcopy(self.results.get(img, _unmatched()))
         return _unmatched()
 
 
@@ -115,6 +117,6 @@ def make_gaming(real_config_dir, *, matcher=None, clicks=None, recorder=None,
     g.task_manage.get_img = lambda target: target  # target 字符串直通 matcher
     g.findImageDetail = matcher if matcher is not None else FakeMatcher()
     g.clicks = clicks if clicks is not None else []
-    g.click = g.clicks.append
+    g.click = lambda x, y: g.clicks.append((x, y))
     g.matcher = matcher if matcher is not None else g.findImageDetail
     return g
