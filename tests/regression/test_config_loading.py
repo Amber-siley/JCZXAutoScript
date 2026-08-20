@@ -41,6 +41,53 @@ class TestConfigLoading:
         assert val == ""
 
 
+class TestDeliveryOrderSettings:
+    """自动交付订单任务：multi_select_switch 订单 + 两个 bool 开关设置。"""
+
+    def test_task_links_settings(self, real_config_dir):
+        tm = TaskManage(real_config_dir)
+        task = tm.get_entity("task-delivery-order")
+        assert task is not None
+        assert task.type == "task"
+        assert task.settings == "settings-delivery-order"
+
+    def test_three_setting_fields(self, real_config_dir):
+        tm = TaskManage(real_config_dir)
+        fields = tm.get_task_setting_entities("task-delivery-order")
+        types = {f.name: f.setting_type for f in fields}
+        assert types == {
+            "setting-delivery-orders": "multi_select_switch",
+            "setting-delivery-synth": "bool",
+            "setting-delivery-check-friend": "bool",
+        }
+
+    def test_multi_switch_orders_and_sub_label(self, real_config_dir):
+        tm = TaskManage(real_config_dir)
+        fields = {f.name: f for f in tm.get_task_setting_entities("task-delivery-order")}
+        orders = fields["setting-delivery-orders"]
+        assert orders.switch_label == "是否合成"
+        assert orders.options == [
+            "18-2构建", "16-2构建", "10-1构建", "8-1构建",
+            "6-1构建", "10-12w技术点", "10-12w星币",
+        ]
+
+    def test_bool_defaults_are_true(self, real_config_dir):
+        tm = TaskManage(real_config_dir)
+        fields = {f.name: f for f in tm.get_task_setting_entities("task-delivery-order")}
+        assert fields["setting-delivery-synth"].default == "true"
+        assert fields["setting-delivery-check-friend"].default == "true"
+
+    def test_saved_values_expose_sub_switches(self, real_config_dir):
+        tm = TaskManage(real_config_dir)
+        vals = tm.get_task_values("task-delivery-order")
+        assert set(vals["setting-delivery-orders"].split(",")) == {
+            "16-2构建", "8-1构建", "6-1构建", "10-12w技术点", "10-12w星币",
+        }
+        assert set(vals["setting-delivery-orders__sub"].split(",")) == {
+            "16-2构建", "8-1构建", "6-1构建",
+        }
+
+
 class TestGetImgLazyLoad:
     """get_img 懒加载兜底：call/method 动态参数路径按需加载进图片池。"""
 

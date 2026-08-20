@@ -84,17 +84,17 @@ action: call-egtask-daily-around,click-EGRecive,get-item,call-egtask-week-around
 [call-egtask-daily-around]
 type: call
 fn: if-around-click
-args: base=buttons\EGDaily.png,base_per=0.9
+args: base=buttons\EGDaily.png,base_per=0.9,expand_right=50
 
 [call-egtask-week-around]
 type: call
 fn: if-around-click
-args: base=buttons\EGWeek.png,base_per=0.9
+args: base=buttons\EGWeek.png,base_per=0.9,expand_right=50
 
 [call-egtask-month-around]
 type: call
 fn: if-around-click
-args: base=buttons\EGMonth.png,base_per=0.9
+args: base=buttons\EGMonth.png,base_per=0.9,expand_right=50
 
 [click-EGRecive]
 type: click

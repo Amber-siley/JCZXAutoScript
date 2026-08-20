@@ -485,7 +485,7 @@ class SettingField:
 
     name: str
     label: str
-    type: str = "input"          # "input" | "integer" | "select" | "multi_select" | "multi_select_switch"
+    type: str = "input"          # "input" | "integer" | "select" | "multi_select" | "multi_select_switch" | "bool"
     value: str = ""
     options: list[str] = field(default_factory=list)
     switch_label: str = ""                        # multi_select_switch: sub-toggle label
@@ -533,9 +533,10 @@ class TaskSettingsPanel(Section):
         body = self.body
         mounted: list[Widget] = []
         for f in fields:
-            label = Label(f.label, classes="field-label")
-            body.mount(label)
-            mounted.append(label)
+            if f.type != "bool":
+                label = Label(f.label, classes="field-label")
+                body.mount(label)
+                mounted.append(label)
             if f.type == "select":
                 opts = [(o, o) for o in (f.options or [])]
                 w = CompactSelect(opts, value=f.value, id=f"field-{f.name}")
@@ -565,6 +566,16 @@ class TaskSettingsPanel(Section):
                 )
                 body.mount(w)
                 mounted.append(w)
+            elif f.type == "bool":
+                row = Horizontal(classes="multi-select-row")
+                body.mount(row)
+                mounted.append(row)
+                sw = CompactSwitch(
+                    value=str(f.value).lower() in ("true", "1", "yes", "on"),
+                    id=f"field-{f.name}",
+                )
+                row.mount(sw)
+                row.mount(Label(f.label, classes="switch-label"))
             elif f.type == "integer":
                 validators = [Integer(
                     minimum=f.min if f.min is not None else 0,
@@ -615,6 +626,9 @@ class TaskSettingsPanel(Section):
                             sub_on.append(name)
                 values[f.name] = ",".join(enabled) if enabled else ""
                 values[f"{f.name}__sub"] = ",".join(sub_on) if sub_on else ""
+            elif f.type == "bool":
+                w = self.query_one(f"#field-{f.name}", CompactSwitch)
+                values[f.name] = "true" if w.value else "false"
             elif f.type == "integer":
                 w = self.query_one(f"#field-{f.name}", Input)
                 values[f.name] = w.value

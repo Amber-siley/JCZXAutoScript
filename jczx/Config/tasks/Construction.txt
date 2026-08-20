@@ -1,16 +1,50 @@
 / 基建相关
 
+[task-delivery-order]
+type: task
+name: 交易所-自动交付订单
+view: on
+settings: settings-delivery-order
+desc: 自动交付订单（action 执行链待实现）
+action: goto-home,click-base,click-tradingPost
+
+[settings-delivery-order]
+type: settings
+fields: setting-delivery-synth,setting-delivery-check-friend,setting-delivery-orders
+
+[setting-delivery-orders]
+type: setting
+label: 需要交付的订单
+setting_type: multi_select_switch
+switch_label: 是否合成
+desc: 每单两开关：交付（开）/合成（副开关）
+options: 18-2构建,16-2构建,10-1构建,8-1构建,6-1构建,10-12w技术点,10-12w星币
+
+[setting-delivery-synth]
+type: setting
+label: 是否按需合成
+setting_type: bool
+default: true
+desc: 缺材料时按需合成补齐后交付
+
+[setting-delivery-check-friend]
+type: setting
+label: 是否检查好友订单
+setting_type: bool
+default: true
+desc: 交付前检查好友订单协助请求
+
+[task-delivery-order-values]
+setting-delivery-orders:16-2构建,8-1构建,6-1构建,10-12w技术点,10-12w星币
+setting-delivery-orders__sub:16-2构建,8-1构建,6-1构建
+setting-delivery-synth:true
+setting-delivery-check-friend:true
+
 [task-get-ore]
 type: task
 name: 领取矿场矿物
 view: on
 action: goto-home,click-base,click-ore,get-item,goto-home
-
-[task-tradingPost-send]
-type: task
-name: 交易所-交付订单
-view: on
-action: goto-home,click-base,click-tradingPost
 
 / 通用
 [get-item]

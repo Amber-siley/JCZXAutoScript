@@ -753,8 +753,33 @@ options: 初级订单,中级订单,高级订单,特殊订单
 | `select` | 下拉选择框 | 单个选项值 |
 | `multi_select` | 多选框 | 逗号分隔选中项 |
 | `multi_select_switch` | 主开关 + 子开关 | 选中项，子开关另存 `{name}__sub` |
+| `bool` | 单开关 `[X] 标签` | `true` / `false` |
 
 值存储到 `{task-key}-values` section，读取时优先取值、其次 `default`。
+
+**`bool` 使用示例**（缺省用 `default`，用户设置后存 `{task-key}-values`）：
+
+```ini
+[delivery-settings]
+type: settings
+fields: enable-delivery, enable-synth
+
+[enable-delivery]
+type: setting
+setting_type: bool
+label: 是否交付
+default: true
+
+[enable-synth]
+type: setting
+setting_type: bool
+label: 是否按需合成
+default: false
+```
+
+- 开关关时保存 `false`，开时保存 `true`。
+- 执行链中用 `${delivery-values:enable-delivery}` 读取；引擎 `_convert_value` 将 `true`/`1`/`yes` 判定为真，可配合 `context_type: bool` 或 `&{...}` 条件使用。
+- 单行渲染为 `[X] 标签`，与 `multi_select_switch` 的行内开关样式一致。
 
 ---
 
