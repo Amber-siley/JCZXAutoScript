@@ -943,24 +943,19 @@ class JCZXGaming(Device):
             case _:
                 return None
         if entity.context_key and entity.type != SectionType.CONTEXT.value and entity.type != SectionType.CONDITION.value:
-            if result is None:
-                # 匹配失败：bool 写 False 清除旧值；其余类型不写入（保留旧值，防止 None 污染后续运算）
-                if entity.context_type == "bool":
-                    self.context_set(entity.context_key, False)
-            else:
-                try:
-                    match entity.context_type:
-                        case "int":
-                            self.context_set(entity.context_key, int(float(result)))
-                        case "float":
-                            self.context_set(entity.context_key, float(result))
-                        case "bool":
-                            self.context_set(entity.context_key, bool(result))
-                        case _:
-                            self.context_set(entity.context_key, str(result))
-                except (ValueError, TypeError) as e:
-                    self.log.warning(f"[{entity.get_task_name() or entity.only_key}] 上下文类型转换失败: context_type={entity.context_type}, result={result!r}, error={e}")
-                    self.context_set(entity.context_key, str(result))
+            try:
+                match entity.context_type:
+                    case "int":
+                        self.context_set(entity.context_key, int(float(result)))
+                    case "float":
+                        self.context_set(entity.context_key, float(result))
+                    case "bool":
+                        self.context_set(entity.context_key, bool(result))
+                    case _:
+                        self.context_set(entity.context_key, str(result))
+            except (ValueError, TypeError) as e:
+                self.log.warning(f"[{entity.get_task_name() or entity.only_key}] 上下文类型转换失败: context_type={entity.context_type}, result={result!r}, error={e}")
+                self.context_set(entity.context_key, str(result))
         return result
 
     def _wait_for_image(self, img, max_wait: int, per: float = 0.8) -> bool:
