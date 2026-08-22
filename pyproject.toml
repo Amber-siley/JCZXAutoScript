@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "imagesize>=2.0.0",
+    "mcp[cli]>=2.0.0",
     "nuitka>=2.8",
     "onnxruntime>=1.26.0",
     "opencv-contrib-python>=4.10.0.84",

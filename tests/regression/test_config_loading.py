@@ -1,7 +1,9 @@
 """方案 3（回归）：基于真实 jczx/Config 只读副本的配置加载测试。"""
 import cv2
 import numpy as np
+from os.path import join
 
+from jczx.CommonBuilder.CommonBuilder.FileTools.ConfigUtils import TxtConfig
 from jczx.taskManage import TaskManage
 
 
@@ -39,6 +41,10 @@ class TestConfigLoading:
         tm = TaskManage(real_config_dir)
         val = tm._resolve_placeholder("${no-such-values:no-such-opt}", "x")
         assert val == ""
+
+    def test_config_has_mcp_port(self, real_config_dir):
+        cfg = TxtConfig(join(real_config_dir, "Config.txt"))
+        assert cfg.get_config(opt="mcp.port") == "8765"
 
 
 class TestDeliveryOrderSettings:

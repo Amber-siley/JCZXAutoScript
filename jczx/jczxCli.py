@@ -1139,6 +1139,7 @@ class JczxCli:
         self.adb: JCZXGaming = None
         self.task_manage = TaskManage("", log=self.logger)
         self.ocr = None
+        self._mcp_server = None
         mode = self.config.get_config(opt="debug.screenshot.mode") or "off"
         debug_dir = os.path.join(self._program_dir(), "screenHistory")
         self._debug_recorder = DebugRecorder(mode, debug_dir, self.logger)
@@ -1164,7 +1165,7 @@ class JczxCli:
 
     @error_exception
     def _init_something(self):
-        self.thread_pool_run(self._init_device, self._init_ocr)
+        self.thread_pool_run(self._init_device, self._init_ocr, self._init_mcp)
         if self.device:
             self.device.set_ocr(self.ocr)
 
@@ -1300,6 +1301,19 @@ class JczxCli:
             engine = 'onnxruntime',
         )
         self.logger.info("OCR初始化完成")
+
+    def _init_mcp(self):
+        try:
+            port = int(self.config.get_config(opt="mcp.port") or "8765")
+        except (TypeError, ValueError, KeyError):
+            port = 8765
+        try:
+            from .mcpServer import JczxMcpServer
+            self._mcp_server = JczxMcpServer(self, port, self.logger)
+            threading.Thread(target=self._mcp_server.run, daemon=True, name="jczx-mcp").start()
+            self.logger.info(f"MCP 服务已启动: http://127.0.0.1:{port}/mcp")
+        except Exception as e:
+            self.logger.error(f"MCP 服务启动失败: {e}")
 
 class JczxTUI(App, JczxCli):
     BINDINGS = [
