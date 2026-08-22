@@ -51,7 +51,7 @@ class TestConfigLoading:
         assert cfg.get_config(opt="record.click_move_threshold") == "15"
         assert cfg.get_config(opt="record.hold_threshold") == "300"
         assert cfg.get_config(opt="record.refresh_interval") == "100"
-        assert cfg.get_config(opt="record.sync.mode") == "screenshot"
+        assert cfg.get_config(opt="record.sync.mode") == "u2"
 
 
 class TestDeliveryOrderSettings:

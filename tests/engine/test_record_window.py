@@ -178,6 +178,32 @@ class TestSyncMode:
         assert img.shape == (4, 4, 3)
 
 
+class TestFpsDisplay:
+    """记录窗口 FPS 显示：固定时间窗口平均帧率（float，两位小数）。"""
+
+    def test_fps_updates_when_window_full(self, gaming, tmp_path):
+        rec = FakeRecordRecorder()
+        win = make_record_window(gaming, tmp_path, rec)
+        win._fps_window = 1.0
+        # 窗口未满：不更新，计数保持
+        fc, ws = win._accumulate_fps(5, 100.0, 100.5)
+        assert win._fps == 0.0, "窗口未满不更新 FPS"
+        assert fc == 5 and ws == 100.0
+        # 窗口满（elapsed >= 1.0）：更新 FPS 并重置计数
+        fc, ws = win._accumulate_fps(5, 100.0, 101.0)
+        assert win._fps == 5.0, "5 帧 / 1 秒 = 5.0 FPS"
+        assert fc == 0 and ws == 101.0
+
+    def test_fps_is_float_precision(self, gaming, tmp_path):
+        rec = FakeRecordRecorder()
+        win = make_record_window(gaming, tmp_path, rec)
+        win._fps_window = 1.0
+        win._accumulate_fps(7, 100.0, 102.0)
+        assert isinstance(win._fps, float)
+        assert win._fps == 3.5, "7 帧 / 2 秒 = 3.5 FPS"
+        assert f"{win._fps:.2f}" == "3.50", "显示应精确到两位小数"
+
+
 class TestDeviceBarRecordButton:
     @pytest.fixture(autouse=True)
     def _active_app(self):

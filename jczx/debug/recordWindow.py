@@ -6,6 +6,7 @@
 import json
 import math
 import os
+import threading
 import time
 import tkinter as tk
 
@@ -69,6 +70,11 @@ class RecordWindow:
         self._hold_threshold = self._cfg_int("record.hold_threshold", 300)
         self._refresh_interval = self._cfg_int("record.refresh_interval", 200)
         self._sync_mode = self._cfg_str("record.sync.mode", "screenshot")
+        self._latest_frame = None       # 截图线程产出的最新帧（UI 线程只读）
+        self._fps = 0.0                 # 固定窗口平均 FPS（float，显示两位小数）
+        self._fps_window = 1.0          # FPS 固定统计窗口（秒）
+        self._stop_capture = threading.Event()
+        self._capture_thread = None
 
     def _cfg_int(self, opt, default):
         """读取 int 配置，缺键/非法值回退默认。"""
@@ -104,8 +110,32 @@ class RecordWindow:
         self._canvas.bind("<ButtonPress-1>", self._on_press)
         self._canvas.bind("<B1-Motion>", self._on_motion)
         self._canvas.bind("<ButtonRelease-1>", self._on_release)
+        self._start_capture()
         self._refresh()
         self._root.mainloop()
+
+    def _start_capture(self):
+        """启动后台截图线程（截图与 UI 分离，避免拖动卡顿）。"""
+        self._stop_capture.clear()
+        self._capture_thread = threading.Thread(target=self._capture_loop,
+                                                daemon=True, name="jczx-record-capture")
+        self._capture_thread.start()
+
+    def _capture_loop(self):
+        """后台截图循环：按刷新间隔取帧，固定时间窗口统计 FPS。"""
+        frame_count = 0
+        window_start = time.time()
+        while not self._stop_capture.is_set():
+            try:
+                frame = self._take_frame()
+                if frame is not None:
+                    self._latest_frame = frame
+                    frame_count += 1
+            except Exception as e:
+                self._log.warning(f"截图线程异常: {e}")
+            frame_count, window_start = self._accumulate_fps(
+                frame_count, window_start, time.time())
+            self._stop_capture.wait(self._refresh_interval / 1000)
 
     def _take_frame(self):
         """按同步模式取设备画面帧。
@@ -121,26 +151,38 @@ class RecordWindow:
                     self._log.warning(f"u2 截图失败，回退截图同步: {e}")
         return self._device.screenshot()
 
+    def _accumulate_fps(self, frame_count, window_start, now):
+        """固定时间窗口满时更新 FPS（float）并重置计数。
+
+        返回重置后的 (frame_count, window_start)。
+        """
+        if now - window_start >= self._fps_window:
+            elapsed = now - window_start
+            self._fps = frame_count / elapsed if elapsed > 0 else 0.0
+            return 0, now
+        return frame_count, window_start
+
     def _refresh(self):
-        """定时拉取设备画面并显示到 Canvas。"""
+        """UI 刷新循环：仅显示后台截图线程的最新帧，不阻塞。"""
         try:
-            img = self._take_frame()
-            h, w = img.shape[:2]
-            cw, ch = self._get_device_size()
-            scale = min(cw / w, ch / h)
-            self._scale = scale
-            # 窗口与设备分辨率一致时原图显示（scale≈1）；尺寸不匹配才缩放
-            if scale < 1.0:
-                display = cv2.resize(img, (max(int(w * scale), 1), max(int(h * scale), 1)))
-            else:
-                display = img
-            rgb = cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
-            self._photo = ImageTk.PhotoImage(PILImage.fromarray(rgb))
-            self._canvas.delete("all")
-            self._canvas.create_image(0, 0, anchor="nw", image=self._photo)
-            self._status.config(
-                text=f"{w}x{h}  缩放 {scale:.2f}  操作 {self._seq - 1}  {self._last_gesture or ''}"
-            )
+            img = self._latest_frame
+            if img is not None:
+                h, w = img.shape[:2]
+                cw, ch = self._get_device_size()
+                scale = min(cw / w, ch / h)
+                self._scale = scale
+                # 窗口与设备分辨率一致时原图显示（scale≈1）；尺寸不匹配才缩放
+                if scale < 1.0:
+                    display = cv2.resize(img, (max(int(w * scale), 1), max(int(h * scale), 1)))
+                else:
+                    display = img
+                rgb = cv2.cvtColor(display, cv2.COLOR_BGR2RGB)
+                self._photo = ImageTk.PhotoImage(PILImage.fromarray(rgb))
+                self._canvas.delete("all")
+                self._canvas.create_image(0, 0, anchor="nw", image=self._photo)
+                self._status.config(
+                    text=f"{w}x{h}  {self._fps:.2f} FPS  操作 {self._seq - 1}  {self._last_gesture or ''}"
+                )
         except Exception as e:
             self._log.warning(f"记录窗口刷新失败: {e}")
         self._root.after(self._refresh_interval, self._refresh)
@@ -212,5 +254,8 @@ class RecordWindow:
             self._log.info(f"记录已保存: {path}")
         else:
             self._log.info("无操作，未生成记录")
+        self._stop_capture.set()
+        if self._capture_thread is not None:
+            self._capture_thread.join(timeout=1.0)
         if self._root is not None:
             self._root.destroy()
