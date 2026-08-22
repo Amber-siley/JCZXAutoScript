@@ -41,7 +41,7 @@ record.refresh_interval : 200
 | 记录窗口（tkinter） | `jczx/debug/recordWindow.py` | 新建 |
 | 手势判定纯函数 | 同上 | 新建（顶层函数，可单测） |
 | DeviceBar "记录" 按钮 | `jczx/widgets.py` | 修改 |
-| 设备操作抑制 recorder | `jczx/jczxCli.py`（`JCZXGaming`） | 修改 |
+| DebugRecorder 记录最近截图 | `jczx/debug/recorder.py` | 修改 |
 | TUI 接线 | `jczx/jczxCli.py`（`JczxTUI`） | 修改 |
 | 配置项 | `jczx/Config/Config.txt` | 修改 |
 
@@ -108,7 +108,7 @@ class RecordWindow:
     def _on_motion(self, event): ...   # 记录首次移动时间、当前点
     def _on_release(self, event): ...  # classify_gesture → _apply_gesture
     def _apply_gesture(self, gesture: str, ...) -> None:
-        """设备操作 + 标注截图 + 记录条目。"""
+        """设备操作（复用 DebugRecorder 标注截图）+ 记录条目。"""
     def _close(self) -> None:
         """会话结束，写 JSON。"""
 ```
@@ -130,14 +130,14 @@ Canvas 绑定事件：
 ### 每次操作（`_apply_gesture`）
 
 1. 换算设备坐标：`x = round(px_x / scale)`，`y = round(px_y / scale)`。
-2. 按类型执行设备操作（见 §5，抑制 DebugRecorder）：
+2. **复用 cli 的点击/滑动/拖动**：直接调用 `JCZXGaming` 方法，annotated 模式下 `DebugRecorder` 自动截取画面、标注坐标并保存到 `screenHistory/N.png`：
    - `click`：`device.click(x, y)`
    - `swipe`：`device.swipe(x1, y1, x2, y2, duration=200)`
    - `drag`：`device.dragAndDrop(x1, y1, x2, y2, duration=200)`
-3. 截取画面：`device.screenshot()`（annotated 模式下不触发额外保存）。
-4. 标注：`ScreenAnnotator` 的 `draw_click` / `draw_swipe`（`draw_swipe` 传 label `"滑动"` / `"拖动"`）。
-5. 保存标注截图：`<output_dir>/record_<sessionId>_<seq>.png`，`seq` 从 1 递增。
-6. 追加记录条目（内存列表）。
+3. 读取 DebugRecorder 最近保存的标注截图文件名：`device._recorder.last_saved`（如 `"12.png"`）。
+4. 追加记录条目（内存列表），`screenshot` 字段引用该文件名。
+
+> **不单独保存截图**：标注截图完全复用 `DebugRecorder`（annotated 模式下 `on_click`/`on_swipe` 必然保存）。记录窗口不再自行截图/标注/保存。
 
 ### 会话与 JSON
 
@@ -161,7 +161,7 @@ Canvas 绑定事件：
       "x2": null, "y2": null,
       "duration": null,
       "time": "15:30:01",
-      "screenshot": "record_20260823_153000_001.png"
+      "screenshot": "12.png"
     }
   ]
 }
@@ -171,7 +171,7 @@ Canvas 绑定事件：
 - `click`：仅 `x`/`y`，`x2`/`y2`/`duration` 为 `null`。
 - `swipe`/`drag`：`x`/`y` 起点、`x2`/`y2` 终点、`duration`（毫秒，默认 200）。
 - `time`：操作时间 `%H:%M:%S`。
-- `screenshot`：该操作对应的标注截图文件名（同目录）。
+- `screenshot`：该操作对应的标注截图文件名（DebugRecorder 数字命名，如 `"12.png"`，位于 `screenHistory/` 目录）。
 
 ## 4. TUI 按钮（`widgets.py` DeviceBar）
 
@@ -192,28 +192,24 @@ Canvas 绑定事件：
 
 - 新增消息类 `class RecordPressed(Message)`。
 
-## 5. 设备操作抑制 recorder（`jczx/jczxCli.py` JCZXGaming）
+## 5. DebugRecorder 记录最近截图（`jczx/debug/recorder.py`）
 
-现状：`JCZXGaming.click/swipe/dragAndDrop` 操作前触发 `DebugRecorder.on_click/on_swipe`（annotated 模式保存 `screenHistory/N.png`）。若记录窗口复用这些方法，会在其自己的标注截图之外额外产生数字命名截图，造成重复与命名混乱。
+`JCZXGaming.click/swipe/dragAndDrop` 操作前已触发 `DebugRecorder.on_click/on_swipe`（annotated 模式保存 `screenHistory/N.png`）。记录窗口**复用**这一机制作为"操作时标注的截图"，不单独保存截图。
 
-方案：给 `JCZXGaming` 增加开关属性 `_suppress_recorder = False`，三处覆盖方法改为：
-
-```python
-if self._recorder and not self._suppress_recorder:
-```
-
-记录窗口每次设备操作期间置位并立即复位（try/finally）：
+方案：给 `DebugRecorder` 增加属性 `last_saved: str | None = None`，在 `_save()` 中更新为刚保存的文件名：
 
 ```python
-saved = device._suppress_recorder
-device._suppress_recorder = True
-try:
-    device.click(x, y)   # 或 swipe / dragAndDrop
-finally:
-    device._suppress_recorder = saved
+def _save(self, img):
+    path = os.path.join(self._output_dir, f"{self._index}.png")
+    cv2.imwrite(path, img)
+    self.last_saved = f"{self._index}.png"   # 新增：记录最近保存的截图文件名
+    self._log.debug(f"调试截图 #{self._index} 已保存")
+    self._index += 1
 ```
 
-保留 `_screen_cache.invalidate()`（操作后下一帧截图反映真实变化）。
+记录窗口每次操作后读取 `device._recorder.last_saved` 关联到 JSON 的 `screenshot` 字段。
+
+**并发注意**：记录窗口操作与任务执行并存时，DebugRecorder 序号会被任务操作占用，`last_saved` 可能指向任务刚保存的截图。记录窗口操作是同步短操作（点击 → 立即读 `last_saved`），且场景为用户手动操作，通常不与任务并发；若并发，标注截图归属可能错位（可接受，日志提示）。
 
 ## 6. TUI 接线（`jczx/jczxCli.py` JczxTUI）
 
@@ -257,8 +253,8 @@ finally:
 **engine（`tests/engine/`）**
 - `ScreenAnnotator.draw_click` / `draw_swipe`：调用后输出图像与输入相比产生像素变化（标注生效），且不抛异常。
 - `classify_gesture` 经记录窗口调用路径（`_apply_gesture` 用 FakeDevice 桩验证 click/swipe/drag 依次收到正确参数）。
-- `_suppress_recorder`：`device.click` 时 recorder 不产生保存（FakeDevice + DebugRecorder 注入）。
-- `RecordWindow` 设备操作：FakeDevice 桩验证坐标换算与参数传递。
+- `DebugRecorder.last_saved`：`_save` 后更新为刚保存的文件名；`JCZXGaming.click` 触发 `on_click` 后 `_recorder.last_saved` 指向该截图。
+- `RecordWindow` 设备操作：FakeDevice 桩验证 click/swipe/drag 依次收到正确参数，且 JSON 条目的 `screenshot` 字段取自 `_recorder.last_saved`。
 
 **widgets**
 - `DeviceBar` `show_record=True` 时含 `record-btn`，`False` 时不含。
@@ -272,4 +268,4 @@ finally:
 - 文件命名保持项目 camelCase 风格：`jczx/debug/recordWindow.py`。
 - 中文注释、英文代码（项目风格）。
 - `screenHistory/` 输出不随 CWD 变化（固定 `_program_dir()`）。
-- DebugRecorder 现有行为不变（数字命名截图逻辑不删改，仅标注文本扩展）。
+- DebugRecorder 现有行为不变（数字命名截图逻辑不删改，仅新增 `last_saved` 属性 + 标注文本扩展）。
