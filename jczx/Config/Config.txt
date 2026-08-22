@@ -20,3 +20,10 @@ adb.port : 7555
 mcp.port : 8765
 / 调试截图模式 off=关闭 simple=连续截图 annotated=标注截图
 debug.screenshot.mode : annotated
+/ 记录窗口：手势判定阈值与画面刷新间隔
+record.click_move_threshold : 15
+record.hold_threshold : 300
+/ 记录窗口画面同步模式 screenshot=截图同步(带缓存) u2=u2高频截图(绕缓存)
+record.sync.mode : u2
+/ 记录窗口 为screenshot时刷新间隔
+record.refresh_interval : 100

@@ -354,17 +354,22 @@ class DeviceBar(Horizontal):
     class ReloadPressed(Message):
         """Emitted when the reload-config button is pressed."""
 
+    class RecordPressed(Message):
+        """Emitted when the record button is pressed."""
+
     def __init__(
         self,
         devices: list[str] | None = None,
         current_device: str = "",
         current_port: str = "7555",
+        show_record: bool = False,
         id: str | None = None,
     ) -> None:
         super().__init__(id=id)
         self._devices = devices or []
         self._current_device = current_device
         self._current_port = current_port
+        self._show_record = show_record
 
     def compose(self) -> ComposeResult:
         opts = [(d, d) for d in self._devices] or [("无设备", "__none__")]
@@ -382,6 +387,8 @@ class DeviceBar(Horizontal):
         yield LabelButton("刷新", id="device-refresh-btn")
         yield Static("", classes="device-bar-spacer")
         yield LabelButton("重载配置", id="config-reload-btn")
+        if self._show_record:
+            yield LabelButton("记录", id="record-btn", style="black on yellow")
 
     def on_label_button_pressed(self, event: LabelButton.Pressed) -> None:
         event.stop()
@@ -389,6 +396,8 @@ class DeviceBar(Horizontal):
             self.post_message(self.RefreshPressed())
         elif event.sender_id == "config-reload-btn":
             self.post_message(self.ReloadPressed())
+        elif event.sender_id == "record-btn":
+            self.post_message(self.RecordPressed())
         elif event.sender_id == "device-save-btn":
             select = self.query_one("#device-select", CompactSelect)
             port = self.query_one("#port-input", Input)

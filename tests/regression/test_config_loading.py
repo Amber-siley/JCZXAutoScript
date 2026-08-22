@@ -46,6 +46,13 @@ class TestConfigLoading:
         cfg = TxtConfig(join(real_config_dir, "Config.txt"))
         assert cfg.get_config(opt="mcp.port") == "8765"
 
+    def test_config_has_record_settings(self, real_config_dir):
+        cfg = TxtConfig(join(real_config_dir, "Config.txt"))
+        assert cfg.get_config(opt="record.click_move_threshold") == "15"
+        assert cfg.get_config(opt="record.hold_threshold") == "300"
+        assert cfg.get_config(opt="record.refresh_interval") == "100"
+        assert cfg.get_config(opt="record.sync.mode") == "screenshot"
+
 
 class TestDeliveryOrderSettings:
     """自动交付订单任务：multi_select_switch 订单 + 两个 bool 开关设置。"""

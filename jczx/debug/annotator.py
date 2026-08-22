@@ -33,7 +33,7 @@ class ScreenAnnotator:
     def draw_click(cls, img, x, y):
         cv2.drawMarker(img, (x, y), cls.COLOR,
                        cv2.MARKER_CROSS, cls.CROSS_SIZE, cls.THICKNESS)
-        cls._draw_label(img, x, y, "点击")
+        cls._draw_label(img, x, y, f"点击 ({x}, {y})")
 
     @classmethod
     def draw_match(cls, img, pts, index):
@@ -45,7 +45,7 @@ class ScreenAnnotator:
     def draw_swipe(cls, img, x1, y1, x2, y2, label):
         cv2.arrowedLine(img, (x1, y1), (x2, y2), cls.COLOR,
                         cls.THICKNESS, tipLength=0.1)
-        cls._draw_label(img, x1, y1, label)
+        cls._draw_label(img, x1, y1, f"{label} ({x1},{y1})->({x2},{y2})")
 
     @classmethod
     def draw_ocr(cls, img, pt_range, text):

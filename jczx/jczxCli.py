@@ -1327,6 +1327,7 @@ class JczxTUI(App, JczxCli):
         super().__init__()
         JczxCli.__init__(self)
         self._editing_queue_id: str | None = None
+        self._record_active = False
 
     def compose(self) -> ComposeResult:
         devices = self.adb.get_device_names() if self.adb else []
@@ -1336,6 +1337,7 @@ class JczxTUI(App, JczxCli):
             devices=devices,
             current_device=current_device,
             current_port=self.config.get_config(opt="adb.port") or "7555",
+            show_record=(self.config.get_config(opt="debug.screenshot.mode") == "annotated"),
         )
         with Container(id="app-grid"):
             yield self.rich_log
@@ -1438,6 +1440,32 @@ class JczxTUI(App, JczxCli):
         self._reload_configs()
         self._refresh_all_panels()
         self.logger.info("配置文件重载完成")
+
+    def on_device_bar_record_pressed(self, event: DeviceBar.RecordPressed) -> None:
+        if self._record_active:
+            self.logger.warning("记录窗口已打开，忽略重复点击")
+            return
+        if not self.device:
+            self.logger.warning("设备未连接，无法打开记录窗口")
+            return
+        if self.device._exec_mgr.is_running():
+            self.logger.warning("任务执行中打开记录窗口，可能互相干扰")
+        self._record_active = True
+        self.logger.info("打开记录窗口...")
+        threading.Thread(target=self._run_record_window, daemon=True).start()
+
+    def _run_record_window(self) -> None:
+        from .debug.recordWindow import RecordWindow
+        window = RecordWindow(
+            self.device,
+            self.config,
+            os.path.join(self._program_dir(), "screenHistory"),
+            self.logger,
+        )
+        try:
+            window.run()
+        finally:
+            self._record_active = False
 
     def _reload_configs(self) -> None:
         config_path = self.fm.get_obj_relative_path("Config/Config.txt", self)

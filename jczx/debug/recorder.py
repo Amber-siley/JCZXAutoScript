@@ -19,6 +19,7 @@ class DebugRecorder:
         self._index = 1
         self._log = log
         self._annotator = ScreenAnnotator()
+        self.last_saved: str | None = None   # 最近一次保存的截图文件名（记录窗口复用）
 
     _NUMERIC_PNG = re.compile(r"^\d+\.png$")
 
@@ -34,6 +35,7 @@ class DebugRecorder:
     def _save(self, img):
         path = os.path.join(self._output_dir, f"{self._index}.png")
         cv2.imwrite(path, img)
+        self.last_saved = f"{self._index}.png"
         self._log.debug(f"调试截图 #{self._index} 已保存")
         self._index += 1
 
